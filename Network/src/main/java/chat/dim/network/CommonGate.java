@@ -48,7 +48,7 @@ import chat.dim.type.Data;
 /**
  *  Gate with hub for connection
  */
-public abstract class CommonGate <H extends Hub> extends BaseGate<H> implements Runnable {
+public abstract class CommonGate extends BaseGate implements Runnable {
 
     private boolean running;
 
@@ -131,7 +131,7 @@ public abstract class CommonGate <H extends Hub> extends BaseGate<H> implements 
     }
 
     public Channel getChannel(SocketAddress remote, SocketAddress local) {
-        H hub = getHub();
+        Hub hub = getHub();
         assert hub != null : "no hub for channel: " + remote + ", " + local;
         return hub.open(remote, local);
     }

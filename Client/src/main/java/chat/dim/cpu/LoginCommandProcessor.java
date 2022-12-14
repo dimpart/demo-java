@@ -28,24 +28,26 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.network;
+package chat.dim.cpu;
 
 import java.util.List;
 
-import chat.dim.mtp.MTPStreamDocker;
-import chat.dim.net.Connection;
-import chat.dim.port.Docker;
+import chat.dim.Facebook;
+import chat.dim.Messenger;
+import chat.dim.protocol.Content;
+import chat.dim.protocol.LoginCommand;
+import chat.dim.protocol.ReliableMessage;
 
-public final class UDPClientGate extends CommonGate {
+public class LoginCommandProcessor extends BaseCommandProcessor {
 
-    public UDPClientGate(Docker.Delegate delegate) {
-        super(delegate);
+    public LoginCommandProcessor(Facebook facebook, Messenger messenger) {
+        super(facebook, messenger);
     }
 
     @Override
-    protected Docker createDocker(Connection conn, List<byte[]> data) {
-        MTPStreamDocker docker = new MTPStreamDocker(conn);
-        docker.setDelegate(getDelegate());
-        return docker;
+    public List<Content> process(Content content, ReliableMessage rMsg) {
+        assert content instanceof LoginCommand : "login command error: " + content;
+        // no need to response login command
+        return null;
     }
 }

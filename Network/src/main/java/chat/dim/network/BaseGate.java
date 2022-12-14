@@ -40,19 +40,19 @@ import chat.dim.port.Docker;
 import chat.dim.socket.ActiveConnection;
 import chat.dim.startrek.StarGate;
 
-public abstract class BaseGate <H extends Hub> extends StarGate {
+public abstract class BaseGate extends StarGate {
 
-    private H hub;
+    private Hub hub;
 
     public BaseGate(Docker.Delegate delegate) {
         super(delegate);
     }
 
-    public H getHub() {
+    public Hub getHub() {
         return hub;
     }
 
-    public void setHub(H h) {
+    public void setHub(Hub h) {
         hub = h;
     }
 

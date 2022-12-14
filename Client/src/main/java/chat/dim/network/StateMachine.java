@@ -30,22 +30,59 @@
  */
 package chat.dim.network;
 
-import java.util.List;
-
-import chat.dim.mtp.MTPStreamDocker;
-import chat.dim.net.Connection;
+import chat.dim.fsm.AutoMachine;
+import chat.dim.fsm.Context;
 import chat.dim.port.Docker;
+import chat.dim.protocol.ID;
 
-public final class UDPClientGate extends CommonGate {
+/**
+ *  Server state machine
+ */
+public class StateMachine extends AutoMachine<StateMachine, StateTransition, SessionState> implements Context {
 
-    public UDPClientGate(Docker.Delegate delegate) {
-        super(delegate);
+    private final ClientSession session;
+
+    public StateMachine(ClientSession clientSession) {
+        super(SessionState.DEFAULT);
+        session = clientSession;
+        // init states
+        StateBuilder builder = createStateBuilder();
+        addState(builder.getDefaultState());
+        addState(builder.getConnectingState());
+        addState(builder.getConnectedState());
+        addState(builder.getHandshakingState());
+        addState(builder.getRunningState());
+        addState(builder.getErrorState());
+    }
+
+    protected StateBuilder createStateBuilder() {
+        return new StateBuilder(new TransitionBuilder());
+    }
+
+    private void addState(SessionState state) {
+        setState(state.name, state);
     }
 
     @Override
-    protected Docker createDocker(Connection conn, List<byte[]> data) {
-        MTPStreamDocker docker = new MTPStreamDocker(conn);
-        docker.setDelegate(getDelegate());
-        return docker;
+    public StateMachine getContext() {
+        return this;
+    }
+
+    public ClientSession getSession() {
+        return session;
+    }
+
+    public String getSessionKey() {
+        return session.getKey();
+    }
+
+    public ID getSessionID() {
+        return session.getIdentifier();
+    }
+
+    Docker.Status getStatus() {
+        CommonGate gate = session.getGate();
+        Docker docker = gate.getDocker(session.getRemoteAddress(), null, null);
+        return docker == null ? Docker.Status.ERROR : docker.getStatus();
     }
 }

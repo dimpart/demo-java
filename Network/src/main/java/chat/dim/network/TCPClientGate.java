@@ -34,10 +34,9 @@ import java.util.List;
 
 import chat.dim.mtp.MTPStreamDocker;
 import chat.dim.net.Connection;
-import chat.dim.net.Hub;
 import chat.dim.port.Docker;
 
-public final class TCPClientGate <H extends Hub> extends CommonGate<H> {
+public final class TCPClientGate extends CommonGate {
 
     public TCPClientGate(Docker.Delegate delegate) {
         super(delegate);

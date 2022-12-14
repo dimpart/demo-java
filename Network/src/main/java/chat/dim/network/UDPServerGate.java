@@ -34,12 +34,11 @@ import java.util.List;
 
 import chat.dim.mtp.MTPStreamDocker;
 import chat.dim.net.Connection;
-import chat.dim.net.Hub;
 import chat.dim.port.Docker;
 import chat.dim.type.ByteArray;
 import chat.dim.type.Data;
 
-public final class UDPServerGate <H extends Hub> extends CommonGate<H> {
+public final class UDPServerGate extends CommonGate {
 
     public UDPServerGate(Docker.Delegate delegate) {
         super(delegate);

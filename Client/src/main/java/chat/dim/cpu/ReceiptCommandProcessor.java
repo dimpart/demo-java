@@ -28,24 +28,26 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.network;
+package chat.dim.cpu;
 
 import java.util.List;
 
-import chat.dim.mtp.MTPStreamDocker;
-import chat.dim.net.Connection;
-import chat.dim.port.Docker;
+import chat.dim.Facebook;
+import chat.dim.Messenger;
+import chat.dim.protocol.Content;
+import chat.dim.protocol.ReceiptCommand;
+import chat.dim.protocol.ReliableMessage;
 
-public final class UDPClientGate extends CommonGate {
+public class ReceiptCommandProcessor extends BaseCommandProcessor {
 
-    public UDPClientGate(Docker.Delegate delegate) {
-        super(delegate);
+    public ReceiptCommandProcessor(Facebook facebook, Messenger messenger) {
+        super(facebook, messenger);
     }
 
     @Override
-    protected Docker createDocker(Connection conn, List<byte[]> data) {
-        MTPStreamDocker docker = new MTPStreamDocker(conn);
-        docker.setDelegate(getDelegate());
-        return docker;
+    public List<Content> process(Content content, ReliableMessage rMsg) {
+        assert content instanceof ReceiptCommand : "receipt command error: " + content;
+        // no need to response receipt command
+        return null;
     }
 }

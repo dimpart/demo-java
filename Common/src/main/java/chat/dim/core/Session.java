@@ -67,7 +67,7 @@ public interface Session extends Transmitter {
      * @return true on changed
      */
     boolean setActive(boolean active, long when);
-    boolean getActive();
+    boolean isActive();
 
     /**
      *  Pack message into a waiting queue

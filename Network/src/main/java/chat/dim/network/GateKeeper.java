@@ -36,6 +36,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Date;
 
 import chat.dim.net.Connection;
+import chat.dim.net.Hub;
 import chat.dim.pack.DeparturePacker;
 import chat.dim.port.Arrival;
 import chat.dim.port.Departure;
@@ -45,14 +46,13 @@ import chat.dim.queue.MessageQueue;
 import chat.dim.queue.MessageWrapper;
 import chat.dim.skywalker.Runner;
 import chat.dim.tcp.StreamChannel;
-import chat.dim.tcp.StreamHub;
 
 public class GateKeeper extends Runner implements Docker.Delegate {
 
     public static int SEND_BUFFER_SIZE = 64 * 1024;  // 64 KB
 
     private final SocketAddress remoteAddress;
-    private final CommonGate<StreamHub> gate;
+    private final CommonGate gate;
     private final MessageQueue queue;
     private boolean active;
     private long lastActive;  // last update time
@@ -66,18 +66,18 @@ public class GateKeeper extends Runner implements Docker.Delegate {
         lastActive = 0;
     }
 
-    protected CommonGate<StreamHub> createGate(SocketAddress remote, SocketChannel sock) {
-        CommonGate<StreamHub> streamGate;
+    protected CommonGate createGate(SocketAddress remote, SocketChannel sock) {
+        CommonGate streamGate;
         if (sock == null) {
-            streamGate = new TCPClientGate<>(this);
+            streamGate = new TCPClientGate(this);
         } else {
-            streamGate = new TCPServerGate<>(this);
+            streamGate = new TCPServerGate(this);
         }
         streamGate.setHub(createHub(gate, remote, sock));
         return streamGate;
     }
 
-    protected StreamHub createHub(Connection.Delegate delegate, SocketAddress remote, SocketChannel sock) {
+    protected Hub createHub(Connection.Delegate delegate, SocketAddress remote, SocketChannel sock) {
         if (sock == null) {
             // client
             assert remote != null : "remote address empty";
@@ -109,7 +109,7 @@ public class GateKeeper extends Runner implements Docker.Delegate {
         return remoteAddress;
     }
 
-    public CommonGate<StreamHub> getGate() {
+    public CommonGate getGate() {
         return gate;
     }
 
@@ -158,7 +158,7 @@ public class GateKeeper extends Runner implements Docker.Delegate {
 
     @Override
     public boolean process() {
-        StreamHub hub = gate.getHub();
+        Hub hub = gate.getHub();
         boolean incoming = hub.process();
         boolean outgoing = gate.process();
         if (incoming || outgoing) {

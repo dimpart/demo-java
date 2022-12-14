@@ -28,24 +28,49 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.network;
+package chat.dim;
 
-import java.util.List;
+import chat.dim.cpu.BaseContentProcessor;
+import chat.dim.cpu.ContentProcessor;
+import chat.dim.cpu.ContentProcessorCreator;
+import chat.dim.cpu.HandshakeCommandProcessor;
+import chat.dim.cpu.LoginCommandProcessor;
+import chat.dim.cpu.ReceiptCommandProcessor;
+import chat.dim.protocol.HandshakeCommand;
+import chat.dim.protocol.LoginCommand;
+import chat.dim.protocol.ReceiptCommand;
 
-import chat.dim.mtp.MTPStreamDocker;
-import chat.dim.net.Connection;
-import chat.dim.port.Docker;
+public class ClientContentProcessorCreator extends ContentProcessorCreator {
 
-public final class UDPClientGate extends CommonGate {
-
-    public UDPClientGate(Docker.Delegate delegate) {
-        super(delegate);
+    public ClientContentProcessorCreator(Facebook facebook, Messenger messenger) {
+        super(facebook, messenger);
     }
 
     @Override
-    protected Docker createDocker(Connection conn, List<byte[]> data) {
-        MTPStreamDocker docker = new MTPStreamDocker(conn);
-        docker.setDelegate(getDelegate());
-        return docker;
+    public ContentProcessor createContentProcessor(int type) {
+        // default
+        if (type == 0) {
+            return new BaseContentProcessor(getFacebook(), getMessenger());
+        }
+        // others
+        return super.createContentProcessor(type);
+    }
+
+    @Override
+    public ContentProcessor createCommandProcessor(int type, String name) {
+        // handshake
+        if (name.equals(HandshakeCommand.HANDSHAKE)) {
+            return new HandshakeCommandProcessor(getFacebook(), getMessenger());
+        }
+        // login
+        if (name.equals(LoginCommand.LOGIN)) {
+            return new LoginCommandProcessor(getFacebook(), getMessenger());
+        }
+        // receipt
+        if (name.equals(ReceiptCommand.RECEIPT)) {
+            return new ReceiptCommandProcessor(getFacebook(), getMessenger());
+        }
+        // others
+        return super.createCommandProcessor(type, name);
     }
 }
