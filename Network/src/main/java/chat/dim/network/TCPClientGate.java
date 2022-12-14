@@ -28,54 +28,25 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.core;
+package chat.dim.network;
 
-import java.net.SocketAddress;
+import java.util.List;
 
-import chat.dim.dbi.SessionDBI;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.ReliableMessage;
+import chat.dim.mtp.MTPStreamDocker;
+import chat.dim.net.Connection;
+import chat.dim.net.Hub;
+import chat.dim.port.Docker;
 
-public interface Session extends Transmitter {
+public final class TCPClientGate <H extends Hub> extends CommonGate<H> {
 
-    SessionDBI getDatabase();
+    public TCPClientGate(Docker.Delegate delegate) {
+        super(delegate);
+    }
 
-    /**
-     *  Get remote socket address
-     *
-     * @return host & port
-     */
-    SocketAddress getRemoteAddress();
-
-    // session key
-    String getKey();
-
-    /**
-     *  Update user ID
-     *
-     * @param identifier - login user ID
-     * @return true on changed
-     */
-    boolean setIdentifier(ID identifier);
-    ID getIdentifier();
-
-    /**
-     *  Update active flag
-     *
-     * @param active - flag
-     * @param when   - now
-     * @return true on changed
-     */
-    boolean setActive(boolean active, long when);
-    boolean getActive();
-
-    /**
-     *  Pack message into a waiting queue
-     *
-     * @param msg      - network message
-     * @param data     - serialized message
-     * @param priority - smaller is faster
-     * @return false on error
-     */
-    boolean queueMessagePackage(ReliableMessage msg, byte[] data, int priority);
+    @Override
+    protected Docker createDocker(Connection conn, List<byte[]> data) {
+        MTPStreamDocker docker = new MTPStreamDocker(conn);
+        docker.setDelegate(getDelegate());
+        return docker;
+    }
 }

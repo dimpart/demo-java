@@ -28,54 +28,42 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.core;
+package chat.dim.network;
 
-import java.net.SocketAddress;
+import java.util.List;
 
-import chat.dim.dbi.SessionDBI;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.ReliableMessage;
+import chat.dim.mtp.MTPStreamDocker;
+import chat.dim.net.Connection;
+import chat.dim.net.Hub;
+import chat.dim.port.Docker;
+import chat.dim.type.ByteArray;
+import chat.dim.type.Data;
 
-public interface Session extends Transmitter {
+public final class TCPServerGate <H extends Hub> extends CommonGate<H> {
 
-    SessionDBI getDatabase();
+    public TCPServerGate(Docker.Delegate delegate) {
+        super(delegate);
+    }
 
-    /**
-     *  Get remote socket address
-     *
-     * @return host & port
-     */
-    SocketAddress getRemoteAddress();
-
-    // session key
-    String getKey();
-
-    /**
-     *  Update user ID
-     *
-     * @param identifier - login user ID
-     * @return true on changed
-     */
-    boolean setIdentifier(ID identifier);
-    ID getIdentifier();
-
-    /**
-     *  Update active flag
-     *
-     * @param active - flag
-     * @param when   - now
-     * @return true on changed
-     */
-    boolean setActive(boolean active, long when);
-    boolean getActive();
-
-    /**
-     *  Pack message into a waiting queue
-     *
-     * @param msg      - network message
-     * @param data     - serialized message
-     * @param priority - smaller is faster
-     * @return false on error
-     */
-    boolean queueMessagePackage(ReliableMessage msg, byte[] data, int priority);
+    @Override
+    protected Docker createDocker(Connection conn, List<byte[]> advanceParty) {
+        int count = advanceParty == null ? 0 : advanceParty.size();
+        if (count == 0) {
+            return null;
+        }
+        ByteArray data = new Data(advanceParty.get(0));
+        for (int i = 1; i < count; ++i) {
+            data = data.concat(advanceParty.get(i));
+        }
+        if (data.getSize() == 0) {
+            return null;
+        }
+        // check data format before creating docker
+        if (MTPStreamDocker.check(data)) {
+            MTPStreamDocker docker = new MTPStreamDocker(conn);
+            docker.setDelegate(getDelegate());
+            return docker;
+        }
+        throw new AssertionError("failed to create docker: " + data);
+    }
 }

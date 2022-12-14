@@ -28,54 +28,23 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.core;
+package chat.dim.mtp;
 
-import java.net.SocketAddress;
+public final class MTPStreamArrival extends PackageArrival {
 
-import chat.dim.dbi.SessionDBI;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.ReliableMessage;
+    public MTPStreamArrival(Package pack, long now) {
+        super(pack, now);
+    }
 
-public interface Session extends Transmitter {
+    public MTPStreamArrival(Package pack) {
+        super(pack);
+    }
 
-    SessionDBI getDatabase();
-
-    /**
-     *  Get remote socket address
-     *
-     * @return host & port
-     */
-    SocketAddress getRemoteAddress();
-
-    // session key
-    String getKey();
-
-    /**
-     *  Update user ID
-     *
-     * @param identifier - login user ID
-     * @return true on changed
-     */
-    boolean setIdentifier(ID identifier);
-    ID getIdentifier();
-
-    /**
-     *  Update active flag
-     *
-     * @param active - flag
-     * @param when   - now
-     * @return true on changed
-     */
-    boolean setActive(boolean active, long when);
-    boolean getActive();
-
-    /**
-     *  Pack message into a waiting queue
-     *
-     * @param msg      - network message
-     * @param data     - serialized message
-     * @param priority - smaller is faster
-     * @return false on error
-     */
-    boolean queueMessagePackage(ReliableMessage msg, byte[] data, int priority);
+    public byte[] getPayload() {
+        Package pack = getPackage();
+        if (pack == null || pack.body == null) {
+            return null;
+        }
+        return pack.body.getBytes();
+    }
 }

@@ -28,54 +28,36 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.core;
+package chat.dim.mtp;
 
-import java.net.SocketAddress;
+import chat.dim.type.ByteArray;
+import chat.dim.type.Pair;
 
-import chat.dim.dbi.SessionDBI;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.ReliableMessage;
+public final class MTPHelper {
 
-public interface Session extends Transmitter {
+    private static final MTPPackageSeeker seeker = new MTPPackageSeeker();
 
-    SessionDBI getDatabase();
+    public static Pair<Header, Integer> seekHeader(ByteArray data) {
+        return seeker.seekHeader(data);
+    }
 
-    /**
-     *  Get remote socket address
-     *
-     * @return host & port
-     */
-    SocketAddress getRemoteAddress();
+    public static Pair<Package, Integer> seekPackage(ByteArray data) {
+        return seeker.seekPackage(data);
+    }
 
-    // session key
-    String getKey();
+    public static Package createCommand(ByteArray body) {
+        return Package.create(DataType.COMMAND, null, 1, 0, body.getSize(), body);
+    }
 
-    /**
-     *  Update user ID
-     *
-     * @param identifier - login user ID
-     * @return true on changed
-     */
-    boolean setIdentifier(ID identifier);
-    ID getIdentifier();
+    public static Package createMessage(TransactionID sn, ByteArray body) {
+        return Package.create(DataType.MESSAGE, sn, 1, 0, body.getSize(), body);
+    }
 
-    /**
-     *  Update active flag
-     *
-     * @param active - flag
-     * @param when   - now
-     * @return true on changed
-     */
-    boolean setActive(boolean active, long when);
-    boolean getActive();
+    public static Package respondCommand(TransactionID sn, ByteArray body) {
+        return Package.create(DataType.COMMAND_RESPONSE, sn, 1, 0, body.getSize(), body);
+    }
 
-    /**
-     *  Pack message into a waiting queue
-     *
-     * @param msg      - network message
-     * @param data     - serialized message
-     * @param priority - smaller is faster
-     * @return false on error
-     */
-    boolean queueMessagePackage(ReliableMessage msg, byte[] data, int priority);
+    public static Package respondMessage(TransactionID sn, int pages, int index, ByteArray body) {
+        return Package.create(DataType.MESSAGE_RESPONSE, sn, pages, index, body.getSize(), body);
+    }
 }

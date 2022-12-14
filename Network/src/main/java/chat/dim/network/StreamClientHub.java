@@ -28,54 +28,36 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.core;
+package chat.dim.network;
 
 import java.net.SocketAddress;
 
-import chat.dim.dbi.SessionDBI;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.ReliableMessage;
+import chat.dim.net.Connection;
+import chat.dim.tcp.ClientHub;
+import chat.dim.tcp.StreamChannel;
 
-public interface Session extends Transmitter {
+public final class StreamClientHub extends ClientHub {
 
-    SessionDBI getDatabase();
+    public StreamClientHub(Connection.Delegate delegate) {
+        super(delegate);
+    }
 
-    /**
-     *  Get remote socket address
-     *
-     * @return host & port
-     */
-    SocketAddress getRemoteAddress();
+    public void putChannel(StreamChannel channel) {
+        setChannel(channel.getRemoteAddress(), channel.getLocalAddress(), channel);
+    }
 
-    // session key
-    String getKey();
+    @Override
+    protected Connection getConnection(SocketAddress remote, SocketAddress local) {
+        return super.getConnection(remote, null);
+    }
 
-    /**
-     *  Update user ID
-     *
-     * @param identifier - login user ID
-     * @return true on changed
-     */
-    boolean setIdentifier(ID identifier);
-    ID getIdentifier();
+    @Override
+    protected void setConnection(SocketAddress remote, SocketAddress local, Connection conn) {
+        super.setConnection(remote, null, conn);
+    }
 
-    /**
-     *  Update active flag
-     *
-     * @param active - flag
-     * @param when   - now
-     * @return true on changed
-     */
-    boolean setActive(boolean active, long when);
-    boolean getActive();
-
-    /**
-     *  Pack message into a waiting queue
-     *
-     * @param msg      - network message
-     * @param data     - serialized message
-     * @param priority - smaller is faster
-     * @return false on error
-     */
-    boolean queueMessagePackage(ReliableMessage msg, byte[] data, int priority);
+    @Override
+    protected void removeConnection(SocketAddress remote, SocketAddress local, Connection conn) {
+        super.removeConnection(remote, null, conn);
+    }
 }

@@ -28,54 +28,39 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.core;
+package chat.dim.mtp;
 
-import java.net.SocketAddress;
+import chat.dim.pack.PackageSeeker;
+import chat.dim.type.ByteArray;
 
-import chat.dim.dbi.SessionDBI;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.ReliableMessage;
+public final class MTPPackageSeeker extends PackageSeeker<Header, Package> {
 
-public interface Session extends Transmitter {
+    public MTPPackageSeeker() {
+        super(Header.MAGIC_CODE, 0, 24);
+    }
 
-    SessionDBI getDatabase();
+    @Override
+    public Header parseHeader(ByteArray data) {
+        try {
+            return Header.parse(data);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-    /**
-     *  Get remote socket address
-     *
-     * @return host & port
-     */
-    SocketAddress getRemoteAddress();
+    @Override
+    public int getHeaderLength(Header head) {
+        return head.getSize();
+    }
 
-    // session key
-    String getKey();
+    @Override
+    public int getBodyLength(Header head) {
+        return head.bodyLength;
+    }
 
-    /**
-     *  Update user ID
-     *
-     * @param identifier - login user ID
-     * @return true on changed
-     */
-    boolean setIdentifier(ID identifier);
-    ID getIdentifier();
-
-    /**
-     *  Update active flag
-     *
-     * @param active - flag
-     * @param when   - now
-     * @return true on changed
-     */
-    boolean setActive(boolean active, long when);
-    boolean getActive();
-
-    /**
-     *  Pack message into a waiting queue
-     *
-     * @param msg      - network message
-     * @param data     - serialized message
-     * @param priority - smaller is faster
-     * @return false on error
-     */
-    boolean queueMessagePackage(ReliableMessage msg, byte[] data, int priority);
+    @Override
+    public Package createPackage(ByteArray data, Header head, ByteArray body) {
+        return new Package(data, head, body);
+    }
 }

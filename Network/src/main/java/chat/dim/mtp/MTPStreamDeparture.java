@@ -28,54 +28,26 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.core;
+package chat.dim.mtp;
 
-import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 
-import chat.dim.dbi.SessionDBI;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.ReliableMessage;
+public final class MTPStreamDeparture extends PackageDeparture {
 
-public interface Session extends Transmitter {
+    public MTPStreamDeparture(Package pack, int prior, int maxTries) {
+        super(pack, prior, maxTries);
+    }
 
-    SessionDBI getDatabase();
+    public MTPStreamDeparture(Package pack, int prior) {
+        super(pack, prior);
+    }
 
-    /**
-     *  Get remote socket address
-     *
-     * @return host & port
-     */
-    SocketAddress getRemoteAddress();
-
-    // session key
-    String getKey();
-
-    /**
-     *  Update user ID
-     *
-     * @param identifier - login user ID
-     * @return true on changed
-     */
-    boolean setIdentifier(ID identifier);
-    ID getIdentifier();
-
-    /**
-     *  Update active flag
-     *
-     * @param active - flag
-     * @param when   - now
-     * @return true on changed
-     */
-    boolean setActive(boolean active, long when);
-    boolean getActive();
-
-    /**
-     *  Pack message into a waiting queue
-     *
-     * @param msg      - network message
-     * @param data     - serialized message
-     * @param priority - smaller is faster
-     * @return false on error
-     */
-    boolean queueMessagePackage(ReliableMessage msg, byte[] data, int priority);
+    @Override
+    protected List<Package> split(Package pack) {
+        // stream docker will not separate packages
+        List<Package> packages = new ArrayList<>();
+        packages.add(pack);
+        return packages;
+    }
 }
