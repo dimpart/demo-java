@@ -1,6 +1,6 @@
 /* license: https://mit-license.org
  *
- *  DIMP : Decentralized Instant Messaging Protocol
+ *  HTTP
  *
  *                                Written in 2022 by Moky <albert.moky@gmail.com>
  *
@@ -28,23 +28,17 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.dbi;
+package chat.dim.http;
 
-import java.util.List;
+import java.io.IOException;
 
-import chat.dim.protocol.ID;
+public interface HTTPDelegate {
 
-/**
- *  Account DBI
- *  ~~~~~~~~~~~
- */
-public interface UserDBI {
+    void uploadSuccess(UploadTask task, String response);
 
-    List<ID> getLocalUsers();
+    void uploadFailed(UploadTask task, IOException error);
 
-    boolean saveLocalUsers(List<ID> users);
+    void downloadSuccess(DownloadTask task, String filePath);
 
-    List<ID> getContacts(ID user);
-
-    boolean saveContacts(List<ID> contacts, ID user);
+    void downloadFailed(DownloadTask task, IOException error);
 }

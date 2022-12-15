@@ -103,7 +103,7 @@ public class ClientProcessor extends MessageProcessor {
                 }
             }
             // normal response
-            messenger.sendContent(receiver, sender, res, 0);
+            messenger.sendContent(receiver, sender, res, 1);
         }
         // DON'T respond to station directly
         return new ArrayList<>();

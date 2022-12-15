@@ -170,7 +170,7 @@ public class CommonFacebook extends Facebook {
 
     @Override
     public List<ID> getContacts(ID user) {
-        return database.getContacts();
+        return database.getContacts(user);
     }
 
     @Override

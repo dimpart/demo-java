@@ -1,13 +1,13 @@
 /* license: https://mit-license.org
  *
- *  DIMP : Decentralized Instant Messaging Protocol
+ *  File System
  *
- *                                Written in 2022 by Moky <albert.moky@gmail.com>
+ *                                Written in 2019 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 Albert Moky
+ * Copyright (c) 2019 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,23 +28,43 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.dbi;
-
-import java.util.List;
-
-import chat.dim.protocol.ID;
+package chat.dim.filesys;
 
 /**
- *  Account DBI
- *  ~~~~~~~~~~~
+ *  RAM access
  */
-public interface UserDBI {
+public abstract class LocalCache extends ExternalStorage {
 
-    List<ID> getLocalUsers();
+    /**
+     *  Get cache file path: "/sdcard/chat.dim.sechat/caches/{XX}/{YY}/{filename}"
+     *
+     * @param filename - cache file name
+     * @return cache file path
+     */
+    public static String getCacheFilePath(String filename) {
+        assert filename.length() > 4 : "filename too short " + filename;
+        String dir = getCachesDirectory();
+        String xx = filename.substring(0, 2);
+        String yy = filename.substring(2, 4);
+        return appendPathComponent(dir, xx, yy, filename);
+    }
 
-    boolean saveLocalUsers(List<ID> users);
+    public static String getCachesDirectory() {
+        return appendPathComponent(getRoot(), "caches");
+    }
 
-    List<ID> getContacts(ID user);
+    /**
+     *  Get temporary file path: "/sdcard/chat.dim.sechat/tmp/{filename}"
+     *
+     * @param filename - temporary file name
+     * @return temporary file path
+     */
+    public static String getTemporaryFilePath(String filename) {
+        String dir = getTemporaryDirectory();
+        return appendPathComponent(dir, filename);
+    }
 
-    boolean saveContacts(List<ID> contacts, ID user);
+    public static String getTemporaryDirectory() {
+        return appendPathComponent(getRoot(), "tmp");
+    }
 }
