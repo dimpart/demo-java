@@ -57,6 +57,10 @@ public class Terminal extends Runner implements Delegate<StateMachine, StateTran
         lastTime = new Date().getTime();
     }
 
+    public String getUserAgent() {
+        return "DIMP/0.4 (Client; Linux; en-US) DIMCoreKit/0.9 (Terminal) DIM-by-GSP/1.0";
+    }
+
     public ClientMessenger getMessenger() {
         return messenger;
     }
@@ -125,7 +129,7 @@ public class Terminal extends Runner implements Delegate<StateMachine, StateTran
         } else {
             // send login command to everyone to provide more information.
             // this command can keep the user online too.
-            messenger.broadcastLogin(uid);
+            messenger.broadcastLogin(uid, getUserAgent());
         }
         // update last online time
         lastTime = now;

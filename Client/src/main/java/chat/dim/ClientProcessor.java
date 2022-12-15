@@ -33,6 +33,7 @@ package chat.dim;
 import java.util.ArrayList;
 import java.util.List;
 
+import chat.dim.cpu.ClientContentProcessorCreator;
 import chat.dim.cpu.ContentProcessor;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
@@ -56,9 +57,9 @@ public class ClientProcessor extends MessageProcessor {
     }
 
     @Override
-    public List<SecureMessage> processMessage(SecureMessage sMsg, ReliableMessage rMsg) {
+    public List<SecureMessage> processSecureMessage(SecureMessage sMsg, ReliableMessage rMsg) {
         try {
-            return super.processMessage(sMsg, rMsg);
+            return super.processSecureMessage(sMsg, rMsg);
         } catch (NullPointerException e) {
             if (e.getMessage().startsWith("receiver error")) {
                 // not mine? ignore it

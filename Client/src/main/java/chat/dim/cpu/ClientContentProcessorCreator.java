@@ -28,14 +28,10 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim;
+package chat.dim.cpu;
 
-import chat.dim.cpu.BaseContentProcessor;
-import chat.dim.cpu.ContentProcessor;
-import chat.dim.cpu.ContentProcessorCreator;
-import chat.dim.cpu.HandshakeCommandProcessor;
-import chat.dim.cpu.LoginCommandProcessor;
-import chat.dim.cpu.ReceiptCommandProcessor;
+import chat.dim.Facebook;
+import chat.dim.Messenger;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.ReceiptCommand;

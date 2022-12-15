@@ -36,10 +36,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import chat.dim.protocol.ID;
 
-public final class QueryFrequencyChecker {
+public enum QueryFrequencyChecker {
 
-    // each query will be expired after 10 minutes
-    public static int QUERY_EXPIRES = 600 * 1000;  // seconds
+    INSTANCE;
+
+    public static QueryFrequencyChecker getInstance() {
+        return INSTANCE;
+    }
 
     // query for meta
     private final FrequencyChecker<ID> metaQueries;
@@ -53,21 +56,14 @@ public final class QueryFrequencyChecker {
     private final FrequencyChecker<ID> membersQueries;
     private final ReadWriteLock membersLock;
 
-    private static QueryFrequencyChecker instance;
-    public static QueryFrequencyChecker getInstance() {
-        if (instance == null) {
-            instance = new QueryFrequencyChecker(QUERY_EXPIRES);
-        }
-        return instance;
-    }
-
-    private QueryFrequencyChecker(long expires) {
-        super();
-        metaQueries = new FrequencyChecker<>(expires);
+    QueryFrequencyChecker() {
+        // each query will be expired after 10 minutes
+        final int QUERY_EXPIRES = 600 * 1000;  // seconds
+        metaQueries = new FrequencyChecker<>(QUERY_EXPIRES);
         metaLock = new ReentrantReadWriteLock();
-        documentQueries = new FrequencyChecker<>(expires);
+        documentQueries = new FrequencyChecker<>(QUERY_EXPIRES);
         documentLock = new ReentrantReadWriteLock();
-        membersQueries = new FrequencyChecker<>(expires);
+        membersQueries = new FrequencyChecker<>(QUERY_EXPIRES);
         membersLock = new ReentrantReadWriteLock();
     }
 

@@ -45,13 +45,18 @@ import chat.dim.crypto.VerifyKey;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Entity;
 import chat.dim.mkm.User;
+import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.GroupCommand;
+import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
+import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.Meta;
+import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
 import chat.dim.protocol.group.QueryCommand;
@@ -332,5 +337,28 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         // 2. call gate keeper to send the message data package
         //    put message package into the waiting queue of current session
         return session.queueMessagePackage(rMsg, data, priority);
+    }
+
+    /**
+     *  Register All Message/Content/Command Factories
+     */
+    public static void registerAllFactories() {
+        //
+        //  Register core factories
+        //
+        registerCoreFactories();
+
+        // Handshake
+        Command.setFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
+        // Receipt
+        Command.setFactory(ReceiptCommand.RECEIPT, ReceiptCommand::new);
+        // Login
+        Command.setFactory(LoginCommand.LOGIN, LoginCommand::new);
+        // Report
+        Command.setFactory(ReportCommand.REPORT, ReportCommand::new);
+    }
+
+    static {
+        registerAllFactories();
     }
 }

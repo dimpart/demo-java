@@ -118,12 +118,12 @@ public class ClientMessenger extends CommonMessenger {
     /**
      *  Send login command to keep roaming
      */
-    public void broadcastLogin(ID sender) {
+    public void broadcastLogin(ID sender, String userAgent) {
         ClientSession session = getSession();
         Station station = session.getStation();
         // create login command
         LoginCommand cmd = new LoginCommand(sender);
-        cmd.setAgent("DIMP/0.4 (Client; Linux; en-US) DIMCoreKit/0.9 (Terminal) DIM-by-GSP/1.0");
+        cmd.setAgent(userAgent);
         cmd.setStation(station);
         // broadcast to 'everyone@everywhere'
         sendContent(sender, ID.EVERYONE, cmd, 1);

@@ -58,7 +58,7 @@ public class CommonPacker extends MessagePacker {
         return (CommonFacebook) facebook;
     }
 
-    private static void attachKeyDigest(ReliableMessage rMsg, Messenger messenger) {
+    protected static void attachKeyDigest(ReliableMessage rMsg, Messenger messenger) {
         // check message delegate
         if (rMsg.getDelegate() == null) {
             rMsg.setDelegate(messenger);

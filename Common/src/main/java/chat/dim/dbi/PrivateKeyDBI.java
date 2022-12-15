@@ -53,7 +53,7 @@ public interface PrivateKeyDBI {
      * @param type - 'M' for matching meta.key; or 'P' for matching profile.key
      * @return false on error
      */
-    boolean savePrivateKey(ID user, PrivateKey key, String type);
+    boolean savePrivateKey(PrivateKey key, String type, ID user);
 
     /**
      *  Get private keys for user
