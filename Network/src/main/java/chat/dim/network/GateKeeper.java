@@ -73,7 +73,7 @@ public class GateKeeper extends Runner implements Docker.Delegate {
         } else {
             streamGate = new TCPServerGate(this);
         }
-        streamGate.setHub(createHub(gate, remote, sock));
+        streamGate.setHub(createHub(streamGate, remote, sock));
         return streamGate;
     }
 

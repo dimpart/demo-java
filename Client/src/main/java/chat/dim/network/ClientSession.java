@@ -93,7 +93,7 @@ public class ClientSession extends BaseSession {
 
     public void start() {
         forceStop();
-        Thread thr = new Thread(thread);
+        Thread thr = new Thread(this);
         thr.setDaemon(true);
         thr.start();
         thread = thr;
@@ -160,6 +160,9 @@ public class ClientSession extends BaseSession {
             try {
                 // 2. process each data package
                 responses = messenger.processPackage(pack);
+                if (responses == null) {
+                    continue;
+                }
                 for (byte[] res : responses) {
                     if (res == null || res.length == 0) {
                         // should not happen

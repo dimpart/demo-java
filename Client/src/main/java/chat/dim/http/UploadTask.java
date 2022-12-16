@@ -66,6 +66,23 @@ public class UploadTask implements Runnable {
         delegateRef = new WeakReference<>(delegate);
     }
 
+    public String getUrlString() {
+        return urlString;
+    }
+    public String getVarName() {
+        return varName;
+    }
+    public String getFileName() {
+        return fileName;
+    }
+    public byte[] getFileData() {
+        return fileData;
+    }
+
+    public HTTPDelegate getDelegate() {
+        return delegateRef.get();
+    }
+
     @Override
     public boolean equals(Object other) {
         if (super.equals(other)) {
@@ -83,14 +100,6 @@ public class UploadTask implements Runnable {
     @Override
     public int hashCode() {
         return Arrays.hashCode(fileData);
-    }
-
-    public HTTPDelegate getDelegate() {
-        return delegateRef.get();
-    }
-
-    public String getUrlString() {
-        return urlString;
     }
 
     private static final String BOUNDARY = "BU1kUJ19yLYPqv5xoT3sbKYbHwjUu1JU7roix";

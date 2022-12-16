@@ -240,13 +240,18 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
 
     @Override
     public void finish() {
+        // stop state machine
         StateMachine machine = fsm;
         if (machine != null) {
             machine.stop();
+            fsm = null;
         }
-        ClientSession session = getSession();
-        if (session != null) {
+        // stop session in messenger
+        Messenger transceiver = messenger;
+        if (transceiver != null) {
+            ClientSession session = getSession();
             session.stop();
+            messenger = null;
         }
         super.finish();
     }

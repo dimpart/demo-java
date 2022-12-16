@@ -59,6 +59,27 @@ public class DownloadTask implements Runnable {
         delegateRef = new WeakReference<>(delegate);
     }
 
+    public String getUrlString() {
+        return urlString;
+    }
+
+    /**
+     *  Get downloaded file path
+     *
+     * @return local file path
+     */
+    public String getFilePath() {
+        if (LocalCache.exists(cachePath)) {
+            return cachePath;
+        } else {
+            return null;
+        }
+    }
+
+    public HTTPDelegate getDelegate() {
+        return delegateRef.get();
+    }
+
     @Override
     public boolean equals(Object other) {
         if (super.equals(other)) {
@@ -75,27 +96,6 @@ public class DownloadTask implements Runnable {
     @Override
     public int hashCode() {
         return urlString.hashCode();
-    }
-
-    public HTTPDelegate getDelegate() {
-        return delegateRef.get();
-    }
-
-    public String getUrlString() {
-        return urlString;
-    }
-
-    /**
-     *  Get downloaded file path
-     *
-     * @return local file path
-     */
-    public String getFilePath() {
-        if (LocalCache.exists(cachePath)) {
-            return cachePath;
-        } else {
-            return null;
-        }
     }
 
     // "/sdcard/chat.dim.sechat/caches/{XX}/{YY}/{filename}"

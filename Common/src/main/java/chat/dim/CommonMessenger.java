@@ -199,6 +199,10 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
      */
     protected boolean checkReceiver(InstantMessage iMsg) {
         ID receiver = iMsg.getReceiver();
+        if (receiver.isBroadcast()) {
+            // broadcast message
+            return true;
+        }
         if (receiver.isUser()) {
             // check user's meta & document
             EncryptKey visaKey = facebook.getPublicKeyForEncryption(receiver);
