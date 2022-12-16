@@ -33,7 +33,9 @@ package chat.dim;
 import java.util.Date;
 import java.util.Locale;
 
+import chat.dim.dbi.SessionDBI;
 import chat.dim.fsm.Delegate;
+import chat.dim.mkm.Station;
 import chat.dim.network.ClientSession;
 import chat.dim.network.SessionState;
 import chat.dim.network.StateMachine;
@@ -44,17 +46,20 @@ import chat.dim.skywalker.Runner;
 
 public abstract class Terminal extends Runner implements Delegate<StateMachine, StateTransition, SessionState> {
 
-    private final ClientMessenger messenger;
-    private final StateMachine fsm;
+    private final CommonFacebook facebook;
+    private final SessionDBI database;
+
+    private ClientMessenger messenger;
+    private StateMachine fsm;  // session state
     private long lastTime;
 
-    public Terminal(ClientMessenger transceiver) {
+    public Terminal(CommonFacebook barrack, SessionDBI sdb) {
         super();
-        messenger = transceiver;
-        // session state
-        fsm = new StateMachine(transceiver.getSession());
-        fsm.setDelegate(this);
-        // default online time
+        facebook = barrack;
+        database = sdb;
+        messenger = null;
+        fsm = null;
+        // last online time
         lastTime = new Date().getTime();
     }
 
@@ -109,11 +114,19 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
     }
 
     public ClientSession getSession() {
-        return messenger.getSession();
+        ClientMessenger transceiver = messenger;
+        if (transceiver == null) {
+            return null;
+        }
+        return transceiver.getSession();
     }
 
     public SessionState getState() {
-        return fsm.getCurrentState();
+        StateMachine machine = fsm;
+        if (machine == null) {
+            return null;
+        }
+        return machine.getCurrentState();
     }
 
     public boolean isAlive() {
@@ -123,27 +136,98 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
         return now.getTime() < (lastTime + 600 * 1000);
     }
 
-    public void enterBackground() {
-        ClientMessenger messenger = getMessenger();
-        ClientSession session = messenger.getSession();
-        ID uid = session.getIdentifier();
-        if (uid != null && getState().equals(SessionState.RUNNING)) {
-            // report client state
-            messenger.reportOffline(uid);
-            idle(512);
+    public ClientMessenger connect(String host, int port) {
+        ClientMessenger old = messenger;
+        if (old != null) {
+            ClientSession session = old.getSession();
+            if (session.isActive()) {
+                // current session is active
+                Station station = session.getStation();
+                if (station.getHost().equals(host) && station.getPort() == port) {
+                    // same target
+                    return old;
+                }
+            }
         }
-        fsm.pause();
+        // stop the machine & remove old messenger
+        StateMachine machine = fsm;
+        if (machine != null) {
+            machine.stop();
+            fsm = null;
+        }
+        // create new messenger with session
+        Station station = createStation(host, port);
+        ClientSession session = createSession(station);
+        messenger = createMessenger(session);
+        // create & start state machine
+        machine = new StateMachine(session);
+        machine.setDelegate(this);
+        machine.start();
+        fsm = machine;
+        return messenger;
     }
-    public void enterForeground() {
-        fsm.resume();
-        ClientMessenger messenger = getMessenger();
-        ClientSession session = messenger.getSession();
+    protected Station createStation(String host, int port) {
+        Station station = new Station(host, port);
+        station.setDataSource(facebook);
+        return station;
+    }
+    protected ClientSession createSession(Station station) {
+        ClientSession session = new ClientSession(station, database);
+        session.start();
+        return session;
+    }
+    protected abstract ClientMessenger createMessenger(ClientSession session);
+
+    public boolean login(ID current) {
+        ClientSession session = getSession();
+        if (session == null) {
+            return false;
+        } else {
+            session.setIdentifier(current);
+            return true;
+        }
+    }
+
+    public void enterBackground() {
+        ClientMessenger transceiver = messenger;
+        StateMachine machine = fsm;
+        if (transceiver == null || machine == null) {
+            // not connect
+            return;
+        }
+        // check signed in user
+        ClientSession session = transceiver.getSession();
         ID uid = session.getIdentifier();
         if (uid != null) {
+            // already signed in, check session state
+            SessionState state = machine.getCurrentState();
+            if (state.equals(SessionState.RUNNING)) {
+                // report client state
+                transceiver.reportOffline(uid);
+                idle(512);
+            }
+        }
+        // pause the session
+        machine.pause();
+    }
+    public void enterForeground() {
+        ClientMessenger transceiver = messenger;
+        StateMachine machine = fsm;
+        if (transceiver == null || machine == null) {
+            // not connect
+            return;
+        }
+        // resume the session
+        machine.resume();
+        // check signed in user
+        ClientSession session = transceiver.getSession();
+        ID uid = session.getIdentifier();
+        if (uid != null) {
+            // already signed in, wait a while to check session state
             idle(512);
             if (getState().equals(SessionState.RUNNING)) {
                 // report client state
-                messenger.reportOnline(uid);
+                transceiver.reportOnline(uid);
             }
         }
     }
@@ -155,16 +239,15 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
     }
 
     @Override
-    public void setup() {
-        super.setup();
-        getSession().start();
-        fsm.start();
-    }
-
-    @Override
     public void finish() {
-        fsm.stop();
-        getSession().stop();
+        StateMachine machine = fsm;
+        if (machine != null) {
+            machine.stop();
+        }
+        ClientSession session = getSession();
+        if (session != null) {
+            session.stop();
+        }
         super.finish();
     }
 
@@ -182,6 +265,10 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
         }
         // check session state
         ClientMessenger messenger = getMessenger();
+        if (messenger == null) {
+            // not connect
+            return false;
+        }
         ClientSession session = messenger.getSession();
         ID uid = session.getIdentifier();
         if (uid == null || !getState().equals(SessionState.RUNNING)) {
