@@ -33,7 +33,7 @@ package chat.dim.mtp;
 import chat.dim.type.ByteArray;
 import chat.dim.type.Pair;
 
-public final class MTPHelper {
+public final class MTPPacker {
 
     private static final MTPPackageSeeker seeker = new MTPPackageSeeker();
 

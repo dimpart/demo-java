@@ -33,6 +33,8 @@ package chat.dim.filesys;
 import java.util.ArrayList;
 import java.util.List;
 
+import chat.dim.utils.ArrayUtils;
+
 public abstract class PathUtils extends Paths {
 
     /**
@@ -114,6 +116,6 @@ public abstract class PathUtils extends Paths {
                 array.add(next);
             }
         }
-        return String.join("", array);
+        return ArrayUtils.join("", array);
     }
 }

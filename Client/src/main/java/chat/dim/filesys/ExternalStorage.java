@@ -54,9 +54,9 @@ public abstract class ExternalStorage extends PathUtils {
         try {
             mkdirs(base);
             // forbid the gallery from scanning media files
-            String nomedia = ".nomedia";
-            if (!exists(nomedia)) {
-                saveText("Moky loves May Lee forever!", nomedia);
+            String path = appendPathComponent(base, ".nomedia");
+            if (!exists(path)) {
+                saveText("Moky loves May Lee forever!", path);
             }
             built = true;
         } catch (IOException e) {
@@ -87,7 +87,7 @@ public abstract class ExternalStorage extends PathUtils {
      */
     public static boolean exists(String path) {
         Storage file = new Storage();
-        return file.exists(abs(path, getRoot()));
+        return file.exists(path);
     }
 
     /**
@@ -97,12 +97,11 @@ public abstract class ExternalStorage extends PathUtils {
      * @return absolute path
      */
     public static String mkdirs(String path) throws IOException {
-        String absolutePath = abs(path, getRoot());
-        File dir = new File(absolutePath);
+        File dir = new File(path);
         if (!dir.exists() && !dir.mkdirs()) {
-            throw new IOException("failed to create directory: " + absolutePath);
+            throw new IOException("failed to create directory: " + path);
         }
-        return absolutePath;
+        return path;
     }
 
     /**

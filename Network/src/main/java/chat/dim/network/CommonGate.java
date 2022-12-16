@@ -32,11 +32,8 @@ package chat.dim.network;
 
 import java.net.SocketAddress;
 
-import chat.dim.mtp.MTPHelper;
-import chat.dim.mtp.MTPStreamArrival;
-import chat.dim.mtp.MTPStreamDocker;
+import chat.dim.mtp.*;
 import chat.dim.mtp.Package;
-import chat.dim.mtp.TransactionID;
 import chat.dim.net.Channel;
 import chat.dim.net.Connection;
 import chat.dim.net.ConnectionState;
@@ -143,7 +140,7 @@ public abstract class CommonGate extends BaseGate implements Runnable {
         assert docker instanceof MTPStreamDocker : "docker error: " + docker;
         MTPStreamDocker worker = (MTPStreamDocker) docker;
         TransactionID sn = TransactionID.from(new Data(arrival.getSN()));
-        Package pack = MTPHelper.createMessage(sn, new Data(payload));
+        Package pack = MTPPacker.createMessage(sn, new Data(payload));
         return worker.sendPackage(pack);
     }
 }

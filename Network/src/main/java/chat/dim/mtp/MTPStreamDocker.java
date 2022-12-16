@@ -67,7 +67,7 @@ public class MTPStreamDocker extends PackageDocker implements DeparturePacker {
             ByteArray buffer = chunks.concat(data);
             chunks = Data.ZERO;
             // try to fetch a package
-            Pair<Package, Integer> result = MTPHelper.seekPackage(buffer);
+            Pair<Package, Integer> result = MTPPacker.seekPackage(buffer);
             pack = result.first;
             int offset = result.second;
             packageReceived = pack != null;
@@ -147,32 +147,32 @@ public class MTPStreamDocker extends PackageDocker implements DeparturePacker {
 
     @Override
     protected Package createCommand(byte[] body) {
-        return MTPHelper.createCommand(new Data(body));
+        return MTPPacker.createCommand(new Data(body));
     }
 
     @Override
     protected Package createMessage(byte[] body) {
-        return MTPHelper.createMessage(null, new Data(body));
+        return MTPPacker.createMessage(null, new Data(body));
     }
 
     @Override
     protected Package createCommandResponse(TransactionID sn, byte[] body) {
-        return MTPHelper.respondCommand(sn, new Data(body));
+        return MTPPacker.respondCommand(sn, new Data(body));
     }
 
     @Override
     protected Package createMessageResponse(TransactionID sn, int pages, int index) {
-        return MTPHelper.respondMessage(sn, pages, index, new Data(OK));
+        return MTPPacker.respondMessage(sn, pages, index, new Data(OK));
     }
 
     @Override
     public Departure packData(byte[] payload, int priority) {
-        Package pack = MTPHelper.createMessage(null, new Data(payload));
+        Package pack = MTPPacker.createMessage(null, new Data(payload));
         return createDeparture(pack, priority);
     }
 
     public static boolean check(ByteArray data) {
-        Pair<Header, Integer> result = MTPHelper.seekHeader(data);
+        Pair<Header, Integer> result = MTPPacker.seekHeader(data);
         return result.first != null;
     }
 }

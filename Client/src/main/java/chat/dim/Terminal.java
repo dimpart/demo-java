@@ -31,6 +31,7 @@
 package chat.dim;
 
 import java.util.Date;
+import java.util.Locale;
 
 import chat.dim.fsm.Delegate;
 import chat.dim.network.ClientSession;
@@ -41,7 +42,7 @@ import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.skywalker.Runner;
 
-public class Terminal extends Runner implements Delegate<StateMachine, StateTransition, SessionState> {
+public abstract class Terminal extends Runner implements Delegate<StateMachine, StateTransition, SessionState> {
 
     private final ClientMessenger messenger;
     private final StateMachine fsm;
@@ -57,8 +58,50 @@ public class Terminal extends Runner implements Delegate<StateMachine, StateTran
         lastTime = new Date().getTime();
     }
 
+    // "zh-CN"
+    public String getLanguage() {
+        return Locale.getDefault().getLanguage();
+    }
+
+    // "DIM"
+    public abstract String getDisplayName();
+
+    // "1.0.1"
+    public abstract String getVersionName();
+
+    // "4.0"
+    public abstract String getSystemVersion();
+
+    // "HMS"
+    public abstract String getSystemModel();
+
+    // "hammerhead"
+    public abstract String getSystemDevice();
+
+    // "HUAWEI"
+    public abstract String getDeviceBrand();
+
+    // "hammerhead"
+    public abstract String getDeviceBoard();
+
+    // "HUAWEI"
+    public abstract String getDeviceManufacturer();
+
+    /**
+     *  format: "DIMP/1.0 (Linux; U; Android 4.1; zh-CN) DIMCoreKit/1.0 (Terminal, like WeChat) DIM-by-GSP/1.0.1"
+     */
     public String getUserAgent() {
-        return "DIMP/0.4 (Client; Linux; en-US) DIMCoreKit/0.9 (Terminal) DIM-by-GSP/1.0";
+        String model = getSystemModel();
+        String device = getSystemDevice();
+        String sysVersion = getSystemVersion();
+        String lang = getLanguage();
+
+        String appName = getDisplayName();
+        String appVersion = getVersionName();
+
+        return String.format("DIMP/1.0 (%s; U; %s %s; %s)" +
+                        " DIMCoreKit/1.0 (Terminal, like WeChat) %s-by-MOKY/%s",
+                model, device, sysVersion, lang, appName, appVersion);
     }
 
     public ClientMessenger getMessenger() {
@@ -78,6 +121,31 @@ public class Terminal extends Runner implements Delegate<StateMachine, StateTran
         // means this terminal is dead
         Date now = new Date();
         return now.getTime() < (lastTime + 600 * 1000);
+    }
+
+    public void enterBackground() {
+        ClientMessenger messenger = getMessenger();
+        ClientSession session = messenger.getSession();
+        ID uid = session.getIdentifier();
+        if (uid != null && getState().equals(SessionState.RUNNING)) {
+            // report client state
+            messenger.reportOffline(uid);
+            idle(512);
+        }
+        fsm.pause();
+    }
+    public void enterForeground() {
+        fsm.resume();
+        ClientMessenger messenger = getMessenger();
+        ClientSession session = messenger.getSession();
+        ID uid = session.getIdentifier();
+        if (uid != null) {
+            idle(512);
+            if (getState().equals(SessionState.RUNNING)) {
+                // report client state
+                messenger.reportOnline(uid);
+            }
+        }
     }
 
     public void start() {

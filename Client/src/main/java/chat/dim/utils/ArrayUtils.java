@@ -38,13 +38,13 @@ public interface ArrayUtils {
     byte SEPARATOR = '\n';
 
     static List<byte[]> splitLines(byte[] data) {
-        return split(data, SEPARATOR);
+        return split(SEPARATOR, data);
     }
     static byte[] joinLines(List<byte[]> packages) {
-        return join(packages, SEPARATOR);
+        return join(SEPARATOR, packages);
     }
 
-    static List<byte[]> split(byte[] data, byte separator) {
+    static List<byte[]> split(byte separator, byte[] data) {
         List<byte[]> lines = new ArrayList<>();
         byte[] tmp;
         int pos1 = 0, pos2;
@@ -67,7 +67,7 @@ public interface ArrayUtils {
         return lines;
     }
 
-    static byte[] join(List<byte[]> packages, byte separator) {
+    static byte[] join(byte separator, List<byte[]> packages) {
         final int count = packages.size();
         int index;
         // get buffer size
@@ -99,5 +99,26 @@ public interface ArrayUtils {
             offset += pack.length;
         }
         return buffer;
+    }
+
+    /**
+     *  Join all string items to a string with separator
+     *
+     * @param array     - string items
+     * @param separator - separate char
+     * @return string
+     */
+    static String join(String separator, List<String> array) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (String item : array) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(separator);
+            }
+            sb.append(item);
+        }
+        return sb.toString();
     }
 }
