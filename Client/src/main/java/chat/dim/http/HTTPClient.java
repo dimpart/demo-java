@@ -30,6 +30,7 @@
  */
 package chat.dim.http;
 
+import chat.dim.CommonMessenger;
 import chat.dim.skywalker.Processor;
 
 import java.lang.ref.WeakReference;
@@ -228,5 +229,13 @@ public enum HTTPClient implements Runnable, Processor {
             idle(1024);
         }
         return uploadTask != null || downloadTask != null;
+    }
+
+    static {
+        // load plugins
+        chat.dim.Plugins.registerAllPlugins();
+
+        // load message/content factories
+        CommonMessenger.registerAllFactories();
     }
 }

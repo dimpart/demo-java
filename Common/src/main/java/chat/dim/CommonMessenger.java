@@ -361,8 +361,4 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         // Report
         Command.setFactory(ReportCommand.REPORT, ReportCommand::new);
     }
-
-    static {
-        registerAllFactories();
-    }
 }
