@@ -30,15 +30,15 @@
  */
 package chat.dim.http;
 
-import chat.dim.CommonMessenger;
-import chat.dim.skywalker.Processor;
-
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import chat.dim.CommonMessenger;
+import chat.dim.skywalker.Processor;
 
 public enum HTTPClient implements Runnable, Processor {
 
