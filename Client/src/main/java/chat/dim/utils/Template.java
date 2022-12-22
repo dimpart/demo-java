@@ -28,49 +28,12 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.sqlite.account;
+package chat.dim.utils;
 
-import java.util.List;
+public class Template {
 
-import chat.dim.dbi.GroupDBI;
-import chat.dim.protocol.ID;
-import chat.dim.sqlite.Database;
-
-public class GroupTable implements GroupDBI {
-
-    private final Database database;
-
-    public GroupTable(Database db) {
-        database = db;
-    }
-
-    @Override
-    public ID getFounder(ID group) {
-        return null;
-    }
-
-    @Override
-    public ID getOwner(ID group) {
-        return null;
-    }
-
-    @Override
-    public List<ID> getMembers(ID group) {
-        return null;
-    }
-
-    @Override
-    public boolean saveMembers(List<ID> members, ID group) {
-        return false;
-    }
-
-    @Override
-    public List<ID> getAssistants(ID group) {
-        return null;
-    }
-
-    @Override
-    public boolean saveAssistants(List<ID> bots, ID group) {
-        return false;
+    public static String replace(String template, String key, String value) {
+        String tag = "\\{" + key + "\\}";
+        return template.replaceAll(tag, value);
     }
 }

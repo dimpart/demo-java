@@ -62,7 +62,7 @@ public class UserTable implements UserDBI {
             return ID.parse(user);
         };
         String[] fields = {
-                "id INT PRIMARY KEY AUTOINCREMENT",
+                "id INTEGER PRIMARY KEY AUTOINCREMENT",
                 "user VARCHAR(64)",
                 "chosen BIT",
         };

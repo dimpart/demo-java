@@ -60,7 +60,7 @@ public class ContactTable implements UserDBI {
             return ID.parse(did);
         };
         String[] fields = {
-                "id INT PRIMARY KEY AUTOINCREMENT",
+                "id INTEGER PRIMARY KEY AUTOINCREMENT",
                 "user VARCHAR(64)",
                 "contact VARCHAR(64)",
                 "alias VARCHAR(32))",

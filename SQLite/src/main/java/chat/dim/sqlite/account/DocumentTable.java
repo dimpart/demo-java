@@ -71,7 +71,7 @@ public class DocumentTable implements DocumentDBI {
             return Document.parse(info);
         };
         String[] fields = {
-                "id INT PRIMARY KEY AUTOINCREMENT",
+                "id INTEGER PRIMARY KEY AUTOINCREMENT",
                 "did VARCHAR(64)",
                 "type VARCHAR(8)",
                 "data TEXT",

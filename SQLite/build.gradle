@@ -35,7 +35,7 @@ repositories {
 }
 
 dependencies {
-    compile group: 'chat.dim', name: 'Common', version: '0.0.1'
+    compile group: 'chat.dim', name: 'Common', version: '0.0.2'
 
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.40.0.0'
 

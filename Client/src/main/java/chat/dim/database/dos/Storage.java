@@ -28,49 +28,33 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.sqlite.account;
+package chat.dim.database.dos;
 
-import java.util.List;
+import chat.dim.filesys.ExternalStorage;
+import chat.dim.utils.Template;
 
-import chat.dim.dbi.GroupDBI;
-import chat.dim.protocol.ID;
-import chat.dim.sqlite.Database;
+public class Storage extends ExternalStorage {
 
-public class GroupTable implements GroupDBI {
+    public static String rootDirectory = "/var/.dim";
+    public static String pubDirTemplate = "{ROOT}/public";
+    public static String priDirTemplate = "{ROOT}/private";
 
-    private final Database database;
+    protected final String publicDirectory;
+    protected final String privateDirectory;
 
-    public GroupTable(Database db) {
-        database = db;
-    }
-
-    @Override
-    public ID getFounder(ID group) {
-        return null;
-    }
-
-    @Override
-    public ID getOwner(ID group) {
-        return null;
-    }
-
-    @Override
-    public List<ID> getMembers(ID group) {
-        return null;
-    }
-
-    @Override
-    public boolean saveMembers(List<ID> members, ID group) {
-        return false;
-    }
-
-    @Override
-    public List<ID> getAssistants(ID group) {
-        return null;
-    }
-
-    @Override
-    public boolean saveAssistants(List<ID> bots, ID group) {
-        return false;
+    public Storage(String rootDir, String publicDir, String privateDir) {
+        super();
+        if (rootDir == null || rootDir.length() == 0) {
+            rootDir = rootDirectory;
+        }
+        if (publicDir == null || publicDir.length() == 0) {
+            publicDir = Template.replace(pubDirTemplate, "ROOT", rootDir);
+        }
+        if (privateDir == null || privateDir.length() == 0) {
+            privateDir = Template.replace(priDirTemplate, "ROOT", rootDir);
+        }
+        setRoot(rootDir);
+        publicDirectory = publicDir;
+        privateDirectory = privateDir;
     }
 }

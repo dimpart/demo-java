@@ -33,9 +33,12 @@ package chat.dim;
 import java.util.Date;
 import java.util.Locale;
 
+import chat.dim.core.Packer;
+import chat.dim.core.Processor;
 import chat.dim.dbi.SessionDBI;
 import chat.dim.fsm.Delegate;
 import chat.dim.mkm.Station;
+import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
 import chat.dim.network.SessionState;
 import chat.dim.network.StateMachine;
@@ -158,7 +161,13 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
         // create new messenger with session
         Station station = createStation(host, port);
         ClientSession session = createSession(station);
-        messenger = createMessenger(session);
+        messenger = createMessenger(session, facebook);
+        // create packer, processor for messenger
+        // they have weak references to facebook & messenger
+        messenger.setPacker(createPacker(facebook, messenger));
+        messenger.setProcessor(createProcessor(facebook, messenger));
+        // set weak reference to messenger
+        session.setMessenger(messenger);
         // create & start state machine
         machine = new StateMachine(session);
         machine.setDelegate(this);
@@ -174,9 +183,17 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
     protected ClientSession createSession(Station station) {
         ClientSession session = new ClientSession(station, database);
         session.start();
+        User user = facebook.getCurrentUser();
+        session.setIdentifier(user.getIdentifier());
         return session;
     }
-    protected abstract ClientMessenger createMessenger(ClientSession session);
+    protected Packer createPacker(CommonFacebook facebook, ClientMessenger messenger) {
+        return new CommonPacker(facebook, messenger);
+    }
+    protected Processor createProcessor(CommonFacebook facebook, ClientMessenger messenger) {
+        return new ClientProcessor(facebook, messenger);
+    }
+    protected abstract ClientMessenger createMessenger(ClientSession session, CommonFacebook facebook);
 
     public boolean login(ID current) {
         ClientSession session = getSession();

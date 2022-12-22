@@ -28,7 +28,7 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.sqlite.account;
+package chat.dim.database;
 
 import java.util.List;
 
@@ -36,12 +36,10 @@ import chat.dim.dbi.GroupDBI;
 import chat.dim.protocol.ID;
 import chat.dim.sqlite.Database;
 
-public class GroupTable implements GroupDBI {
+public class GroupDatabase implements GroupDBI {
 
-    private final Database database;
-
-    public GroupTable(Database db) {
-        database = db;
+    public GroupDatabase(String rootDir, String publicDir, String privateDir, Database sqlite) {
+        super();
     }
 
     @Override

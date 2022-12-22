@@ -92,6 +92,8 @@ public final class SQLValues {
                 }
                 sb.append(ch);
             }
+        } else {
+            sb.append(sql);
         }
         sb.append('\'');
     }

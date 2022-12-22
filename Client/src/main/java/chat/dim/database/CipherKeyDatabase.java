@@ -28,49 +28,48 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.sqlite.account;
+package chat.dim.database;
 
-import java.util.List;
+import java.util.Date;
 
-import chat.dim.dbi.GroupDBI;
+import chat.dim.crypto.PlainKey;
+import chat.dim.crypto.SymmetricKey;
+import chat.dim.dbi.CipherKeyDBI;
+import chat.dim.mem.CacheManager;
+import chat.dim.mem.CachePair;
+import chat.dim.mem.CachePool;
 import chat.dim.protocol.ID;
 import chat.dim.sqlite.Database;
 
-public class GroupTable implements GroupDBI {
+public class CipherKeyDatabase implements CipherKeyDBI {
 
-    private final Database database;
+    private final CachePool<String, SymmetricKey> keyCache;
 
-    public GroupTable(Database db) {
-        database = db;
+    public CipherKeyDatabase(String rootDir, String publicDir, String privateDir, Database sqlite) {
+        super();
+        CacheManager man = CacheManager.getInstance();
+        keyCache = man.getPool("cipher_key");
     }
 
     @Override
-    public ID getFounder(ID group) {
-        return null;
+    public SymmetricKey getCipherKey(ID sender, ID receiver, boolean generate) {
+        if (receiver.isBroadcast()) {
+            return PlainKey.getInstance();
+        }
+        long now = new Date().getTime();
+        CachePair<SymmetricKey> pair = keyCache.fetch(sender + "->" + receiver, now);
+        SymmetricKey key = pair == null ? null : pair.value;
+        if (key == null && generate) {
+            // generate and cache it
+            key = SymmetricKey.generate(SymmetricKey.AES);
+            assert key != null : "failed to generate symmetric key";
+            keyCache.update(sender + "->" + receiver, key, 7*24*3600*1000, now);
+        }
+        return key;
     }
 
     @Override
-    public ID getOwner(ID group) {
-        return null;
-    }
-
-    @Override
-    public List<ID> getMembers(ID group) {
-        return null;
-    }
-
-    @Override
-    public boolean saveMembers(List<ID> members, ID group) {
-        return false;
-    }
-
-    @Override
-    public List<ID> getAssistants(ID group) {
-        return null;
-    }
-
-    @Override
-    public boolean saveAssistants(List<ID> bots, ID group) {
-        return false;
+    public void cacheCipherKey(ID sender, ID receiver, SymmetricKey key) {
+        keyCache.update(sender + "->" + receiver, key, 7*24*3600*1000, 0);
     }
 }

@@ -28,49 +28,64 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.sqlite.account;
+package chat.dim.mem;
 
-import java.util.List;
+import java.util.Date;
 
-import chat.dim.dbi.GroupDBI;
-import chat.dim.protocol.ID;
-import chat.dim.sqlite.Database;
+public class CacheHolder <V> {
 
-public class GroupTable implements GroupDBI {
+    private V value;
 
-    private final Database database;
+    private final long lifeSpan;
+    private long expired;     // time to expired
+    private long deprecated;  // time to deprecated
 
-    public GroupTable(Database db) {
-        database = db;
+    public CacheHolder(V cacheValue, long cacheLifeSpan, long now) {
+        super();
+        value = cacheValue;
+        lifeSpan = cacheLifeSpan;
+        if (now <= 0) {
+            now = new Date().getTime();
+        }
+        expired = now + lifeSpan;
+        deprecated = now + lifeSpan << 1;
     }
 
-    @Override
-    public ID getFounder(ID group) {
-        return null;
+    public V getValue() {
+        return value;
     }
 
-    @Override
-    public ID getOwner(ID group) {
-        return null;
+    public void update(V newValue, long now) {
+        value = newValue;
+        if (now <= 0) {
+            now = new Date().getTime();
+        }
+        expired = now + lifeSpan;
+        deprecated = now + lifeSpan << 1;
     }
 
-    @Override
-    public List<ID> getMembers(ID group) {
-        return null;
+    public boolean isAlive(long now) {
+        if (now <= 0) {
+            now = new Date().getTime();
+        }
+        return now < expired;
     }
 
-    @Override
-    public boolean saveMembers(List<ID> members, ID group) {
-        return false;
+    public boolean isDeprecated(long now) {
+        if (now <= 0) {
+            now = new Date().getTime();
+        }
+        return now > deprecated;
     }
 
-    @Override
-    public List<ID> getAssistants(ID group) {
-        return null;
-    }
-
-    @Override
-    public boolean saveAssistants(List<ID> bots, ID group) {
-        return false;
+    public void renewal(long duration, long now) {
+        if (duration <= 0) {
+            duration = 128 * 1000;
+        }
+        if (now <= 0) {
+            now = new Date().getTime();
+        }
+        expired = now + duration;
+        deprecated = now + lifeSpan << 1;
     }
 }

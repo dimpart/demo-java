@@ -65,7 +65,6 @@ public enum HTTPClient implements Runnable, Processor {
         delegateRef = null;
         thread = null;
         running = false;
-        start();
     }
 
     public HTTPDelegate getDelegate() {
@@ -157,26 +156,31 @@ public enum HTTPClient implements Runnable, Processor {
         return task;
     }
 
-    private void start() {
+    public void start() {
+        forceStop();
         running = true;
         Thread thr = new Thread(this);
         thr.setDaemon(true);
         thr.start();
-        thread = null;
+        thread = thr;
+    }
+
+    private void forceStop() {
+        running = false;
+        Thread thr = thread;
+        if (thr != null) {
+            // waiting 2 seconds for stopping the thread
+            thread = null;
+            try {
+                thr.join(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void stop() {
-        running = false;
-        try {
-            Thread thr = thread;
-            if (thr != null) {
-                // waiting 2 seconds for stopping the thread
-                thread = null;
-                thr.join(2000);
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        forceStop();
     }
 
     @Override

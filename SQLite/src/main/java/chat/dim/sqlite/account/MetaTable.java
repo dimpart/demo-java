@@ -77,7 +77,7 @@ public class MetaTable implements MetaDBI {
             return Meta.parse(info);
         };
         String[] fields = {
-                "id INT PRIMARY KEY AUTOINCREMENT",
+                "id INTEGER PRIMARY KEY AUTOINCREMENT",
                 "did VARCHAR(64)",
                 "type INTEGER",
                 "key TEXT",

@@ -31,7 +31,6 @@
 package chat.dim.sqlite.account;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.crypto.DecryptKey;
@@ -64,7 +63,7 @@ public class PrivateKeyTable implements PrivateKeyDBI {
             return PrivateKey.parse(key);
         };
         String[] fields = {
-                "id INT PRIMARY KEY AUTOINCREMENT",
+                "id INTEGER PRIMARY KEY AUTOINCREMENT",
                 "user VARCHAR(64)",
                 "key TEXT",
                 "type CHAR(1)",
@@ -113,13 +112,7 @@ public class PrivateKeyTable implements PrivateKeyDBI {
             e.printStackTrace();
             return null;
         }
-        List<DecryptKey> keys = new ArrayList<>();
-        for (PrivateKey item : results) {
-            if (item instanceof DecryptKey) {
-                keys.add((DecryptKey) item);
-            }
-        }
-        return keys;
+        return PrivateKeyDBI.convertDecryptKeys(results);
     }
 
     @Override

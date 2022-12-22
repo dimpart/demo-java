@@ -28,49 +28,61 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.sqlite.account;
+package chat.dim.database.dos;
 
-import java.util.List;
+import java.io.IOException;
 
-import chat.dim.dbi.GroupDBI;
+import chat.dim.dbi.MetaDBI;
 import chat.dim.protocol.ID;
-import chat.dim.sqlite.Database;
+import chat.dim.protocol.Meta;
+import chat.dim.utils.Template;
 
-public class GroupTable implements GroupDBI {
+/**
+ *  Meta for Entities (User/Group)
+ *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ *  file path: '.dim/public/{ADDRESS}/meta.js'
+ */
+public class MetaStorage extends Storage implements MetaDBI {
 
-    private final Database database;
+    public static String META_PATH = "{PUBLIC}/{ADDRESS}/meta.js";
 
-    public GroupTable(Database db) {
-        database = db;
+    public MetaStorage(String rootDir, String publicDir, String privateDir) {
+        super(rootDir, publicDir, privateDir);
+    }
+
+    public void showInfo() {
+        String path = Template.replace(META_PATH, "PUBLIC", publicDirectory);
+        System.out.println("!!!      meta path: " + path);
+    }
+
+    private String getMetaPath(ID entity) {
+        String path = META_PATH;
+        path = Template.replace(path, "PUBLIC", publicDirectory);
+        path = Template.replace(path, "ADDRESS", entity.getAddress().toString());
+        return path;
     }
 
     @Override
-    public ID getFounder(ID group) {
-        return null;
+    public boolean saveMeta(Meta meta, ID entity) {
+        String path = getMetaPath(entity);
+        try {
+            return saveJSON(meta.toMap(), path) > 0;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
-    public ID getOwner(ID group) {
-        return null;
-    }
-
-    @Override
-    public List<ID> getMembers(ID group) {
-        return null;
-    }
-
-    @Override
-    public boolean saveMembers(List<ID> members, ID group) {
-        return false;
-    }
-
-    @Override
-    public List<ID> getAssistants(ID group) {
-        return null;
-    }
-
-    @Override
-    public boolean saveAssistants(List<ID> bots, ID group) {
-        return false;
+    public Meta getMeta(ID entity) {
+        String path = getMetaPath(entity);
+        try {
+            Object info = loadJSON(path);
+            return Meta.parse(info);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

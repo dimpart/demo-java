@@ -56,7 +56,9 @@ public abstract class ExternalStorage extends PathUtils {
             // forbid the gallery from scanning media files
             String path = appendPathComponent(base, ".nomedia");
             if (!exists(path)) {
-                saveText("Moky loves May Lee forever!", path);
+                Storage file = new Storage();
+                file.setData(UTF8.encode("Moky loves May Lee forever!"));
+                file.write(path);
             }
             built = true;
         } catch (IOException e) {

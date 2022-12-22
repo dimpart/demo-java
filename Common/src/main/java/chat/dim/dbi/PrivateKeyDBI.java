@@ -30,7 +30,9 @@
  */
 package chat.dim.dbi;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import chat.dim.crypto.DecryptKey;
 import chat.dim.crypto.PrivateKey;
@@ -78,4 +80,63 @@ public interface PrivateKeyDBI {
      * @return the private key matched with meta.key
      */
     PrivateKey getPrivateKeyForVisaSignature(ID user);
+
+    //
+    //  Conveniences
+    //
+
+    static List<DecryptKey> convertDecryptKeys(List<PrivateKey> privateKeys) {
+        List<DecryptKey> decryptKeys = new ArrayList<>();
+        for (PrivateKey key : privateKeys) {
+            if (key instanceof DecryptKey) {
+                decryptKeys.add((DecryptKey) key);
+            }
+        }
+        return decryptKeys;
+    }
+    static List<PrivateKey> convertPrivateKeys(List<DecryptKey> decryptKeys) {
+        List<PrivateKey> privateKeys = new ArrayList<>();
+        for (DecryptKey key : decryptKeys) {
+            if (key instanceof PrivateKey) {
+                privateKeys.add((PrivateKey) key);
+            }
+        }
+        return privateKeys;
+    }
+
+    static List<Map<String, Object>> revertPrivateKeys(List<PrivateKey> privateKeys) {
+        List<Map<String, Object>> array = new ArrayList<>();
+        for (PrivateKey key : privateKeys) {
+            array.add(key.toMap());
+        }
+        return array;
+    }
+
+    static List<PrivateKey> insertKey(PrivateKey key, List<PrivateKey> privateKeys) {
+        int index = findKey(key, privateKeys);
+        if (index == 0) {
+            // nothing change
+            return null;
+        } else if (index > 0) {
+            // move to the front
+            privateKeys.remove(index);
+        } else if (privateKeys.size() > 2) {
+            // keep only last three records
+            privateKeys.remove(privateKeys.size() - 1);
+        }
+        privateKeys.add(0, key);
+        return privateKeys;
+    }
+    static int findKey(PrivateKey key, List<PrivateKey> privateKeys) {
+        String data = (String) key.get("data");
+        assert data != null && data.length() > 0 : "key data error: " + key;
+        PrivateKey item;
+        for (int index = 0; index < privateKeys.size(); ++index) {
+            item = privateKeys.get(index);
+            if (data.equals(item.get("data"))) {
+                return index;
+            }
+        }
+        return -1;
+    }
 }
