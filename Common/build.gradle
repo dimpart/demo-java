@@ -35,7 +35,7 @@ repositories {
 }
 
 dependencies {
-    compile group: 'chat.dim', name: 'SDK', version: '0.8.1'
+    compile group: 'chat.dim', name: 'SDK', version: '0.8.2'
 
     compile group: 'chat.dim', name: 'DOS', version: '0.1.2'
 

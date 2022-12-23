@@ -45,15 +45,15 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.TextContent;
 
-public class ClientProcessor extends MessageProcessor {
+public class ClientMessageProcessor extends MessageProcessor {
 
-    public ClientProcessor(Facebook facebook, Messenger messenger) {
+    public ClientMessageProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
     }
 
     @Override
-    protected ClientMessenger getMessenger() {
-        return (ClientMessenger) super.getMessenger();
+    protected CommonMessenger getMessenger() {
+        return (CommonMessenger) super.getMessenger();
     }
 
     @Override
@@ -86,7 +86,7 @@ public class ClientProcessor extends MessageProcessor {
         User user = getFacebook().selectLocalUser(receiver);
         assert user != null : "receiver error: " + receiver;
         receiver = user.getIdentifier();
-        ClientMessenger messenger = getMessenger();
+        CommonMessenger messenger = getMessenger();
         // check responses
         for (Content res : responses) {
             if (res == null) {

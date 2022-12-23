@@ -45,9 +45,9 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
 
-public class CommonPacker extends MessagePacker {
+public class ClientMessagePacker extends MessagePacker {
 
-    public CommonPacker(Facebook facebook, Messenger messenger) {
+    public ClientMessagePacker(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
     }
 

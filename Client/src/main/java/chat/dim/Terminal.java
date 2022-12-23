@@ -188,10 +188,10 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
         return session;
     }
     protected Packer createPacker(CommonFacebook facebook, ClientMessenger messenger) {
-        return new CommonPacker(facebook, messenger);
+        return new ClientMessagePacker(facebook, messenger);
     }
     protected Processor createProcessor(CommonFacebook facebook, ClientMessenger messenger) {
-        return new ClientProcessor(facebook, messenger);
+        return new ClientMessageProcessor(facebook, messenger);
     }
     protected abstract ClientMessenger createMessenger(ClientSession session, CommonFacebook facebook);
 

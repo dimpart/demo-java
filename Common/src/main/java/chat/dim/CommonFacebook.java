@@ -78,7 +78,6 @@ public class CommonFacebook extends Facebook {
         return localUsers;
     }
 
-    @Override
     public User getCurrentUser() {
         // Get current user (for signing and sending message)
         User user = current;
