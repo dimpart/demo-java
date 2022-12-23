@@ -61,7 +61,8 @@ public class ClientProcessor extends MessageProcessor {
         try {
             return super.processSecureMessage(sMsg, rMsg);
         } catch (NullPointerException e) {
-            if (e.getMessage().startsWith("receiver error")) {
+            String errMsg = e.getMessage();
+            if (errMsg != null && errMsg.startsWith("receiver error")) {
                 // not mine? ignore it
                 return new ArrayList<>();
             } else {

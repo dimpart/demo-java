@@ -162,7 +162,8 @@ public class CommonPacker extends MessagePacker {
             return super.decryptMessage(sMsg);
         } catch (NullPointerException e) {
             // check exception thrown by DKD: chat.dim.dkd.EncryptedMessage.decrypt()
-            if (e.getMessage().contains("failed to decrypt key in msg")) {
+            String errMsg = e.getMessage();
+            if (errMsg != null && errMsg.contains("failed to decrypt key in msg")) {
                 // visa.key not updated?
                 User user = getFacebook().getCurrentUser();
                 Visa visa = user.getVisa();

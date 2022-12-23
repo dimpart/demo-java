@@ -62,13 +62,12 @@ public class DocumentTable implements DocumentDBI {
             String type = resultSet.getString("type");
             String data = resultSet.getString("data");
             String signature = resultSet.getString("signature");
-
-            Map<String, Object> info = new HashMap<>();
-            info.put("ID", did);
-            info.put("type", type);
-            info.put("data", data);
-            info.put("signature", signature);
-            return Document.parse(info);
+            assert did != null && did.length() > 0 : "did error: " + did;
+            ID identifier = ID.parse(did);
+            if (identifier == null) {
+                throw new AssertionError("ID error: " + did);
+            }
+            return Document.create(type, identifier, data, signature);
         };
         String[] fields = {
                 "id INTEGER PRIMARY KEY AUTOINCREMENT",
