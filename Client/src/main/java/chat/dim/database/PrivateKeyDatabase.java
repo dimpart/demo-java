@@ -43,7 +43,7 @@ import chat.dim.mem.CacheManager;
 import chat.dim.mem.CachePair;
 import chat.dim.mem.CachePool;
 import chat.dim.protocol.ID;
-import chat.dim.sqlite.Database;
+import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.sqlite.account.PrivateKeyTable;
 
 public class PrivateKeyDatabase implements PrivateKeyDBI {
@@ -54,10 +54,10 @@ public class PrivateKeyDatabase implements PrivateKeyDBI {
     private final CachePool<ID, PrivateKey> idKeyCache;
     private final CachePool<ID, List<DecryptKey>> msgKeysCache;
 
-    public PrivateKeyDatabase(String rootDir, String publicDir, String privateDir, Database sqlite) {
+    public PrivateKeyDatabase(String rootDir, String publicDir, String privateDir, DatabaseConnector sqliteConnector) {
         super();
         privateKeyStorage = new PrivateKeyStorage(rootDir, publicDir, privateDir);
-        privateKeyTable = new PrivateKeyTable(sqlite);
+        privateKeyTable = new PrivateKeyTable(sqliteConnector);
         CacheManager man = CacheManager.getInstance();
         idKeyCache = man.getPool("private_id_key");
         msgKeysCache = man.getPool("private_msg_keys");

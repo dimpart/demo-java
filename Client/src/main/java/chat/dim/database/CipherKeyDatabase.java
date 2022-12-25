@@ -39,13 +39,13 @@ import chat.dim.mem.CacheManager;
 import chat.dim.mem.CachePair;
 import chat.dim.mem.CachePool;
 import chat.dim.protocol.ID;
-import chat.dim.sqlite.Database;
+import chat.dim.sqlite.DatabaseConnector;
 
 public class CipherKeyDatabase implements CipherKeyDBI {
 
     private final CachePool<String, SymmetricKey> keyCache;
 
-    public CipherKeyDatabase(String rootDir, String publicDir, String privateDir, Database sqlite) {
+    public CipherKeyDatabase(String rootDir, String publicDir, String privateDir, DatabaseConnector sqliteConnector) {
         super();
         CacheManager man = CacheManager.getInstance();
         keyCache = man.getPool("cipher_key");

@@ -96,10 +96,16 @@ public class ClientMessageProcessor extends MessageProcessor {
                 if (EntityType.STATION.equals(sender.getType())) {
                     // no need to respond receipt to station
                     continue;
+                } else if (EntityType.BOT.equals(sender.getType())) {
+                    // no need to respond receipt to a bot
+                    continue;
                 }
             } else if (res  instanceof TextContent) {
                 if (EntityType.STATION.equals(sender.getType())) {
                     // no need to respond text message to station
+                    continue;
+                } else if (EntityType.BOT.equals(sender.getType())) {
+                    // no need to respond text message to a bot
                     continue;
                 }
             }

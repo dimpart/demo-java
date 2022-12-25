@@ -40,7 +40,7 @@ import chat.dim.mem.CachePair;
 import chat.dim.mem.CachePool;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
-import chat.dim.sqlite.Database;
+import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.sqlite.account.MetaTable;
 
 public class MetaDatabase implements MetaDBI {
@@ -50,10 +50,10 @@ public class MetaDatabase implements MetaDBI {
 
     private final CachePool<ID, Meta> metaCache;
 
-    public MetaDatabase(String rootDir, String publicDir, String privateDir, Database sqlite) {
+    public MetaDatabase(String rootDir, String publicDir, String privateDir, DatabaseConnector sqliteConnector) {
         super();
         metaStorage = new MetaStorage(rootDir, publicDir, privateDir);
-        metaTable = new MetaTable(sqlite);
+        metaTable = new MetaTable(sqliteConnector);
         CacheManager man = CacheManager.getInstance();
         metaCache = man.getPool("meta");
     }

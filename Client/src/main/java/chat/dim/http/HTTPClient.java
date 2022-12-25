@@ -237,7 +237,7 @@ public enum HTTPClient implements Runnable, Processor {
 
     static {
         // load plugins
-        chat.dim.Plugins.registerAllPlugins();
+        chat.dim.Plugins.registerPlugins();
 
         // load message/content factories
         CommonMessenger.registerAllFactories();

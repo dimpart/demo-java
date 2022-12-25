@@ -40,7 +40,7 @@ import chat.dim.mem.CachePair;
 import chat.dim.mem.CachePool;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
-import chat.dim.sqlite.Database;
+import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.sqlite.account.DocumentTable;
 
 public class DocumentDatabase implements DocumentDBI {
@@ -50,10 +50,10 @@ public class DocumentDatabase implements DocumentDBI {
 
     private final CachePool<ID, Document> documentCache;
 
-    public DocumentDatabase(String rootDir, String publicDir, String privateDir, Database sqlite) {
+    public DocumentDatabase(String rootDir, String publicDir, String privateDir, DatabaseConnector sqliteConnector) {
         super();
         documentStorage = new DocumentStorage(rootDir, publicDir, privateDir);
-        documentTable = new DocumentTable(sqlite);
+        documentTable = new DocumentTable(sqliteConnector);
         CacheManager man = CacheManager.getInstance();
         documentCache = man.getPool("document");
     }

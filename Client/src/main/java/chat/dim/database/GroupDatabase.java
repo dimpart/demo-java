@@ -34,11 +34,11 @@ import java.util.List;
 
 import chat.dim.dbi.GroupDBI;
 import chat.dim.protocol.ID;
-import chat.dim.sqlite.Database;
+import chat.dim.sqlite.DatabaseConnector;
 
 public class GroupDatabase implements GroupDBI {
 
-    public GroupDatabase(String rootDir, String publicDir, String privateDir, Database sqlite) {
+    public GroupDatabase(String rootDir, String publicDir, String privateDir, DatabaseConnector sqliteConnector) {
         super();
     }
 

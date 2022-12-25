@@ -40,7 +40,7 @@ import chat.dim.mem.CacheManager;
 import chat.dim.mem.CachePair;
 import chat.dim.mem.CachePool;
 import chat.dim.protocol.ID;
-import chat.dim.sqlite.Database;
+import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.sqlite.account.ContactTable;
 import chat.dim.sqlite.account.UserTable;
 
@@ -52,10 +52,10 @@ public class UserDatabase implements UserDBI {
     private final CachePool<String, List<ID>> dimCache;
     private final CachePool<ID, List<ID>> contactCache;
 
-    public UserDatabase(String rootDir, String publicDir, String privateDir, Database sqlite) {
+    public UserDatabase(String rootDir, String publicDir, String privateDir, DatabaseConnector sqliteConnector) {
         super();
-        userTable = new UserTable(sqlite);
-        contactTable = new ContactTable(sqlite);
+        userTable = new UserTable(sqliteConnector);
+        contactTable = new ContactTable(sqliteConnector);
         CacheManager man = CacheManager.getInstance();
         dimCache = man.getPool("dim");
         contactCache = man.getPool("contacts");
