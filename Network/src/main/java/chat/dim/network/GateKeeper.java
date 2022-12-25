@@ -121,7 +121,8 @@ public class GateKeeper extends Runner implements Docker.Delegate {
             when = new Date().getTime();
         } else if (when <= lastActive) {
             return false;
-        } else if (active == flag) {
+        }
+        if (active == flag) {
             return false;
         }
         active = flag;

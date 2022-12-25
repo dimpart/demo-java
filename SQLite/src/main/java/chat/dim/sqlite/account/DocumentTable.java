@@ -77,7 +77,19 @@ public class DocumentTable extends DataTableHandler implements DocumentDBI {
                 if (identifier == null) {
                     throw new AssertionError("ID error: " + did);
                 }
-                return Document.create(type, identifier, data, signature);
+                if (type == null || type.length() == 0) {
+                    type = "*";
+                }
+                Document doc = Document.create(type, identifier, data, signature);
+                if (type.equals("*")) {
+                    if (identifier.isGroup()) {
+                        type = Document.BULLETIN;
+                    } else {
+                        type = Document.VISA;
+                    }
+                }
+                doc.put("type", type);
+                return doc;
             };
         }
         return true;
