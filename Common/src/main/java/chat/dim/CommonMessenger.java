@@ -178,8 +178,8 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
             //assert Meta.matches(sender, rMsg.getMeta()) : "meta error: " + rMsg;
             return true;
         }
-        List<VerifyKey> verifyKeys = facebook.getPublicKeysForVerification(sender);
-        if (verifyKeys != null && verifyKeys.size() > 0) {
+        EncryptKey visaKey = facebook.getPublicKeyForEncryption(sender);
+        if (visaKey != null) {
             // sender is OK
             return true;
         }
