@@ -30,7 +30,6 @@
  */
 package chat.dim.sqlite.account;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,48 +38,50 @@ import java.util.Map;
 import chat.dim.dbi.UserDBI;
 import chat.dim.protocol.ID;
 import chat.dim.sql.SQLConditions;
-import chat.dim.sqlite.Database;
+import chat.dim.sqlite.DataTableHandler;
+import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.sqlite.ResultSetExtractor;
 
-public class UserTable implements UserDBI {
+public class UserTable extends DataTableHandler implements UserDBI {
 
-    private final Database database;
     private ResultSetExtractor<ID> extractor;
 
-    public UserTable(Database db) {
-        database = db;
+    public UserTable(DatabaseConnector connector) {
+        super(connector);
         extractor = null;
     }
 
-    private void prepare() throws SQLException {
-        if (extractor != null) {
-            // already created
-            return;
+    private boolean prepare() {
+        if (extractor == null) {
+            // create table if not exists
+            String[] fields = {
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT",
+                    "user VARCHAR(64)",
+                    "chosen BIT",
+            };
+            if (!createTable("t_local_user", fields)) {
+                // db error
+                return false;
+            }
+            // prepare result set extractor
+            extractor = (resultSet, index) -> {
+                String user = resultSet.getString("user");
+                return ID.parse(user);
+            };
         }
-        extractor = (resultSet, index) -> {
-            String user = resultSet.getString("user");
-            return ID.parse(user);
-        };
-        String[] fields = {
-                "id INTEGER PRIMARY KEY AUTOINCREMENT",
-                "user VARCHAR(64)",
-                "chosen BIT",
-        };
-        database.createTable("t_local_user", fields);
+        return true;
     }
 
 
     @Override
     public List<ID> getLocalUsers() {
-        String[] columns = {"user"};
-        try {
-            prepare();
-            return database.select(columns, "t_local_user", null,
-                    null, null, "chosen DESC", 0, extractor);
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (!prepare()) {
+            // db error
             return null;
         }
+        String[] columns = {"user"};
+        return select(columns, "t_local_user", null,
+                null, null, "chosen DESC", 0, extractor);
     }
 
     @Override
@@ -96,10 +97,8 @@ public class UserTable implements UserDBI {
             }
             SQLConditions conditions = new SQLConditions();
             conditions.addCondition(null, "user", "=", identifier.toString());
-            try {
-                database.delete("t_local_user", conditions);
-            } catch (SQLException e) {
-                e.printStackTrace();
+            if (delete("t_local_user", conditions) < 0) {
+                // db error
                 return false;
             }
         }
@@ -110,10 +109,8 @@ public class UserTable implements UserDBI {
             }
             String[] columns = {"user", "chosen"};
             Object[] values = {identifier.toString(), 0};
-            try {
-                database.insert("t_local_user", columns, values);
-            } catch (SQLException e) {
-                e.printStackTrace();
+            if (insert("t_local_user", columns, values) < 0) {
+                // db error
                 return false;
             }
         }
@@ -127,10 +124,8 @@ public class UserTable implements UserDBI {
             // first user changed
             Map<String, Object> values = new HashMap<>();
             values.put("chosen", 0);
-            try {
-                database.update("t_local_user", values, null);
-            } catch (SQLException e) {
-                e.printStackTrace();
+            if (update("t_local_user", values, null) < 0) {
+                // db error
                 return false;
             }
         }
@@ -139,13 +134,7 @@ public class UserTable implements UserDBI {
         values.put("chosen", 1);
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "user", "=", first.toString());
-        try {
-            database.update("t_local_user", values, null);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
+        return update("t_local_user", values, null) > 0;
     }
 
     @Override

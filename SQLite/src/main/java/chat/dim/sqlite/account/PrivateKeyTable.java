@@ -30,7 +30,6 @@
  */
 package chat.dim.sqlite.account;
 
-import java.sql.SQLException;
 import java.util.List;
 
 import chat.dim.crypto.DecryptKey;
@@ -39,53 +38,55 @@ import chat.dim.dbi.PrivateKeyDBI;
 import chat.dim.format.JSON;
 import chat.dim.protocol.ID;
 import chat.dim.sql.SQLConditions;
-import chat.dim.sqlite.Database;
+import chat.dim.sqlite.DataTableHandler;
+import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.sqlite.ResultSetExtractor;
 
-public class PrivateKeyTable implements PrivateKeyDBI {
+public class PrivateKeyTable extends DataTableHandler implements PrivateKeyDBI {
 
-    private final Database database;
     private ResultSetExtractor<PrivateKey> extractor;
 
-    public PrivateKeyTable(Database db) {
-        database = db;
+    public PrivateKeyTable(DatabaseConnector connector) {
+        super(connector);
+        // lazy load
         extractor = null;
     }
 
-    private void prepare() throws SQLException {
-        if (extractor != null) {
-            // already created
-            return;
+    private boolean prepare() {
+        if (extractor == null) {
+            // create table if not exists
+            String[] fields = {
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT",
+                    "user VARCHAR(64)",
+                    "key TEXT",
+                    "type CHAR(1)",
+                    "sign BIT",
+                    "decrypt BIT",
+            };
+            if (!createTable("t_private_key", fields)) {
+                // db error
+                return false;
+            }
+            // prepare result set extractor
+            extractor = (resultSet, index) -> {
+                String sk = resultSet.getString("key");
+                Object key = JSON.decode(sk);
+                return PrivateKey.parse(key);
+            };
         }
-        extractor = (resultSet, index) -> {
-            String sk = resultSet.getString("key");
-            Object key = JSON.decode(sk);
-            return PrivateKey.parse(key);
-        };
-        String[] fields = {
-                "id INTEGER PRIMARY KEY AUTOINCREMENT",
-                "user VARCHAR(64)",
-                "key TEXT",
-                "type CHAR(1)",
-                "sign BIT",
-                "decrypt BIT",
-        };
-        database.createTable("t_private_key", fields);
+        return true;
     }
 
     private boolean savePrivateKey(ID user, PrivateKey key, String type, int sign, int decrypt) {
+        if (!prepare()) {
+            // db error
+            return false;
+        }
         String pk = JSON.encode(key);
 
         String[] columns = {"user", "key", "type", "sign", "decrypt"};
         Object[] values = {user.toString(), pk, type, sign, decrypt};
-        try {
-            prepare();
-            database.insert("t_private_key", columns, values);
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        return insert("t_private_key", columns, values) > 0;
     }
 
     @Override
@@ -99,17 +100,17 @@ public class PrivateKeyTable implements PrivateKeyDBI {
 
     @Override
     public List<DecryptKey> getPrivateKeysForDecryption(ID user) {
+        if (!prepare()) {
+            // db error
+            return null;
+        }
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "user", "=", user.toString());
         conditions.addCondition(SQLConditions.Relation.AND, "decrypt", "=", 1);
         String[] columns = {"key"};
-        List<PrivateKey> results;
-        try {
-            prepare();
-            results = database.select(columns, "t_private_key", conditions,
-                    null, null, "type DESC", 0, extractor);
-        } catch (SQLException e) {
-            e.printStackTrace();
+        List<PrivateKey> results = select(columns, "t_private_key", conditions,
+                null, null, "type DESC", 0, extractor);
+        if (results == null) {
             return null;
         }
         return PrivateKeyDBI.convertDecryptKeys(results);
@@ -123,20 +124,18 @@ public class PrivateKeyTable implements PrivateKeyDBI {
 
     @Override
     public PrivateKey getPrivateKeyForVisaSignature(ID user) {
+        if (!prepare()) {
+            // db error
+            return null;
+        }
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "user", "=", user.toString());
         conditions.addCondition(SQLConditions.Relation.AND, "type", "=", "M");
         conditions.addCondition(SQLConditions.Relation.AND, "sign", "=", 1);
         String[] columns = {"key"};
-        List<PrivateKey> results;
-        try {
-            prepare();
-            results = database.select(columns, "t_private_key", conditions,
-                    null, null, "type DESC", 0, extractor);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
+        List<PrivateKey> results = select(columns, "t_private_key", conditions,
+                null, null, "type DESC", 0, extractor);
+        // return first record only
         return results == null || results.size() == 0 ? null : results.get(0);
     }
 }

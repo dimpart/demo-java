@@ -30,42 +30,46 @@
  */
 package chat.dim.sqlite.account;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.dbi.UserDBI;
 import chat.dim.protocol.ID;
 import chat.dim.sql.SQLConditions;
-import chat.dim.sqlite.Database;
+import chat.dim.sqlite.DataTableHandler;
+import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.sqlite.ResultSetExtractor;
 
-public class ContactTable implements UserDBI {
+public class ContactTable extends DataTableHandler implements UserDBI {
 
-    private final Database database;
     private ResultSetExtractor<ID> extractor;
 
-    public ContactTable(Database db) {
-        database = db;
+    public ContactTable(DatabaseConnector connector) {
+        super(connector);
+        // lazy load
         extractor = null;
     }
 
-    private void prepare() throws SQLException {
-        if (extractor != null) {
-            // already created
-            return;
+    private boolean prepare() {
+        if (extractor == null) {
+            // create table if not exists
+            String[] fields = {
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT",
+                    "user VARCHAR(64)",
+                    "contact VARCHAR(64)",
+                    "alias VARCHAR(32))",
+            };
+            if (!createTable("t_contact", fields)) {
+                // db error
+                return false;
+            }
+            // prepare result set extractor
+            extractor = (resultSet, index) -> {
+                String did = resultSet.getString("contact");
+                return ID.parse(did);
+            };
         }
-        extractor = (resultSet, index) -> {
-            String did = resultSet.getString("contact");
-            return ID.parse(did);
-        };
-        String[] fields = {
-                "id INTEGER PRIMARY KEY AUTOINCREMENT",
-                "user VARCHAR(64)",
-                "contact VARCHAR(64)",
-                "alias VARCHAR(32))",
-        };
-        database.createTable("t_contact", fields);
+        return true;
     }
 
 
@@ -81,16 +85,14 @@ public class ContactTable implements UserDBI {
 
     @Override
     public List<ID> getContacts(ID user) {
+        if (!prepare()) {
+            // db error
+            return null;
+        }
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "user", "=", user.toString());
         String[] columns = {"contact"/*, "alias"*/};
-        try {
-            prepare();
-            return database.select(columns, "t_contact", conditions, 0, extractor);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return select(columns, "t_contact", conditions, 0, extractor);
     }
 
     @Override
@@ -107,10 +109,8 @@ public class ContactTable implements UserDBI {
             SQLConditions conditions = new SQLConditions();
             conditions.addCondition(null, "user", "=", user.toString());
             conditions.addCondition(SQLConditions.Relation.AND, "contact", "=", identifier.toString());
-            try {
-                database.delete("t_contact", conditions);
-            } catch (SQLException e) {
-                e.printStackTrace();
+            if (delete("t_contact", conditions) < 0) {
+                // db error
                 return false;
             }
         }
@@ -121,10 +121,8 @@ public class ContactTable implements UserDBI {
             }
             String[] columns = {"user", "contact"};
             Object[] values = {user.toString(), identifier.toString()};
-            try {
-                database.insert("t_contact", columns, values);
-            } catch (SQLException e) {
-                e.printStackTrace();
+            if (insert("t_contact", columns, values) < 0) {
+                // db error
                 return false;
             }
         }

@@ -28,39 +28,44 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.sqlite.session;
+package chat.dim.sqlite;
 
-import java.util.Set;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
-import chat.dim.dbi.ProviderDBI;
-import chat.dim.protocol.ID;
-import chat.dim.sqlite.DataTableHandler;
-import chat.dim.sqlite.DatabaseConnector;
-import chat.dim.type.Triplet;
+public class DatabaseConnector {
 
-public class ProviderTable extends DataTableHandler implements ProviderDBI {
+    private final String dbFilePath;
+    private Connection connection;
 
-    public ProviderTable(DatabaseConnector sqliteConnector) {
-        super(sqliteConnector);
+    public DatabaseConnector(String sqliteFilePath) {
+        super();
+        dbFilePath = sqliteFilePath;
+        // lazy load
+        connection = null;
     }
 
     @Override
-    public Set<Triplet<String, Integer, ID>> allNeighbors() {
-        return null;
+    protected void finalize() throws Throwable {
+        destroy();
+        super.finalize();
     }
 
-    @Override
-    public ID getNeighbor(String ip, int port) {
-        return null;
+    public void destroy() throws SQLException {
+        Connection conn = connection;
+        if (conn != null) {
+            connection = null;
+            conn.close();
+        }
     }
 
-    @Override
-    public boolean addNeighbor(String ip, int port, ID station) {
-        return false;
-    }
-
-    @Override
-    public boolean removeNeighbor(String ip, int port) {
-        return false;
+    public Connection getConnection() throws SQLException {
+        Connection conn = connection;
+        if (conn == null) {
+            conn = DriverManager.getConnection("jdbc:sqlite:" + dbFilePath);
+            connection = conn;
+        }
+        return conn;
     }
 }

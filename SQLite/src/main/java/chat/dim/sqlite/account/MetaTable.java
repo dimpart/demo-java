@@ -30,7 +30,6 @@
  */
 package chat.dim.sqlite.account;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,50 +40,55 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaType;
 import chat.dim.sql.SQLConditions;
-import chat.dim.sqlite.Database;
+import chat.dim.sqlite.DataTableHandler;
+import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.sqlite.ResultSetExtractor;
 
-public class MetaTable implements MetaDBI {
+public class MetaTable extends DataTableHandler implements MetaDBI {
 
-    private final Database database;
     private ResultSetExtractor<Meta> extractor;
 
-    public MetaTable(Database db) {
-        database = db;
+    public MetaTable(DatabaseConnector connector) {
+        super(connector);
+        // lazy load
         extractor = null;
     }
 
-    private void prepare() throws SQLException {
-        if (extractor != null) {
-            // already created
-            return;
-        }
-        extractor = (resultSet, index) -> {
-            int type = resultSet.getInt("type");
-            String pk = resultSet.getString("key");
-            Object key = JSON.decode(pk);
-
-            Map<String, Object> info = new HashMap<>();
-            info.put("version", type);
-            info.put("type", type);
-            info.put("key", key);
-            if (MetaType.hasSeed(type)) {
-                String seed = resultSet.getString("seed");
-                String ct = resultSet.getString("fingerprint");
-                info.put("seed", seed);
-                info.put("fingerprint", ct);
+    private boolean prepare() {
+        if (extractor == null) {
+            // create table if not exists
+            String[] fields = {
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT",
+                    "did VARCHAR(64)",
+                    "type INTEGER",
+                    "key TEXT",
+                    "seed VARCHAR(20)",
+                    "fingerprint VARCHAR(88)",
+            };
+            if (!createTable("t_meta", fields)) {
+                // db error
+                return false;
             }
-            return Meta.parse(info);
-        };
-        String[] fields = {
-                "id INTEGER PRIMARY KEY AUTOINCREMENT",
-                "did VARCHAR(64)",
-                "type INTEGER",
-                "key TEXT",
-                "seed VARCHAR(20)",
-                "fingerprint VARCHAR(88)",
-        };
-        database.createTable("t_meta", fields);
+            // prepare result set extractor
+            extractor = (resultSet, index) -> {
+                int type = resultSet.getInt("type");
+                String pk = resultSet.getString("key");
+                Object key = JSON.decode(pk);
+
+                Map<String, Object> info = new HashMap<>();
+                info.put("version", type);
+                info.put("type", type);
+                info.put("key", key);
+                if (MetaType.hasSeed(type)) {
+                    String seed = resultSet.getString("seed");
+                    String ct = resultSet.getString("fingerprint");
+                    info.put("seed", seed);
+                    info.put("fingerprint", ct);
+                }
+                return Meta.parse(info);
+            };
+        }
+        return true;
     }
 
     @Override
@@ -110,29 +114,21 @@ public class MetaTable implements MetaDBI {
 
         String[] columns = {"did", "type", "key", "seed", "fingerprint"};
         Object[] values = {entity.toString(), type, pk, seed, ct};
-        try {
-            database.insert("t_meta", columns, values);
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        return insert("t_meta", columns, values) > 0;
     }
 
     @Override
     public Meta getMeta(ID entity) {
+        if (!prepare()) {
+            // db error
+            return null;
+        }
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "did", "=", entity.toString());
         String[] columns = {"type", "key", "seed", "fingerprint"};
-        List<Meta> results;
-        try {
-            prepare();
-            results = database.select(columns, "t_meta", conditions,
-                    null, null, "id DESC", 0, extractor);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
+        List<Meta> results = select(columns, "t_meta", conditions,
+                null, null, "id DESC", 0, extractor);
+        // return first record only
         return results == null || results.size() == 0 ? null : results.get(0);
     }
 }

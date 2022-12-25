@@ -34,9 +34,15 @@ import chat.dim.dbi.LoginDBI;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.sqlite.DataTableHandler;
+import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.type.Pair;
 
-public class LoginTable implements LoginDBI {
+public class LoginTable extends DataTableHandler implements LoginDBI {
+
+    public LoginTable(DatabaseConnector sqliteConnector) {
+        super(sqliteConnector);
+    }
 
     @Override
     public Pair<LoginCommand, ReliableMessage> getLoginCommandMessage(ID identifier) {

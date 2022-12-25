@@ -34,14 +34,13 @@ import java.util.List;
 
 import chat.dim.dbi.GroupDBI;
 import chat.dim.protocol.ID;
-import chat.dim.sqlite.Database;
+import chat.dim.sqlite.DataTableHandler;
+import chat.dim.sqlite.DatabaseConnector;
 
-public class GroupTable implements GroupDBI {
+public class GroupTable extends DataTableHandler implements GroupDBI {
 
-    private final Database database;
-
-    public GroupTable(Database db) {
-        database = db;
+    public GroupTable(DatabaseConnector connector) {
+        super(connector);
     }
 
     @Override

@@ -37,35 +37,51 @@ import java.util.Map;
 import chat.dim.sql.SQLBuilder;
 import chat.dim.sql.SQLConditions;
 
-public class Database extends SQLiteHelper {
+public class DataTableHandler extends DatabaseHandler {
 
-    public Database(String dbFilePath) {
-        super(dbFilePath);
+    public DataTableHandler(DatabaseConnector sqliteConnector) {
+        super(sqliteConnector);
     }
 
-    public int createTable(String table,
-                           String[] fields) throws SQLException {
+    public boolean createTable(String table,
+                               String[] fields) {
         // CREATE TABLE table (field type, ...);
         String sql = SQLBuilder.buildCreateTable(table, fields);
-        return executeUpdate(sql);
+        try {
+            executeUpdate(sql);
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public int insert(String table,
                       String[] columns,
-                      Object[] values) throws SQLException {
+                      Object[] values) {
         // INSERT INTO table (columns) VALUES (values);
         String sql = SQLBuilder.buildInsert(table, columns, values);
-        return executeUpdate(sql);
+        try {
+            return executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return -1;
+        }
     }
 
     public <T> List<T> select(String[] columns,
                               String table,
                               SQLConditions conditions,
                               int limit,
-                              ResultSetExtractor<T> extractor) throws SQLException {
+                              ResultSetExtractor<T> extractor) {
         // SELECT DISTINCT columns FROM tables WHERE conditions ...
         String sql = SQLBuilder.buildSelect(columns, table, conditions, null, null, null, limit);
-        return executeQuery(sql, extractor);
+        try {
+            return executeQuery(sql, extractor);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public <T> List<T> select(String[] columns,
@@ -75,24 +91,39 @@ public class Database extends SQLiteHelper {
                               String having,
                               String orderBy,
                               int limit,
-                              ResultSetExtractor<T> extractor) throws SQLException {
+                              ResultSetExtractor<T> extractor) {
         // SELECT DISTINCT columns FROM tables WHERE conditions ...
         String sql = SQLBuilder.buildSelect(columns, table, conditions, groupBy, having, orderBy, limit);
-        return executeQuery(sql, extractor);
+        try {
+            return executeQuery(sql, extractor);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public int update(String table,
                       Map<String, Object> values,
-                      SQLConditions conditions) throws SQLException {
+                      SQLConditions conditions) {
         // UPDATE table SET name=value WHERE conditions
         String sql = SQLBuilder.buildUpdate(table, values, conditions);
-        return executeUpdate(sql);
+        try {
+            return executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return -1;
+        }
     }
 
     public int delete(String table,
-                      SQLConditions conditions) throws SQLException {
+                      SQLConditions conditions) {
         // DELETE FROM table WHERE conditions
         String sql = SQLBuilder.buildDelete(table, conditions);
-        return executeUpdate(sql);
+        try {
+            return executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return -1;
+        }
     }
 }

@@ -31,26 +31,21 @@
 package chat.dim.sqlite;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SQLiteHelper {
+public class DatabaseHandler {
 
-    private Connection connection;
+    private final DatabaseConnector connector;
     private Statement statement;
     private ResultSet resultSet;
 
-    private final String filePath;
-
-    public SQLiteHelper(String dbFilePath) {
+    public DatabaseHandler(DatabaseConnector sqliteConnector) {
         super();
-        filePath = dbFilePath;
-
-        connection = null;
+        connector = sqliteConnector;
         statement = null;
         resultSet = null;
     }
@@ -62,11 +57,6 @@ public class SQLiteHelper {
     }
 
     public void destroy() throws SQLException {
-        Connection conn = connection;
-        if (conn != null) {
-            connection = null;
-            conn.close();
-        }
         Statement stat = statement;
         if (stat != null) {
             statement = null;
@@ -80,12 +70,7 @@ public class SQLiteHelper {
     }
 
     public Connection getConnection() throws SQLException {
-        Connection conn = connection;
-        if (conn == null) {
-            conn = DriverManager.getConnection("jdbc:sqlite:" + filePath);
-            connection = conn;
-        }
-        return conn;
+        return connector.getConnection();
     }
     public Statement getStatement() throws SQLException {
         Statement stat = statement;
