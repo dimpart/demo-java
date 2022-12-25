@@ -109,7 +109,7 @@ public class PrivateKeyTable extends DataTableHandler implements PrivateKeyDBI {
         conditions.addCondition(SQLConditions.Relation.AND, "decrypt", "=", 1);
         String[] columns = {"key"};
         List<PrivateKey> results = select(columns, "t_private_key", conditions,
-                null, null, "type DESC", 0, extractor);
+                null, null, "type DESC", -1, 0, extractor);
         if (results == null) {
             return null;
         }
@@ -134,7 +134,7 @@ public class PrivateKeyTable extends DataTableHandler implements PrivateKeyDBI {
         conditions.addCondition(SQLConditions.Relation.AND, "sign", "=", 1);
         String[] columns = {"key"};
         List<PrivateKey> results = select(columns, "t_private_key", conditions,
-                null, null, "type DESC", 0, extractor);
+                null, null, "type DESC", -1, 0, extractor);
         // return first record only
         return results == null || results.size() == 0 ? null : results.get(0);
     }

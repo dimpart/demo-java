@@ -79,12 +79,6 @@ public final class SQLBuilder {
         }
     }
 
-    private void appendDistinct(boolean distinct) {
-        if (distinct) {
-            append(" DISTINCT");
-        }
-    }
-
     private void appendClause(String name, String clause) {
         if (clause == null || clause.length() == 0) {
             return;
@@ -138,38 +132,16 @@ public final class SQLBuilder {
     //          GROUP BY ...
     //          HAVING ...
     //          ORDER BY ...
-    //          LIMIT start, count;
+    //          LIMIT count OFFSET start;
     //
-    public static String buildSelect(boolean distinct,
-                                     String[] columns,
-                                     String[] tables,
-                                     SQLConditions conditions,
-                                     String groupBy,
-                                     String having,
-                                     String orderBy,
-                                     int limit) {
+    public static String buildSelect(boolean distinct, String[] columns,
+                                     String table, SQLConditions conditions,
+                                     String groupBy, String having, String orderBy,
+                                     int limit, int offset) {
         SQLBuilder builder = new SQLBuilder(SELECT);
-        builder.appendDistinct(distinct);
-        builder.appendColumns(columns);
-        builder.append(" FROM ");
-        builder.appendStringList(tables);
-        builder.appendWhere(conditions);
-        builder.appendClause(" GROUP BY ", groupBy);
-        builder.appendClause(" HAVING ", having);
-        builder.appendClause(" ORDER BY ", orderBy);
-        if (limit > 0) {
-            builder.appendClause(" LIMIT ", String.valueOf(limit));
+        if (distinct) {
+            builder.append(" DISTINCT");
         }
-        return builder.toString();
-    }
-    public static String buildSelect(String[] columns,
-                                     String table,
-                                     SQLConditions conditions,
-                                     String groupBy,
-                                     String having,
-                                     String orderBy,
-                                     int limit) {
-        SQLBuilder builder = new SQLBuilder(SELECT);
         builder.appendColumns(columns);
         builder.append(" FROM ");
         builder.append(table);
@@ -179,6 +151,7 @@ public final class SQLBuilder {
         builder.appendClause(" ORDER BY ", orderBy);
         if (limit > 0) {
             builder.appendClause(" LIMIT ", String.valueOf(limit));
+            builder.appendClause(" OFFSET ", String.valueOf(offset));
         }
         return builder.toString();
     }

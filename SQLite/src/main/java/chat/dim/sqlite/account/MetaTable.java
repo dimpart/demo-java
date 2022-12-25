@@ -127,7 +127,7 @@ public class MetaTable extends DataTableHandler implements MetaDBI {
         conditions.addCondition(null, "did", "=", entity.toString());
         String[] columns = {"type", "key", "seed", "fingerprint"};
         List<Meta> results = select(columns, "t_meta", conditions,
-                null, null, "id DESC", 0, extractor);
+                null, null, "id DESC", -1, 0, extractor);
         // return first record only
         return results == null || results.size() == 0 ? null : results.get(0);
     }

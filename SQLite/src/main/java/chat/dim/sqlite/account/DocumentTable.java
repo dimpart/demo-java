@@ -107,7 +107,6 @@ public class DocumentTable extends DataTableHandler implements DocumentDBI {
             // old record not found, insert it as new record
             String[] columns = {"did", "type", "data", "signature"};
             Object[] values = {identifier.toString(), type, data, signature};
-            // db error
             return insert("t_document", columns, values) > 0;
         }
         if (old.get("data").equals(data) && old.get("signature").equals(signature)) {
@@ -121,7 +120,6 @@ public class DocumentTable extends DataTableHandler implements DocumentDBI {
         values.put("type", type);
         values.put("data", data);
         values.put("signature", signature);
-        // db error
         return update("t_document", values, conditions) > 0;
     }
 
@@ -135,7 +133,7 @@ public class DocumentTable extends DataTableHandler implements DocumentDBI {
         conditions.addCondition(null, "did", "=", entity.toString());
         String[] columns = {"did", "type", "data", "signature"};
         List<Document> results = select(columns, "t_document", conditions,
-                null, null, "id DESC", 0, extractor);
+                null, null, "id DESC", -1, 0, extractor);
         // return first result only
         return results == null || results.size() == 0 ? null : results.get(0);
     }

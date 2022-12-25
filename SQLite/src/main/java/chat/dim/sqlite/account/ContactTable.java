@@ -92,7 +92,7 @@ public class ContactTable extends DataTableHandler implements UserDBI {
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "user", "=", user.toString());
         String[] columns = {"contact"/*, "alias"*/};
-        return select(columns, "t_contact", conditions, 0, extractor);
+        return select(columns, "t_contact", conditions, extractor);
     }
 
     @Override

@@ -43,8 +43,7 @@ public class DataTableHandler extends DatabaseHandler {
         super(sqliteConnector);
     }
 
-    public boolean createTable(String table,
-                               String[] fields) {
+    public boolean createTable(String table, String[] fields) {
         // CREATE TABLE table (field type, ...);
         String sql = SQLBuilder.buildCreateTable(table, fields);
         try {
@@ -56,9 +55,7 @@ public class DataTableHandler extends DatabaseHandler {
         }
     }
 
-    public int insert(String table,
-                      String[] columns,
-                      Object[] values) {
+    public int insert(String table, String[] columns, Object[] values) {
         // INSERT INTO table (columns) VALUES (values);
         String sql = SQLBuilder.buildInsert(table, columns, values);
         try {
@@ -70,30 +67,22 @@ public class DataTableHandler extends DatabaseHandler {
     }
 
     public <T> List<T> select(String[] columns,
-                              String table,
-                              SQLConditions conditions,
-                              int limit,
+                              String table, SQLConditions conditions,
                               ResultSetExtractor<T> extractor) {
         // SELECT DISTINCT columns FROM tables WHERE conditions ...
-        String sql = SQLBuilder.buildSelect(columns, table, conditions, null, null, null, limit);
-        try {
-            return executeQuery(sql, extractor);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return select(columns, table, conditions,
+                null, null, null, -1, 0,
+                extractor);
     }
 
     public <T> List<T> select(String[] columns,
-                              String table,
-                              SQLConditions conditions,
-                              String groupBy,
-                              String having,
-                              String orderBy,
-                              int limit,
+                              String table, SQLConditions conditions,
+                              String groupBy, String having, String orderBy,
+                              int limit, int offset,
                               ResultSetExtractor<T> extractor) {
         // SELECT DISTINCT columns FROM tables WHERE conditions ...
-        String sql = SQLBuilder.buildSelect(columns, table, conditions, groupBy, having, orderBy, limit);
+        String sql = SQLBuilder.buildSelect(false,
+                columns, table, conditions, groupBy, having, orderBy, limit, offset);
         try {
             return executeQuery(sql, extractor);
         } catch (SQLException e) {
@@ -102,9 +91,7 @@ public class DataTableHandler extends DatabaseHandler {
         }
     }
 
-    public int update(String table,
-                      Map<String, Object> values,
-                      SQLConditions conditions) {
+    public int update(String table, Map<String, Object> values, SQLConditions conditions) {
         // UPDATE table SET name=value WHERE conditions
         String sql = SQLBuilder.buildUpdate(table, values, conditions);
         try {
@@ -115,8 +102,7 @@ public class DataTableHandler extends DatabaseHandler {
         }
     }
 
-    public int delete(String table,
-                      SQLConditions conditions) {
+    public int delete(String table, SQLConditions conditions) {
         // DELETE FROM table WHERE conditions
         String sql = SQLBuilder.buildDelete(table, conditions);
         try {

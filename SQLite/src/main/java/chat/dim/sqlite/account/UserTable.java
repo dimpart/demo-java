@@ -81,7 +81,7 @@ public class UserTable extends DataTableHandler implements UserDBI {
         }
         String[] columns = {"user"};
         return select(columns, "t_local_user", null,
-                null, null, "chosen DESC", 0, extractor);
+                null, null, "chosen DESC", -1, 0, extractor);
     }
 
     @Override
