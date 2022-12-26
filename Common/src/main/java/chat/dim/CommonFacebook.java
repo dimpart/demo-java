@@ -47,7 +47,7 @@ public class CommonFacebook extends Facebook {
     private final AccountDBI database;
     private User current;
 
-    protected CommonFacebook(AccountDBI db) {
+    public CommonFacebook(AccountDBI db) {
         super();
         database = db;
         current = null;

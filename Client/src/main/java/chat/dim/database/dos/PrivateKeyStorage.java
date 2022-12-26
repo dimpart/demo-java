@@ -113,7 +113,8 @@ public class PrivateKeyStorage extends Storage implements PrivateKeyDBI {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            System.out.println("[DOS] failed to load msg keys from: " + path);
         }
         return privateKeys;
     }
