@@ -34,13 +34,19 @@ import java.util.List;
 
 import chat.dim.dbi.GroupDBI;
 import chat.dim.protocol.ID;
+import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
 
-public class GroupTable extends DataTableHandler implements GroupDBI {
+public class GroupTable extends DataTableHandler<ID> implements GroupDBI {
 
     public GroupTable(DatabaseConnector connector) {
         super(connector);
+    }
+
+    @Override
+    protected DataRowExtractor<ID> getDataRowExtractor() {
+        return null;
     }
 
     @Override

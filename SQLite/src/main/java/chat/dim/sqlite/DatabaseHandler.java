@@ -38,7 +38,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DatabaseHandler {
+public class DatabaseHandler<T> {
 
     private final DatabaseConnector connector;
     private Statement statement;
@@ -87,11 +87,10 @@ public class DatabaseHandler {
      *
      * @param sql       - SQL
      * @param extractor - result extractor
-     * @param <T>       - result type
      * @return rows
      * @throws SQLException on DB error
      */
-    public <T> List<T> executeQuery(String sql, ResultSetExtractor<T> extractor) throws SQLException, IOException {
+    public List<T> executeQuery(String sql, DataRowExtractor<T> extractor) throws SQLException, IOException {
         List<T> rows = new ArrayList<>();
         try {
             resultSet = getStatement().executeQuery(sql);

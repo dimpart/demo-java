@@ -33,7 +33,7 @@ package chat.dim.sqlite;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public interface ResultSetExtractor <T> {
+public interface DataRowExtractor<T> {
 
 
     T extractRow(ResultSet resultSet, int index) throws SQLException;

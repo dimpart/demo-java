@@ -40,18 +40,23 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaType;
 import chat.dim.sql.SQLConditions;
+import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
-import chat.dim.sqlite.ResultSetExtractor;
 
-public class MetaTable extends DataTableHandler implements MetaDBI {
+public class MetaTable extends DataTableHandler<Meta> implements MetaDBI {
 
-    private ResultSetExtractor<Meta> extractor;
+    private DataRowExtractor<Meta> extractor;
 
     public MetaTable(DatabaseConnector connector) {
         super(connector);
         // lazy load
         extractor = null;
+    }
+
+    @Override
+    protected DataRowExtractor<Meta> getDataRowExtractor() {
+        return extractor;
     }
 
     private boolean prepare() {
@@ -61,19 +66,19 @@ public class MetaTable extends DataTableHandler implements MetaDBI {
                     "id INTEGER PRIMARY KEY AUTOINCREMENT",
                     "did VARCHAR(64)",
                     "type INTEGER",
-                    "key TEXT",
+                    "pub_key TEXT",
                     "seed VARCHAR(20)",
                     "fingerprint VARCHAR(88)",
             };
-            if (!createTable("t_meta", fields)) {
+            if (!createTable(T_META, fields)) {
                 // db error
                 return false;
             }
-            // prepare result set extractor
+            // prepare data row extractor
             extractor = (resultSet, index) -> {
                 int type = resultSet.getInt("type");
-                String pk = resultSet.getString("key");
-                Object key = JSON.decode(pk);
+                String json = resultSet.getString("pub_key");
+                Object key = JSON.decode(json);
 
                 Map<String, Object> info = new HashMap<>();
                 info.put("version", type);
@@ -81,41 +86,18 @@ public class MetaTable extends DataTableHandler implements MetaDBI {
                 info.put("key", key);
                 if (MetaType.hasSeed(type)) {
                     String seed = resultSet.getString("seed");
-                    String ct = resultSet.getString("fingerprint");
+                    String fingerprint = resultSet.getString("fingerprint");
                     info.put("seed", seed);
-                    info.put("fingerprint", ct);
+                    info.put("fingerprint", fingerprint);
                 }
                 return Meta.parse(info);
             };
         }
         return true;
     }
-
-    @Override
-    public boolean saveMeta(Meta meta, ID entity) {
-        // make sure old records not exists
-        Meta old = getMeta(entity);
-        if (old != null) {
-            // meta info won't changed, no need to update
-            return false;
-        }
-
-        int type = meta.getType();
-        String pk = JSON.encode(meta.getKey());
-        String seed;
-        String ct;
-        if (MetaType.hasSeed(type)) {
-            seed = meta.getSeed();
-            ct = (String) meta.get("fingerprint");
-        } else {
-            seed = "";
-            ct = "";
-        }
-
-        String[] columns = {"did", "type", "key", "seed", "fingerprint"};
-        Object[] values = {entity.toString(), type, pk, seed, ct};
-        return insert("t_meta", columns, values) > 0;
-    }
+    private static final String[] SELECT_COLUMNS = {"type", "pub_key", "seed", "fingerprint"};
+    private static final String[] INSERT_COLUMNS =  {"did", "type", "pub_key", "seed", "fingerprint"};
+    private static final String T_META = "t_meta";
 
     @Override
     public Meta getMeta(ID entity) {
@@ -125,10 +107,38 @@ public class MetaTable extends DataTableHandler implements MetaDBI {
         }
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "did", "=", entity.toString());
-        String[] columns = {"type", "key", "seed", "fingerprint"};
-        List<Meta> results = select(columns, "t_meta", conditions,
-                null, null, "id DESC", -1, 0, extractor);
+        List<Meta> results = select(T_META, SELECT_COLUMNS, conditions,
+                null, null, "id DESC", -1, 0);
         // return first record only
         return results == null || results.size() == 0 ? null : results.get(0);
+    }
+
+    @Override
+    public boolean saveMeta(Meta meta, ID entity) {
+        if (!prepare()) {
+            // db error
+            return false;
+        }
+        // make sure old records not exists
+        Meta old = getMeta(entity);
+        if (old != null) {
+            // meta info won't changed, no need to update
+            return false;
+        }
+
+        int type = meta.getType();
+        String json = JSON.encode(meta.getKey());
+        String seed;
+        String fingerprint;
+        if (MetaType.hasSeed(type)) {
+            seed = meta.getSeed();
+            fingerprint = (String) meta.get("fingerprint");
+        } else {
+            seed = "";
+            fingerprint = "";
+        }
+
+        Object[] values = {entity.toString(), type, json, seed, fingerprint};
+        return insert(T_META, INSERT_COLUMNS, values) > 0;
     }
 }

@@ -34,14 +34,20 @@ import chat.dim.dbi.LoginDBI;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.type.Pair;
 
-public class LoginTable extends DataTableHandler implements LoginDBI {
+public class LoginTable extends DataTableHandler<Pair<LoginCommand, ReliableMessage>> implements LoginDBI {
 
     public LoginTable(DatabaseConnector sqliteConnector) {
         super(sqliteConnector);
+    }
+
+    @Override
+    protected DataRowExtractor<Pair<LoginCommand, ReliableMessage>> getDataRowExtractor() {
+        return null;
     }
 
     @Override

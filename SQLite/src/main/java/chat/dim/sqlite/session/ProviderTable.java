@@ -34,14 +34,20 @@ import java.util.Set;
 
 import chat.dim.dbi.ProviderDBI;
 import chat.dim.protocol.ID;
+import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.type.Triplet;
 
-public class ProviderTable extends DataTableHandler implements ProviderDBI {
+public class ProviderTable extends DataTableHandler<Set<Triplet<String, Integer, ID>>> implements ProviderDBI {
 
     public ProviderTable(DatabaseConnector sqliteConnector) {
         super(sqliteConnector);
+    }
+
+    @Override
+    protected DataRowExtractor<Set<Triplet<String, Integer, ID>>> getDataRowExtractor() {
+        return null;
     }
 
     @Override

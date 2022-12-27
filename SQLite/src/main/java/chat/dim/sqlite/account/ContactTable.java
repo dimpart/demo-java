@@ -30,24 +30,28 @@
  */
 package chat.dim.sqlite.account;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.dbi.UserDBI;
 import chat.dim.protocol.ID;
 import chat.dim.sql.SQLConditions;
+import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
-import chat.dim.sqlite.ResultSetExtractor;
 
-public class ContactTable extends DataTableHandler implements UserDBI {
+public class ContactTable extends DataTableHandler<ID> implements UserDBI {
 
-    private ResultSetExtractor<ID> extractor;
+    private DataRowExtractor<ID> extractor;
 
     public ContactTable(DatabaseConnector connector) {
         super(connector);
         // lazy load
         extractor = null;
+    }
+
+    @Override
+    protected DataRowExtractor<ID> getDataRowExtractor() {
+        return extractor;
     }
 
     private boolean prepare() {
@@ -59,11 +63,11 @@ public class ContactTable extends DataTableHandler implements UserDBI {
                     "contact VARCHAR(64)",
                     "alias VARCHAR(32))",
             };
-            if (!createTable("t_contact", fields)) {
+            if (!createTable(T_CONTACT, fields)) {
                 // db error
                 return false;
             }
-            // prepare result set extractor
+            // prepare data row extractor
             extractor = (resultSet, index) -> {
                 String did = resultSet.getString("contact");
                 return ID.parse(did);
@@ -71,7 +75,9 @@ public class ContactTable extends DataTableHandler implements UserDBI {
         }
         return true;
     }
-
+    private static final String[] SELECT_COLUMNS = {"contact"/*, "alias"*/};
+    private static final String[] INSERT_COLUMNS = {"user", "contact"/*, "alias"*/};
+    private static final String T_CONTACT = "t_contact";
 
     @Override
     public List<ID> getLocalUsers() {
@@ -91,15 +97,15 @@ public class ContactTable extends DataTableHandler implements UserDBI {
         }
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "user", "=", user.toString());
-        String[] columns = {"contact"/*, "alias"*/};
-        return select(columns, "t_contact", conditions, extractor);
+        return select(T_CONTACT, SELECT_COLUMNS, conditions);
     }
 
     @Override
     public boolean saveContacts(List<ID> contacts, ID user) {
         List<ID> oldContacts = getContacts(user);
         if (oldContacts == null) {
-            oldContacts = new ArrayList<>();
+            // db error
+            return false;
         }
         // 1. delete old records not contain in current contacts
         for (ID identifier : oldContacts) {
@@ -109,7 +115,7 @@ public class ContactTable extends DataTableHandler implements UserDBI {
             SQLConditions conditions = new SQLConditions();
             conditions.addCondition(null, "user", "=", user.toString());
             conditions.addCondition(SQLConditions.Relation.AND, "contact", "=", identifier.toString());
-            if (delete("t_contact", conditions) < 0) {
+            if (delete(T_CONTACT, conditions) < 0) {
                 // db error
                 return false;
             }
@@ -119,9 +125,8 @@ public class ContactTable extends DataTableHandler implements UserDBI {
             if (oldContacts.contains(identifier)) {
                 continue;
             }
-            String[] columns = {"user", "contact"};
             Object[] values = {user.toString(), identifier.toString()};
-            if (insert("t_contact", columns, values) < 0) {
+            if (insert(T_CONTACT, INSERT_COLUMNS, values) < 0) {
                 // db error
                 return false;
             }

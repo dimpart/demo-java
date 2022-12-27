@@ -38,18 +38,23 @@ import chat.dim.dbi.DocumentDBI;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
 import chat.dim.sql.SQLConditions;
+import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
-import chat.dim.sqlite.ResultSetExtractor;
 
-public class DocumentTable extends DataTableHandler implements DocumentDBI {
+public class DocumentTable extends DataTableHandler<Document> implements DocumentDBI {
 
-    private ResultSetExtractor<Document> extractor;
+    private DataRowExtractor<Document> extractor;
 
     public DocumentTable(DatabaseConnector connector) {
         super(connector);
         // lazy load
         extractor = null;
+    }
+
+    @Override
+    protected DataRowExtractor<Document> getDataRowExtractor() {
+        return extractor;
     }
 
     private boolean prepare() {
@@ -62,21 +67,18 @@ public class DocumentTable extends DataTableHandler implements DocumentDBI {
                     "data TEXT",
                     "signature VARCHAR(88)",
             };
-            if (!createTable("t_document", fields)) {
+            if (!createTable(T_DOCUMENT, fields)) {
                 // db error
                 return false;
             }
-            // prepare result set extractor
+            // prepare data row extractor
             extractor = (resultSet, index) -> {
                 String did = resultSet.getString("did");
                 String type = resultSet.getString("type");
                 String data = resultSet.getString("data");
                 String signature = resultSet.getString("signature");
-                assert did != null && did.length() > 0 : "did error: " + did;
                 ID identifier = ID.parse(did);
-                if (identifier == null) {
-                    throw new AssertionError("ID error: " + did);
-                }
+                assert identifier != null : "did error: " + did;
                 if (type == null || type.length() == 0) {
                     type = "*";
                 }
@@ -94,9 +96,30 @@ public class DocumentTable extends DataTableHandler implements DocumentDBI {
         }
         return true;
     }
+    private static final String[] SELECT_COLUMNS = {"did", "type", "data", "signature"};
+    private static final String[] INSERT_COLUMNS = {"did", "type", "data", "signature"};
+    private static final String T_DOCUMENT = "t_document";
+
+    @Override
+    public Document getDocument(ID entity, String type) {
+        if (!prepare()) {
+            // db error
+            return null;
+        }
+        SQLConditions conditions = new SQLConditions();
+        conditions.addCondition(null, "did", "=", entity.toString());
+        List<Document> results = select(T_DOCUMENT, SELECT_COLUMNS, conditions,
+                null, null, "id DESC", -1, 0);
+        // return first result only
+        return results == null || results.size() == 0 ? null : results.get(0);
+    }
 
     @Override
     public boolean saveDocument(Document doc) {
+        if (!prepare()) {
+            // db error
+            return false;
+        }
         ID identifier = doc.getIdentifier();
         String type = doc.getType();
         String data = (String) doc.get("data");
@@ -105,9 +128,8 @@ public class DocumentTable extends DataTableHandler implements DocumentDBI {
         Document old = getDocument(identifier, type);
         if (old == null) {
             // old record not found, insert it as new record
-            String[] columns = {"did", "type", "data", "signature"};
             Object[] values = {identifier.toString(), type, data, signature};
-            return insert("t_document", columns, values) > 0;
+            return insert(T_DOCUMENT, INSERT_COLUMNS, values) > 0;
         }
         if (old.get("data").equals(data) && old.get("signature").equals(signature)) {
             // same document
@@ -120,21 +142,6 @@ public class DocumentTable extends DataTableHandler implements DocumentDBI {
         values.put("type", type);
         values.put("data", data);
         values.put("signature", signature);
-        return update("t_document", values, conditions) > 0;
-    }
-
-    @Override
-    public Document getDocument(ID entity, String type) {
-        if (!prepare()) {
-            // db error
-            return null;
-        }
-        SQLConditions conditions = new SQLConditions();
-        conditions.addCondition(null, "did", "=", entity.toString());
-        String[] columns = {"did", "type", "data", "signature"};
-        List<Document> results = select(columns, "t_document", conditions,
-                null, null, "id DESC", -1, 0, extractor);
-        // return first result only
-        return results == null || results.size() == 0 ? null : results.get(0);
+        return update(T_DOCUMENT, values, conditions) > 0;
     }
 }

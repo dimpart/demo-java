@@ -38,11 +38,13 @@ import java.util.Map;
 import chat.dim.sql.SQLBuilder;
 import chat.dim.sql.SQLConditions;
 
-public class DataTableHandler extends DatabaseHandler {
+public abstract class DataTableHandler<T> extends DatabaseHandler<T> {
 
     public DataTableHandler(DatabaseConnector sqliteConnector) {
         super(sqliteConnector);
     }
+
+    protected abstract DataRowExtractor<T> getDataRowExtractor();
 
     public boolean createTable(String table, String[] fields) {
         // CREATE TABLE table (field type, ...);
@@ -67,25 +69,19 @@ public class DataTableHandler extends DatabaseHandler {
         }
     }
 
-    public <T> List<T> select(String[] columns,
-                              String table, SQLConditions conditions,
-                              ResultSetExtractor<T> extractor) {
+    public List<T> select(String table, String[] columns, SQLConditions conditions) {
         // SELECT DISTINCT columns FROM tables WHERE conditions ...
-        return select(columns, table, conditions,
-                null, null, null, -1, 0,
-                extractor);
+        return select(table, columns, conditions,
+                null, null, null, -1, 0);
     }
 
-    public <T> List<T> select(String[] columns,
-                              String table, SQLConditions conditions,
-                              String groupBy, String having, String orderBy,
-                              int limit, int offset,
-                              ResultSetExtractor<T> extractor) {
+    public List<T> select(String table, String[] columns, SQLConditions conditions,
+                          String groupBy, String having, String orderBy, int limit, int offset) {
         // SELECT DISTINCT columns FROM tables WHERE conditions ...
-        String sql = SQLBuilder.buildSelect(false,
-                columns, table, conditions, groupBy, having, orderBy, limit, offset);
+        String sql = SQLBuilder.buildSelect(false, columns, table, conditions,
+                groupBy, having, orderBy, limit, offset);
         try {
-            return executeQuery(sql, extractor);
+            return executeQuery(sql, getDataRowExtractor());
         } catch (SQLException | IOException e) {
             e.printStackTrace();
             return null;

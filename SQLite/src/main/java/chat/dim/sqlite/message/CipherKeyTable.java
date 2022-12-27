@@ -33,13 +33,19 @@ package chat.dim.sqlite.message;
 import chat.dim.crypto.SymmetricKey;
 import chat.dim.dbi.CipherKeyDBI;
 import chat.dim.protocol.ID;
+import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
 
-public class CipherKeyTable extends DataTableHandler implements CipherKeyDBI {
+public class CipherKeyTable extends DataTableHandler<SymmetricKey> implements CipherKeyDBI {
 
     public CipherKeyTable(DatabaseConnector connector) {
         super(connector);
+    }
+
+    @Override
+    protected DataRowExtractor<SymmetricKey> getDataRowExtractor() {
+        return null;
     }
 
     @Override

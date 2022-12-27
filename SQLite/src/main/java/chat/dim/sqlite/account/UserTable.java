@@ -30,7 +30,6 @@
  */
 package chat.dim.sqlite.account;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,17 +37,22 @@ import java.util.Map;
 import chat.dim.dbi.UserDBI;
 import chat.dim.protocol.ID;
 import chat.dim.sql.SQLConditions;
+import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
-import chat.dim.sqlite.ResultSetExtractor;
 
-public class UserTable extends DataTableHandler implements UserDBI {
+public class UserTable extends DataTableHandler<ID> implements UserDBI {
 
-    private ResultSetExtractor<ID> extractor;
+    private DataRowExtractor<ID> extractor;
 
     public UserTable(DatabaseConnector connector) {
         super(connector);
         extractor = null;
+    }
+
+    @Override
+    protected DataRowExtractor<ID> getDataRowExtractor() {
+        return extractor;
     }
 
     private boolean prepare() {
@@ -59,11 +63,11 @@ public class UserTable extends DataTableHandler implements UserDBI {
                     "user VARCHAR(64)",
                     "chosen BIT",
             };
-            if (!createTable("t_local_user", fields)) {
+            if (!createTable(T_USER, fields)) {
                 // db error
                 return false;
             }
-            // prepare result set extractor
+            // prepare data row extractor
             extractor = (resultSet, index) -> {
                 String user = resultSet.getString("user");
                 return ID.parse(user);
@@ -71,7 +75,9 @@ public class UserTable extends DataTableHandler implements UserDBI {
         }
         return true;
     }
-
+    private static final String[] SELECT_COLUMNS = {"user"};
+    private static final String[] INSERT_COLUMNS = {"user", "chosen"};
+    private static final String T_USER = "t_local_user";
 
     @Override
     public List<ID> getLocalUsers() {
@@ -79,16 +85,17 @@ public class UserTable extends DataTableHandler implements UserDBI {
             // db error
             return null;
         }
-        String[] columns = {"user"};
-        return select(columns, "t_local_user", null,
-                null, null, "chosen DESC", -1, 0, extractor);
+
+        return select(T_USER, SELECT_COLUMNS, null,
+                null, null, "chosen DESC", -1, 0);
     }
 
     @Override
     public boolean saveLocalUsers(List<ID> users) {
         List<ID> localUsers = getLocalUsers();
         if (localUsers == null) {
-            localUsers = new ArrayList<>();
+            // db error
+            return false;
         }
         // 1. delete users not contain in current users
         for (ID identifier : localUsers) {
@@ -97,7 +104,7 @@ public class UserTable extends DataTableHandler implements UserDBI {
             }
             SQLConditions conditions = new SQLConditions();
             conditions.addCondition(null, "user", "=", identifier.toString());
-            if (delete("t_local_user", conditions) < 0) {
+            if (delete(T_USER, conditions) < 0) {
                 // db error
                 return false;
             }
@@ -107,9 +114,9 @@ public class UserTable extends DataTableHandler implements UserDBI {
             if (localUsers.contains(identifier)) {
                 continue;
             }
-            String[] columns = {"user", "chosen"};
+
             Object[] values = {identifier.toString(), 0};
-            if (insert("t_local_user", columns, values) < 0) {
+            if (insert(T_USER, INSERT_COLUMNS, values) < 0) {
                 // db error
                 return false;
             }
@@ -124,7 +131,7 @@ public class UserTable extends DataTableHandler implements UserDBI {
             // first user changed
             Map<String, Object> values = new HashMap<>();
             values.put("chosen", 0);
-            if (update("t_local_user", values, null) < 0) {
+            if (update(T_USER, values, null) < 0) {
                 // db error
                 return false;
             }
@@ -134,7 +141,7 @@ public class UserTable extends DataTableHandler implements UserDBI {
         values.put("chosen", 1);
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "user", "=", first.toString());
-        return update("t_local_user", values, null) > 0;
+        return update(T_USER, values, null) > 0;
     }
 
     @Override

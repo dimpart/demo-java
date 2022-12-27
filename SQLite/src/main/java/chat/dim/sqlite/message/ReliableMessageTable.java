@@ -35,14 +35,20 @@ import java.util.List;
 import chat.dim.dbi.ReliableMessageDBI;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.type.Pair;
 
-public class ReliableMessageTable extends DataTableHandler implements ReliableMessageDBI {
+public class ReliableMessageTable extends DataTableHandler<ReliableMessage> implements ReliableMessageDBI {
 
     public ReliableMessageTable(DatabaseConnector connector) {
         super(connector);
+    }
+
+    @Override
+    protected DataRowExtractor<ReliableMessage> getDataRowExtractor() {
+        return null;
     }
 
     @Override

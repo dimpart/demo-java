@@ -38,18 +38,23 @@ import chat.dim.dbi.PrivateKeyDBI;
 import chat.dim.format.JSON;
 import chat.dim.protocol.ID;
 import chat.dim.sql.SQLConditions;
+import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
-import chat.dim.sqlite.ResultSetExtractor;
 
-public class PrivateKeyTable extends DataTableHandler implements PrivateKeyDBI {
+public class PrivateKeyTable extends DataTableHandler<PrivateKey> implements PrivateKeyDBI {
 
-    private ResultSetExtractor<PrivateKey> extractor;
+    private DataRowExtractor<PrivateKey> extractor;
 
     public PrivateKeyTable(DatabaseConnector connector) {
         super(connector);
         // lazy load
         extractor = null;
+    }
+
+    @Override
+    protected DataRowExtractor<PrivateKey> getDataRowExtractor() {
+        return extractor;
     }
 
     private boolean prepare() {
@@ -58,45 +63,27 @@ public class PrivateKeyTable extends DataTableHandler implements PrivateKeyDBI {
             String[] fields = {
                     "id INTEGER PRIMARY KEY AUTOINCREMENT",
                     "user VARCHAR(64)",
-                    "key TEXT",
+                    "pri_key TEXT",
                     "type CHAR(1)",
                     "sign BIT",
                     "decrypt BIT",
             };
-            if (!createTable("t_private_key", fields)) {
+            if (!createTable(T_PRIVATE_KEY, fields)) {
                 // db error
                 return false;
             }
-            // prepare result set extractor
+            // prepare data row extractor
             extractor = (resultSet, index) -> {
-                String sk = resultSet.getString("key");
-                Object key = JSON.decode(sk);
+                String json = resultSet.getString("pri_key");
+                Object key = JSON.decode(json);
                 return PrivateKey.parse(key);
             };
         }
         return true;
     }
-
-    private boolean savePrivateKey(ID user, PrivateKey key, String type, int sign, int decrypt) {
-        if (!prepare()) {
-            // db error
-            return false;
-        }
-        String pk = JSON.encode(key);
-
-        String[] columns = {"user", "key", "type", "sign", "decrypt"};
-        Object[] values = {user.toString(), pk, type, sign, decrypt};
-        return insert("t_private_key", columns, values) > 0;
-    }
-
-    @Override
-    public boolean savePrivateKey(PrivateKey key, String type, ID user) {
-        if (key instanceof DecryptKey) {
-            return savePrivateKey(user, key, type, 1, 1);
-        } else {
-            return savePrivateKey(user, key, type, 1, 0);
-        }
-    }
+    private static final String[] SELECT_COLUMNS = {"pri_key"};
+    private static final String[] INSERT_COLUMNS = {"user", "pri_key", "type", "sign", "decrypt"};
+    private static final String T_PRIVATE_KEY = "t_private_key";
 
     @Override
     public List<DecryptKey> getPrivateKeysForDecryption(ID user) {
@@ -107,9 +94,8 @@ public class PrivateKeyTable extends DataTableHandler implements PrivateKeyDBI {
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "user", "=", user.toString());
         conditions.addCondition(SQLConditions.Relation.AND, "decrypt", "=", 1);
-        String[] columns = {"key"};
-        List<PrivateKey> results = select(columns, "t_private_key", conditions,
-                null, null, "type DESC", -1, 0, extractor);
+        List<PrivateKey> results = select(T_PRIVATE_KEY, SELECT_COLUMNS, conditions,
+                null, null, "type DESC", -1, 0);
         if (results == null) {
             return null;
         }
@@ -132,10 +118,30 @@ public class PrivateKeyTable extends DataTableHandler implements PrivateKeyDBI {
         conditions.addCondition(null, "user", "=", user.toString());
         conditions.addCondition(SQLConditions.Relation.AND, "type", "=", "M");
         conditions.addCondition(SQLConditions.Relation.AND, "sign", "=", 1);
-        String[] columns = {"key"};
-        List<PrivateKey> results = select(columns, "t_private_key", conditions,
-                null, null, "type DESC", -1, 0, extractor);
+
+        List<PrivateKey> results = select(T_PRIVATE_KEY, SELECT_COLUMNS, conditions,
+                null, null, "id DESC", -1, 0);
         // return first record only
         return results == null || results.size() == 0 ? null : results.get(0);
+    }
+
+    private boolean savePrivateKey(ID user, PrivateKey key, String type, int sign, int decrypt) {
+        if (!prepare()) {
+            // db error
+            return false;
+        }
+        String json = JSON.encode(key);
+
+        Object[] values = {user.toString(), json, type, sign, decrypt};
+        return insert(T_PRIVATE_KEY, INSERT_COLUMNS, values) > 0;
+    }
+
+    @Override
+    public boolean savePrivateKey(PrivateKey key, String type, ID user) {
+        if (key instanceof DecryptKey) {
+            return savePrivateKey(user, key, type, 1, 1);
+        } else {
+            return savePrivateKey(user, key, type, 1, 0);
+        }
     }
 }
