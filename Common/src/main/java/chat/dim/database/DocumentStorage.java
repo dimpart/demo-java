@@ -28,7 +28,7 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.database.dos;
+package chat.dim.database;
 
 import java.io.IOException;
 import java.util.Map;

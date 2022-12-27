@@ -28,61 +28,33 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.database.dos;
+package chat.dim.database;
 
-import java.io.IOException;
-
-import chat.dim.dbi.MetaDBI;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.Meta;
+import chat.dim.filesys.ExternalStorage;
 import chat.dim.utils.Template;
 
-/**
- *  Meta for Entities (User/Group)
- *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- *
- *  file path: '.dim/public/{ADDRESS}/meta.js'
- */
-public class MetaStorage extends Storage implements MetaDBI {
+public class Storage extends ExternalStorage {
 
-    public static String META_PATH = "{PUBLIC}/{ADDRESS}/meta.js";
+    public static String rootDirectory = "/var/.dim";
+    public static String pubDirTemplate = "{ROOT}/public";
+    public static String priDirTemplate = "{ROOT}/private";
 
-    public MetaStorage(String rootDir, String publicDir, String privateDir) {
-        super(rootDir, publicDir, privateDir);
-    }
+    protected final String publicDirectory;
+    protected final String privateDirectory;
 
-    public void showInfo() {
-        String path = Template.replace(META_PATH, "PUBLIC", publicDirectory);
-        System.out.println("!!!      meta path: " + path);
-    }
-
-    private String getMetaPath(ID entity) {
-        String path = META_PATH;
-        path = Template.replace(path, "PUBLIC", publicDirectory);
-        path = Template.replace(path, "ADDRESS", entity.getAddress().toString());
-        return path;
-    }
-
-    @Override
-    public boolean saveMeta(Meta meta, ID entity) {
-        String path = getMetaPath(entity);
-        try {
-            return saveJSON(meta.toMap(), path) > 0;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
+    public Storage(String rootDir, String publicDir, String privateDir) {
+        super();
+        if (rootDir == null || rootDir.length() == 0) {
+            rootDir = rootDirectory;
         }
-    }
-
-    @Override
-    public Meta getMeta(ID entity) {
-        String path = getMetaPath(entity);
-        try {
-            Object info = loadJSON(path);
-            return Meta.parse(info);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        if (publicDir == null || publicDir.length() == 0) {
+            publicDir = Template.replace(pubDirTemplate, "ROOT", rootDir);
         }
+        if (privateDir == null || privateDir.length() == 0) {
+            privateDir = Template.replace(priDirTemplate, "ROOT", rootDir);
+        }
+        setRoot(rootDir);
+        publicDirectory = publicDir;
+        privateDirectory = privateDir;
     }
 }

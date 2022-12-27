@@ -112,6 +112,14 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
                 model, device, sysVersion, lang, appName, appVersion);
     }
 
+    public SessionDBI getDatabase() {
+        return database;
+    }
+
+    public CommonFacebook getFacebook() {
+        return facebook;
+    }
+
     public ClientMessenger getMessenger() {
         return messenger;
     }
@@ -182,9 +190,12 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
     }
     protected ClientSession createSession(Station station) {
         ClientSession session = new ClientSession(station, database);
-        session.start();
+        // set current user for handshaking
         User user = facebook.getCurrentUser();
-        session.setIdentifier(user.getIdentifier());
+        if (user != null) {
+            session.setIdentifier(user.getIdentifier());
+        }
+        session.start();
         return session;
     }
     protected Packer createPacker(CommonFacebook facebook, ClientMessenger messenger) {

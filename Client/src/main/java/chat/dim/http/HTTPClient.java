@@ -37,7 +37,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import chat.dim.CommonMessenger;
+import chat.dim.Register;
 import chat.dim.skywalker.Processor;
 
 public enum HTTPClient implements Runnable, Processor {
@@ -65,6 +65,9 @@ public enum HTTPClient implements Runnable, Processor {
         delegateRef = null;
         thread = null;
         running = false;
+
+        // load plugins
+        Register.prepare();
     }
 
     public HTTPDelegate getDelegate() {
@@ -233,13 +236,5 @@ public enum HTTPClient implements Runnable, Processor {
             idle(1024);
         }
         return uploadTask != null || downloadTask != null;
-    }
-
-    static {
-        // load plugins
-        chat.dim.Plugins.registerPlugins();
-
-        // load message/content factories
-        CommonMessenger.registerAllFactories();
     }
 }

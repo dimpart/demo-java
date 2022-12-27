@@ -32,7 +32,6 @@ package chat.dim.database;
 
 import java.util.Date;
 
-import chat.dim.database.dos.DocumentStorage;
 import chat.dim.dbi.DocumentDBI;
 import chat.dim.mem.CacheHolder;
 import chat.dim.mem.CacheManager;

@@ -36,7 +36,6 @@ import java.util.List;
 
 import chat.dim.crypto.DecryptKey;
 import chat.dim.crypto.PrivateKey;
-import chat.dim.database.dos.PrivateKeyStorage;
 import chat.dim.dbi.PrivateKeyDBI;
 import chat.dim.mem.CacheHolder;
 import chat.dim.mem.CacheManager;

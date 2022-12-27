@@ -30,6 +30,7 @@
  */
 package chat.dim.sqlite;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class DataTableHandler extends DatabaseHandler {
         try {
             executeUpdate(sql);
             return true;
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
             return false;
         }
@@ -60,7 +61,7 @@ public class DataTableHandler extends DatabaseHandler {
         String sql = SQLBuilder.buildInsert(table, columns, values);
         try {
             return executeUpdate(sql);
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
             return -1;
         }
@@ -85,7 +86,7 @@ public class DataTableHandler extends DatabaseHandler {
                 columns, table, conditions, groupBy, having, orderBy, limit, offset);
         try {
             return executeQuery(sql, extractor);
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
             return null;
         }
@@ -96,7 +97,7 @@ public class DataTableHandler extends DatabaseHandler {
         String sql = SQLBuilder.buildUpdate(table, values, conditions);
         try {
             return executeUpdate(sql);
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
             return -1;
         }
@@ -107,7 +108,7 @@ public class DataTableHandler extends DatabaseHandler {
         String sql = SQLBuilder.buildDelete(table, conditions);
         try {
             return executeUpdate(sql);
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
             return -1;
         }

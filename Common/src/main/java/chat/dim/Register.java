@@ -156,4 +156,19 @@ public class Register {
         doc.sign(privateKey);
         return doc;
     }
+
+    public static void prepare() {
+        if (loaded) {
+            return;
+        }
+
+        // load plugins
+        chat.dim.Plugins.registerPlugins();
+
+        // load message/content factories
+        CommonMessenger.registerAllFactories();
+
+        loaded = true;
+    }
+    private static boolean loaded = false;
 }

@@ -33,7 +33,6 @@ package chat.dim.utils;
 public class Template {
 
     public static String replace(String template, String key, String value) {
-        String tag = "\\{" + key + "\\}";
-        return template.replaceAll(tag, value);
+        return template.replaceAll("\\{" + key + "}", value);
     }
 }

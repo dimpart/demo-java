@@ -44,11 +44,12 @@ public abstract class PathUtils extends Paths {
      * @return parent path
      */
     public static String parent(String path) {
+        int pos;
         if (path.endsWith(separator)) {
-            // remove the tailed
-            path = path.substring(0, path.length() - separator.length());
+            pos = path.lastIndexOf(separator, path.length() - separator.length());
+        } else {
+            pos = path.lastIndexOf(separator);
         }
-        int pos = path.lastIndexOf(separator);
         if (pos < 0) {
             // relative path?
             return null;
