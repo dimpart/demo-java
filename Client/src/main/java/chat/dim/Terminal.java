@@ -49,8 +49,8 @@ import chat.dim.skywalker.Runner;
 
 public abstract class Terminal extends Runner implements Delegate<StateMachine, StateTransition, SessionState> {
 
-    private final CommonFacebook facebook;
-    private final SessionDBI database;
+    public final CommonFacebook facebook;
+    public final SessionDBI database;
 
     private ClientMessenger messenger;
     private StateMachine fsm;  // session state
@@ -112,14 +112,6 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
                 model, device, sysVersion, lang, appName, appVersion);
     }
 
-    public SessionDBI getDatabase() {
-        return database;
-    }
-
-    public CommonFacebook getFacebook() {
-        return facebook;
-    }
-
     public ClientMessenger getMessenger() {
         return messenger;
     }
@@ -138,13 +130,6 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
             return null;
         }
         return machine.getCurrentState();
-    }
-
-    public boolean isAlive() {
-        // if more than 10 minutes no online command sent
-        // means this terminal is dead
-        Date now = new Date();
-        return now.getTime() < (lastTime + 600 * 1000);
     }
 
     public ClientMessenger connect(String host, int port) {
@@ -291,9 +276,10 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
 
     @Override
     public boolean process() {
+        // check timeout
         long now = new Date().getTime();
-        if (now < (lastTime + 60 * 1000)) {
-            // last sent within 5 minutes
+        if (!isExpired(lastTime, now)) {
+            // not expired yet
             return false;
         }
         // check session state
@@ -317,6 +303,11 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
         // update last online time
         lastTime = now;
         return false;
+    }
+
+    protected boolean isExpired(long last, long now) {
+        // keep online every 5 minutes
+        return now < (last + 300 * 1000);
     }
 
     protected void keepOnline(ID uid, ClientMessenger messenger) {
