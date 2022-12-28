@@ -35,6 +35,7 @@ import java.io.IOException;
 import chat.dim.dbi.MetaDBI;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
+import chat.dim.utils.Log;
 import chat.dim.utils.Template;
 
 /**
@@ -53,7 +54,7 @@ public class MetaStorage extends Storage implements MetaDBI {
 
     public void showInfo() {
         String path = Template.replace(META_PATH, "PUBLIC", publicDirectory);
-        System.out.println("!!!      meta path: " + path);
+        Log.info("!!!      meta path: " + path);
     }
 
     private String getMetaPath(ID entity) {
@@ -69,7 +70,8 @@ public class MetaStorage extends Storage implements MetaDBI {
         try {
             return saveJSON(meta.toMap(), path) > 0;
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            Log.error("failed to save meta: " + path);
             return false;
         }
     }
@@ -81,7 +83,8 @@ public class MetaStorage extends Storage implements MetaDBI {
             Object info = loadJSON(path);
             return Meta.parse(info);
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            Log.error("failed to get meta: " + path);
             return null;
         }
     }

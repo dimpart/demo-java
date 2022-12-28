@@ -46,6 +46,7 @@ import chat.dim.queue.MessageQueue;
 import chat.dim.queue.MessageWrapper;
 import chat.dim.skywalker.Runner;
 import chat.dim.tcp.StreamChannel;
+import chat.dim.utils.Log;
 
 public class GateKeeper extends Runner implements Docker.Delegate {
 
@@ -211,12 +212,12 @@ public class GateKeeper extends Runner implements Docker.Delegate {
 
     @Override
     public void onDockerStatusChanged(Docker.Status previous, Docker.Status current, Docker docker) {
-        System.out.println("docker status changed: " + previous + " => " + current + ", " + docker);
+        Log.info("docker status changed: " + previous + " => " + current + ", " + docker);
     }
 
     @Override
     public void onDockerReceived(Arrival ship, Docker docker) {
-        System.out.println("docker received a ship: " + ship + ", " + docker);
+        Log.debug("docker received a ship: " + ship + ", " + docker);
     }
 
     @Override

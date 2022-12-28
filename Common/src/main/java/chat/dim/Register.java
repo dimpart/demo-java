@@ -40,6 +40,8 @@ import chat.dim.crypto.PrivateKey;
 import chat.dim.crypto.SignKey;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.dbi.PrivateKeyDBI;
+import chat.dim.format.Base64;
+import chat.dim.format.DataCoder;
 import chat.dim.mkm.BaseBulletin;
 import chat.dim.mkm.BaseVisa;
 import chat.dim.protocol.Bulletin;
@@ -167,6 +169,23 @@ public class Register {
 
         // load message/content factories
         CommonMessenger.registerAllFactories();
+
+        // fix base64 coder
+        Base64.coder = new DataCoder() {
+
+            @Override
+            public String encode(byte[] data) {
+                return java.util.Base64.getEncoder().encodeToString(data);
+            }
+
+            @Override
+            public byte[] decode(String string) {
+                string = string.replace(" ", "");
+                string = string.replace("\t", "");
+                string = string.replace("\n", "");
+                return java.util.Base64.getDecoder().decode(string);
+            }
+        };
 
         loaded = true;
     }

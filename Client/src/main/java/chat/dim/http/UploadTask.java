@@ -39,6 +39,7 @@ import java.net.URL;
 import java.util.Arrays;
 
 import chat.dim.format.UTF8;
+import chat.dim.utils.Log;
 
 public class UploadTask implements Runnable {
 
@@ -169,7 +170,8 @@ public class UploadTask implements Runnable {
             String response = post(urlString, varName, fileName, fileData);
             delegate.uploadSuccess(this, response);
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            Log.error("failed to upload: " + urlString);
             delegate.uploadFailed(this, e);
         }
     }

@@ -44,6 +44,7 @@ import chat.dim.filesys.PathUtils;
 import chat.dim.filesys.Paths;
 import chat.dim.format.Hex;
 import chat.dim.format.UTF8;
+import chat.dim.utils.Log;
 
 public class DownloadTask implements Runnable {
 
@@ -157,7 +158,8 @@ public class DownloadTask implements Runnable {
             String path = download(urlString, cachePath);
             delegate.downloadSuccess(this, path);
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            Log.error("failed to download: " + urlString);
             delegate.downloadFailed(this, e);
         }
     }

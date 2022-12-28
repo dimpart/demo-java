@@ -128,7 +128,8 @@ public class ConfigParser {
                 return Float.parseFloat(value);
             }
         } catch (NumberFormatException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            Log.error("float value error: " + value);
         }
         return 0.0f;
     }
@@ -138,7 +139,8 @@ public class ConfigParser {
                 return Integer.parseInt(value);
             }
         } catch (NumberFormatException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            Log.error("int value error: " + value);
         }
         return 0;
     }

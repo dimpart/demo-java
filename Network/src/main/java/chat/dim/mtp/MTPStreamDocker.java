@@ -43,6 +43,7 @@ import chat.dim.startrek.DepartureShip;
 import chat.dim.type.ByteArray;
 import chat.dim.type.Data;
 import chat.dim.type.Pair;
+import chat.dim.utils.Log;
 
 /**
  *  Docker for MTP packages
@@ -116,7 +117,7 @@ public class MTPStreamDocker extends PackageDocker implements DeparturePacker {
         // check body length
         if (head.bodyLength != pack.body.getSize()) {
             // sticky data?
-            System.out.println("[MTP] package not completed: body_len=" + pack.body.getSize() + ", " + pack);
+            Log.warning("[MTP] package not completed: body_len=" + pack.body.getSize() + ", " + pack);
             return ship;
         }
         // check for response

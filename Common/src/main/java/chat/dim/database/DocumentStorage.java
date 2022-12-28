@@ -36,6 +36,7 @@ import java.util.Map;
 import chat.dim.dbi.DocumentDBI;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
+import chat.dim.utils.Log;
 import chat.dim.utils.Template;
 
 /**
@@ -54,7 +55,7 @@ public class DocumentStorage extends Storage implements DocumentDBI {
 
     public void showInfo() {
         String path = Template.replace(DOC_PATH, "PUBLIC", publicDirectory);
-        System.out.println("!!!       doc path: " + path);
+        Log.info("!!!       doc path: " + path);
     }
 
     private String getDocPath(ID entity) {
@@ -71,7 +72,8 @@ public class DocumentStorage extends Storage implements DocumentDBI {
         try {
             return saveJSON(doc.toMap(), path) > 0;
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            Log.error("failed to save document: " + path);
             return false;
         }
     }
@@ -87,7 +89,8 @@ public class DocumentStorage extends Storage implements DocumentDBI {
             }
             return parseDocument((Map<String, Object>) info, null, null);
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            Log.error("failed to get document: " + path);
             return null;
         }
     }

@@ -44,6 +44,7 @@ import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
+import chat.dim.utils.Log;
 
 public class ClientMessagePacker extends MessagePacker {
 
@@ -164,6 +165,7 @@ public class ClientMessagePacker extends MessagePacker {
             // check exception thrown by DKD: chat.dim.dkd.EncryptedMessage.decrypt()
             String errMsg = e.getMessage();
             if (errMsg != null && errMsg.contains("failed to decrypt key in msg")) {
+                Log.error(errMsg);
                 // visa.key not updated?
                 User user = getFacebook().getCurrentUser();
                 Visa visa = user.getVisa();

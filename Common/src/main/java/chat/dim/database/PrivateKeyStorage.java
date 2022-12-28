@@ -38,6 +38,7 @@ import chat.dim.crypto.DecryptKey;
 import chat.dim.crypto.PrivateKey;
 import chat.dim.dbi.PrivateKeyDBI;
 import chat.dim.protocol.ID;
+import chat.dim.utils.Log;
 import chat.dim.utils.Template;
 
 /**
@@ -61,8 +62,8 @@ public class PrivateKeyStorage extends Storage implements PrivateKeyDBI {
     public void showInfo() {
         String path1 = Template.replace(ID_KEY_PATH, "PRIVATE", privateDirectory);
         String path2 = Template.replace(MSG_KEYS_PATH, "PRIVATE", privateDirectory);
-        System.out.println("!!!    id key path: " + path1);
-        System.out.println("!!!  msg keys path: " + path2);
+        Log.info("!!!    id key path: " + path1);
+        Log.info("!!!  msg keys path: " + path2);
     }
 
     private String getIdKeyPath(ID entity) {
@@ -77,7 +78,8 @@ public class PrivateKeyStorage extends Storage implements PrivateKeyDBI {
             Object info = loadJSON(path);
             return PrivateKey.parse(info);
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            Log.error("failed to load id key: " + path);
             return null;
         }
     }
@@ -86,7 +88,8 @@ public class PrivateKeyStorage extends Storage implements PrivateKeyDBI {
         try {
             return saveJSON(key.toMap(), path) > 0;
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            Log.error("failed to save id key: " + path);
             return false;
         }
     }
@@ -114,7 +117,7 @@ public class PrivateKeyStorage extends Storage implements PrivateKeyDBI {
             }
         } catch (IOException e) {
             //e.printStackTrace();
-            System.out.println("[DOS] failed to load msg keys from: " + path);
+            Log.info("failed to load msg keys from: " + path);
         }
         return privateKeys;
     }
@@ -130,7 +133,8 @@ public class PrivateKeyStorage extends Storage implements PrivateKeyDBI {
         try {
             return saveJSON(plain, path) > 0;
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            Log.error("failed to save msg key: " + path);
             return false;
         }
     }

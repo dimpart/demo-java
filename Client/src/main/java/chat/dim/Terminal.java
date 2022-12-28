@@ -63,7 +63,7 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
         messenger = null;
         fsm = null;
         // last online time
-        lastTime = new Date().getTime();
+        lastTime = 0;
     }
 
     // "zh-CN"
@@ -286,13 +286,13 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
 
     @Override
     protected void idle() {
-        idle(60 * 1000);
+        idle(16 * 1000);
     }
 
     @Override
     public boolean process() {
         long now = new Date().getTime();
-        if (now < (lastTime + 300 * 1000)) {
+        if (now < (lastTime + 60 * 1000)) {
             // last sent within 5 minutes
             return false;
         }
@@ -309,6 +309,17 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
             return false;
         }
         // report every 5 minutes to keep user online
+        try {
+            keepOnline(uid, messenger);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // update last online time
+        lastTime = now;
+        return false;
+    }
+
+    protected void keepOnline(ID uid, ClientMessenger messenger) {
         if (EntityType.STATION.equals(uid.getType())) {
             // a station won't login to another station, if here is a station,
             // it must be a station bridge for roaming messages, we just send
@@ -319,9 +330,6 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
             // this command can keep the user online too.
             messenger.broadcastLogin(uid, getUserAgent());
         }
-        // update last online time
-        lastTime = now;
-        return false;
     }
 
     //

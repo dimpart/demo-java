@@ -44,6 +44,7 @@ import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.TextContent;
+import chat.dim.utils.Log;
 
 public class ClientMessageProcessor extends MessageProcessor {
 
@@ -64,6 +65,7 @@ public class ClientMessageProcessor extends MessageProcessor {
             String errMsg = e.getMessage();
             if (errMsg != null && errMsg.startsWith("receiver error")) {
                 // not mine? ignore it
+                Log.warning("ignore message for: " + rMsg.getReceiver());
                 return new ArrayList<>();
             } else {
                 throw e;

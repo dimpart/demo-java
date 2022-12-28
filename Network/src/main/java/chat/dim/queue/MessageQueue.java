@@ -42,6 +42,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import chat.dim.port.Departure;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.utils.Log;
 
 public final class MessageQueue {
 
@@ -78,7 +79,7 @@ public final class MessageQueue {
                 for (MessageWrapper wrapper : array) {
                     item = wrapper.getMessage();
                     if (item != null && signature.equals(item.get("signature"))) {
-                        //System.out.println("[QUEUE] duplicated message: " + signature);
+                        Log.warning("[QUEUE] duplicated message: " + signature);
                         ok = false;
                         break;
                     }

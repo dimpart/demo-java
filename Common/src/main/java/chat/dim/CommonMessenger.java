@@ -41,7 +41,6 @@ import chat.dim.core.Processor;
 import chat.dim.core.Session;
 import chat.dim.core.Transmitter;
 import chat.dim.crypto.EncryptKey;
-import chat.dim.crypto.VerifyKey;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Entity;
 import chat.dim.mkm.User;
@@ -61,6 +60,7 @@ import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
 import chat.dim.protocol.group.QueryCommand;
 import chat.dim.type.Pair;
+import chat.dim.utils.Log;
 import chat.dim.utils.QueryFrequencyChecker;
 
 public abstract class CommonMessenger extends Messenger implements Transmitter {
@@ -183,7 +183,9 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
             // sender is OK
             return true;
         }
-        queryDocument(sender);
+        if (queryDocument(sender)) {
+            Log.info("querying document for sender: " + sender);
+        }
         Map<String, String> error = new HashMap<>();
         error.put("message", "verify key not found");
         error.put("user", sender.toString());
@@ -207,7 +209,9 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
             // check user's meta & document
             EncryptKey visaKey = facebook.getPublicKeyForEncryption(receiver);
             if (visaKey == null) {
-                queryDocument(receiver);
+                if (queryDocument(receiver)) {
+                    Log.info("querying document for receiver: " + receiver);
+                }
                 Map<String, String> error = new HashMap<>();
                 error.put("message", "encrypt key not found");
                 error.put("user", receiver.toString());
@@ -218,7 +222,9 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
             // check group's meta
             Meta meta = facebook.getMeta(receiver);
             if (meta == null) {
-                queryMeta(receiver);
+                if (queryMeta(receiver)) {
+                    Log.info("querying meta for group: " + receiver);
+                }
                 Map<String, String> error = new HashMap<>();
                 error.put("message", "group meta not found");
                 error.put("user", receiver.toString());
@@ -228,7 +234,9 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
             // check group members
             List<ID> members = facebook.getMembers(receiver);
             if (members == null || members.size() == 0) {
-                queryMembers(receiver);
+                if (queryMembers(receiver)) {
+                    Log.info("querying members for group: " + receiver);
+                }
                 Map<String, String> error = new HashMap<>();
                 error.put("message", "members not found");
                 error.put("user", receiver.toString());
@@ -238,7 +246,9 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
             List<ID> waiting = new ArrayList<>();
             for (ID item : members) {
                 if (facebook.getPublicKeyForEncryption(item) == null) {
-                    queryDocument(item);
+                    if (queryDocument(item)) {
+                        Log.info("querying document for member: " + item + ", group: " + receiver);
+                    }
                     waiting.add(item);
                 }
             }

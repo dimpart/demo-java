@@ -38,10 +38,13 @@ import chat.dim.mtp.MTPStreamDocker;
 import chat.dim.mtp.Package;
 import chat.dim.mtp.TransactionID;
 import chat.dim.net.Channel;
+import chat.dim.net.Connection;
+import chat.dim.net.ConnectionState;
 import chat.dim.net.Hub;
 import chat.dim.port.Arrival;
 import chat.dim.port.Docker;
 import chat.dim.type.Data;
+import chat.dim.utils.Log;
 
 /**
  *  Gate with hub for connection
@@ -88,45 +91,41 @@ public abstract class CommonGate extends BaseGate implements Runnable {
         }
     }
 
-    /*/
     @Override
     public void onConnectionStateChanged(ConnectionState previous, ConnectionState current, Connection connection) {
-        if (current == null || current.equals(ConnectionState.ERROR)) {
-            System.out.println("[ERROR] connection lost: " + previous + " => " + current + ", " + connection);
-        } else if (!(current.equals(ConnectionState.EXPIRED) || current.equals(ConnectionState.MAINTAINING))) {
-            System.out.println("[DEBUG] connection state changed: " + previous + " => " + current + ", " + connection);
-        }
         super.onConnectionStateChanged(previous, current, connection);
+        if (current == null || current.equals(ConnectionState.ERROR)) {
+            Log.error("connection lost: " + previous + " => " + current + ", " + connection);
+        } else if (!(current.equals(ConnectionState.EXPIRED) || current.equals(ConnectionState.MAINTAINING))) {
+            Log.info("connection state changed: " + previous + " => " + current + ", " + connection);
+        }
     }
 
     @Override
     public void onConnectionReceived(byte[] data, Connection connection) {
-        // debug info
         super.onConnectionReceived(data, connection);
-        System.out.println("[NET] received " + data.length + " byte(s): " + connection);
+        Log.debug("received " + data.length + " byte(s): " + connection);
     }
 
     @Override
     public void onConnectionSent(int sent, byte[] data, Connection connection) {
-        // debug info
         super.onConnectionSent(sent, data, connection);
-        System.out.println("[NET] sent " + sent + "/" + data.length + " byte(s): " + connection);
+        Log.debug("sent " + sent + "/" + data.length + " byte(s): " + connection);
     }
 
     @Override
     public void onConnectionFailed(Throwable error, byte[] data, Connection connection) {
         super.onConnectionFailed(error, data, connection);
-        System.out.println("[ERROR] failed to send " + data.length + " byte(s): " + error + ", " + connection);
+        Log.error("failed to send " + data.length + " byte(s): " + error + ", " + connection);
     }
 
     @Override
     public void onConnectionError(Throwable error, Connection connection) {
         super.onConnectionError(error, connection);
         if (error.getMessage().startsWith("failed to send: ")) {
-            System.out.println("[WARNING] ignore socket error: " + error + ", " + connection);
+            Log.warning("ignore socket error: " + error + ", " + connection);
         }
     }
-    /*/
 
     public Channel getChannel(SocketAddress remote, SocketAddress local) {
         Hub hub = getHub();

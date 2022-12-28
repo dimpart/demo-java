@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import chat.dim.utils.Log;
+
 public enum CacheManager implements Runnable {
 
     INSTANCE;
@@ -96,12 +98,12 @@ public enum CacheManager implements Runnable {
             }
             try {
                 int count = purge(now);
-                System.out.println("[MEM] purge " + count + " item(s) from cache pools");
+                Log.info("[MEM] purge " + count + " item(s) from cache pools");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        System.out.println("[MEM] stop: " + this);
+        Log.info("[MEM] stop: " + this);
     }
 
     public static void idle(long millis) {
