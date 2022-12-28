@@ -25,6 +25,7 @@
  */
 package chat.dim.utils;
 
+import java.util.Arrays;
 import java.util.Date;
 
 import chat.dim.type.Time;
@@ -48,11 +49,20 @@ public final class Log {
     }
 
     private static String getLocation() {
+        String filename = null;
+        int line = -1;
         StackTraceElement[] traces = Thread.currentThread().getStackTrace();
-        //String method = traces[3].getMethodName();
-        String filename = traces[3].getFileName();
-        int line = traces[3].getLineNumber();
-        assert filename != null : "traces error: " + traces[3];
+        boolean flag = false;
+        for (StackTraceElement element : traces) {
+            filename = element.getFileName();
+            if (filename != null && filename.endsWith("Log.java")) {
+                flag = true;
+            } else if (flag) {
+                line = element.getLineNumber();
+                break;
+            }
+        }
+        assert filename != null && line >= 0 : "traces error: " + Arrays.toString(traces);
         filename = filename.split("\\.")[0];
         return filename + ":" + line;
     }
@@ -72,7 +82,7 @@ public final class Log {
         }
         String time = getTime();
         String loc = getLocation();
-        System.out.println("[" + time + "] - " + loc + " >\t" + msg);
+        System.out.println("[" + time + "] " + loc + " >\t" + msg);
     }
 
     public static void warning(String msg) {
