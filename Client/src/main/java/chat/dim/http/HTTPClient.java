@@ -30,6 +30,7 @@
  */
 package chat.dim.http;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import chat.dim.Register;
+import chat.dim.filesys.ExternalStorage;
+import chat.dim.filesys.Paths;
 import chat.dim.skywalker.Processor;
 
 public enum HTTPClient implements Runnable, Processor {
@@ -47,6 +50,12 @@ public enum HTTPClient implements Runnable, Processor {
     public static HTTPClient getInstance() {
         return INSTANCE;
     }
+
+    /**
+     *  Base directory
+     */
+    private String base = "/tmp/.dim";  // "/sdcard/chat.dim.sechat"
+    private boolean built = false;
 
     private final List<UploadTask> uploadTasks;
     private final ReadWriteLock uploadLock;
@@ -80,6 +89,60 @@ public enum HTTPClient implements Runnable, Processor {
         } else {
             delegateRef = new WeakReference<>(delegate);
         }
+    }
+
+    public void setRoot(String dir) {
+        // lazy create
+        base = dir;
+    }
+    public String getRoot() {
+        if (built) {
+            return base;
+        }
+        try {
+            // make sure base directory built
+            ExternalStorage.mkdirs(base);
+            // forbid the gallery from scanning media files
+            ExternalStorage.setNoMedia(base);
+            built = true;
+            return base;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public String getCachesDirectory() {
+        return Paths.appendPathComponent(getRoot(), "caches");
+    }
+
+    public String getTemporaryDirectory() {
+        return Paths.appendPathComponent(getRoot(), "tmp");
+    }
+
+    /**
+     *  Get cache file path: "/sdcard/chat.dim.sechat/caches/{XX}/{YY}/{filename}"
+     *
+     * @param filename - cache file name
+     * @return cache file path
+     */
+    public String getCacheFilePath(String filename) {
+        assert filename.length() > 4 : "filename too short " + filename;
+        String dir = getCachesDirectory();
+        String xx = filename.substring(0, 2);
+        String yy = filename.substring(2, 4);
+        return Paths.appendPathComponent(dir, xx, yy, filename);
+    }
+
+    /**
+     *  Get temporary file path: "/sdcard/chat.dim.sechat/tmp/{filename}"
+     *
+     * @param filename - temporary file name
+     * @return temporary file path
+     */
+    public String getTemporaryFilePath(String filename) {
+        String dir = getTemporaryDirectory();
+        return Paths.appendPathComponent(dir, filename);
     }
 
     /**

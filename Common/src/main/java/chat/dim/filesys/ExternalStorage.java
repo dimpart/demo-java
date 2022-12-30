@@ -42,43 +42,24 @@ import chat.dim.format.UTF8;
 public abstract class ExternalStorage extends PathUtils {
 
     /**
-     *  Base Directory
+     *  Forbid the gallery from scanning media files
+     *
+     * @param dir - data directory
+     * @return true on success
      */
-    private static String base = "/tmp/.dim";  // "/sdcard/chat.dim.sechat"
-    private static boolean built = false;
-
-    public static String getRoot() {
-        if (built) {
-            return base;
-        }
+    public static boolean setNoMedia(String dir) {
         try {
-            mkdirs(base);
-            // forbid the gallery from scanning media files
-            String path = appendPathComponent(base, ".nomedia");
+            String path = appendPathComponent(dir, ".nomedia");
             if (!exists(path)) {
                 Storage file = new Storage();
                 file.setData(UTF8.encode("Moky loves May Lee forever!"));
                 file.write(path);
             }
-            built = true;
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         }
-        return base;
-    }
-    public static void setRoot(String dir) {
-        assert dir != null : "root directory should not empty";
-        if (dir.length() > separator.length() && dir.endsWith(separator)) {
-            // remove last '/'
-            dir = dir.substring(0, dir.length() - separator.length());
-        }
-        dir = tidy(dir);
-        if (dir.equals(base)) {
-            // base dir not change
-            return;
-        }
-        base = dir;
-        built = false;
     }
 
     /**
@@ -114,14 +95,14 @@ public abstract class ExternalStorage extends PathUtils {
      */
     public static boolean delete(String path) throws IOException {
         Storage file = new Storage();
-        return file.remove(abs(path, getRoot()));
+        return file.remove(path);
     }
 
     //-------- read
 
     private static byte[] load(String path) throws IOException {
         Storage file = new Storage();
-        file.read(abs(path, getRoot()));
+        file.read(path);
         return file.getData();
     }
 
@@ -172,7 +153,7 @@ public abstract class ExternalStorage extends PathUtils {
     private static int save(byte[] data, String path) throws IOException {
         Storage file = new Storage();
         file.setData(data);
-        return file.write(abs(path, getRoot()));
+        return file.write(path);
     }
 
     /**

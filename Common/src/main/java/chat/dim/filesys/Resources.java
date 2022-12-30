@@ -40,28 +40,9 @@ import chat.dim.format.UTF8;
  */
 public abstract class Resources extends PathUtils {
 
-    /**
-     *  Base Directory
-     */
-    private static String base = "/";
-
-    public static void setRoot(String dir) {
-        assert dir != null : "root directory should not empty";
-        if (dir.length() > separator.length() && dir.endsWith(separator)) {
-            // remove last '/'
-            dir = dir.substring(0, dir.length() - separator.length());
-        }
-        dir = tidy(dir);
-        if (dir.equals(base)) {
-            // base dir not change
-            return;
-        }
-        base = dir;
-    }
-
     private static byte[] load(String path) throws IOException {
         Resource resource = new Resource();
-        resource.read(abs(path, base));
+        resource.read(path);
         return resource.getData();
     }
 

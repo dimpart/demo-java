@@ -182,6 +182,7 @@ public class Register {
             public byte[] decode(String string) {
                 string = string.replace(" ", "");
                 string = string.replace("\t", "");
+                string = string.replace("\r", "");
                 string = string.replace("\n", "");
                 return java.util.Base64.getDecoder().decode(string);
             }

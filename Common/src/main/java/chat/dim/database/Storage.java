@@ -53,7 +53,6 @@ public class Storage extends ExternalStorage {
         if (privateDir == null || privateDir.length() == 0) {
             privateDir = Template.replace(priDirTemplate, "ROOT", rootDir);
         }
-        setRoot(rootDir);
         publicDirectory = publicDir;
         privateDirectory = privateDir;
     }

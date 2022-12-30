@@ -67,7 +67,7 @@ public abstract class PathUtils extends Paths {
      * @param base     - base directory
      * @return absolute path
      */
-    static String abs(String relative, String base) {
+    public static String abs(String relative, String base) {
         assert base.length() > 0 && relative.length() > 0 : "paths error: " + base + ", " + relative;
         if (relative.startsWith(separator) || relative.indexOf(":") > 0) {
             // Linux   - "/filename"
@@ -94,7 +94,7 @@ public abstract class PathUtils extends Paths {
      * @param path - full path
      * @return absolute path
      */
-    static String tidy(String path) {
+    public static String tidy(String path) {
         List<String> array = new ArrayList<>();
         String next;
         int left, right = 0;

@@ -86,7 +86,7 @@ public final class Log {
     }
 
     public static void warning(String msg) {
-        if ((LEVEL & DEBUG_FLAG) == 0) {
+        if ((LEVEL & WARNING_FLAG) == 0) {
             return;
         }
         String time = getTime();
@@ -95,7 +95,7 @@ public final class Log {
     }
 
     public static void error(String msg) {
-        if ((LEVEL & DEBUG_FLAG) == 0) {
+        if ((LEVEL & ERROR_FLAG) == 0) {
             return;
         }
         String time = getTime();

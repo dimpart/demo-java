@@ -39,7 +39,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import chat.dim.digest.MD5;
-import chat.dim.filesys.LocalCache;
+import chat.dim.filesys.ExternalStorage;
 import chat.dim.filesys.PathUtils;
 import chat.dim.filesys.Paths;
 import chat.dim.format.Hex;
@@ -70,7 +70,7 @@ public class DownloadTask implements Runnable {
      * @return local file path
      */
     public String getFilePath() {
-        if (LocalCache.exists(cachePath)) {
+        if (ExternalStorage.exists(cachePath)) {
             return cachePath;
         } else {
             return null;
@@ -110,7 +110,8 @@ public class DownloadTask implements Runnable {
         // get filename
         byte[] data = UTF8.encode(urlString);
         String hash = Hex.encode(MD5.digest(data));
-        return LocalCache.getCacheFilePath(hash + "." + ext);
+        HTTPClient client = HTTPClient.getInstance();
+        return client.getCacheFilePath(hash + "." + ext);
     }
 
     private static String download(String urlString, String cachePath) throws IOException {
@@ -153,7 +154,7 @@ public class DownloadTask implements Runnable {
             // 1. prepare directory
             String dir = PathUtils.parent(cachePath);
             assert dir != null : "cache path error: " + cachePath;
-            LocalCache.mkdirs(dir);
+            ExternalStorage.mkdirs(dir);
             // 2. start download
             String path = download(urlString, cachePath);
             delegate.downloadSuccess(this, path);
