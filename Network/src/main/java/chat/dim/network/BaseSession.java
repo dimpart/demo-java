@@ -35,7 +35,7 @@ import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 
 import chat.dim.CommonMessenger;
-import chat.dim.core.Session;
+import chat.dim.Session;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.dbi.SessionDBI;
 import chat.dim.port.Departure;

@@ -30,7 +30,6 @@
  */
 package chat.dim;
 
-import chat.dim.core.Session;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;

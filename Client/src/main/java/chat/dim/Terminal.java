@@ -32,8 +32,6 @@ package chat.dim;
 
 import java.util.Locale;
 
-import chat.dim.core.Packer;
-import chat.dim.core.Processor;
 import chat.dim.dbi.SessionDBI;
 import chat.dim.fsm.Delegate;
 import chat.dim.mkm.Station;

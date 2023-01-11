@@ -35,11 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import chat.dim.core.CipherKeyDelegate;
-import chat.dim.core.Packer;
-import chat.dim.core.Processor;
-import chat.dim.core.Session;
-import chat.dim.core.Transmitter;
+import chat.dim.core.FactoryManager;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Entity;
@@ -361,7 +357,8 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         //
         //  Register core factories
         //
-        registerCoreFactories();
+        FactoryManager man = FactoryManager.getInstance();
+        man.registerAllFactories();
 
         // Handshake
         Command.setFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);

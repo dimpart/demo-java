@@ -37,13 +37,7 @@ import chat.dim.crypto.SymmetricKey;
 import chat.dim.digest.SHA256;
 import chat.dim.format.Base64;
 import chat.dim.mkm.User;
-import chat.dim.protocol.Command;
-import chat.dim.protocol.DocumentCommand;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.InstantMessage;
-import chat.dim.protocol.ReliableMessage;
-import chat.dim.protocol.SecureMessage;
-import chat.dim.protocol.Visa;
+import chat.dim.protocol.*;
 import chat.dim.utils.Log;
 
 public class ClientMessagePacker extends MessagePacker {
@@ -173,7 +167,7 @@ public class ClientMessagePacker extends MessagePacker {
                     // FIXME: user visa not found?
                     throw new NullPointerException("user visa error: " + user.getIdentifier());
                 }
-                Command cmd = DocumentCommand.response(user.getIdentifier(), visa);
+                DocumentCommand cmd = DocumentCommand.response(user.getIdentifier(), visa);
                 CommonMessenger messenger = (CommonMessenger) getMessenger();
                 messenger.sendContent(user.getIdentifier(), sMsg.getSender(), cmd, 0);
             } else {

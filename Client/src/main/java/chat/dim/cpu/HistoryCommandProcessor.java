@@ -1,8 +1,13 @@
 /* license: https://mit-license.org
+ *
+ *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
+ *
+ *                                Written in 2019 by Moky <albert.moky@gmail.com>
+ *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 Albert Moky
+ * Copyright (c) 2019 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,42 +28,29 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.protocol;
+package chat.dim.cpu;
 
-import java.util.Map;
+import java.util.List;
 
-import chat.dim.dkd.cmd.BaseCommand;
+import chat.dim.Facebook;
+import chat.dim.Messenger;
+import chat.dim.protocol.Content;
+import chat.dim.protocol.HistoryCommand;
+import chat.dim.protocol.ReliableMessage;
 
-/**
- *  Command message: {
- *      type : 0x88,
- *      sn   : 123,
- *
- *      cmd   : "report",
- *      title : "online",      // or "offline"
- *      //---- extra info
- *      time  : 1234567890,    // timestamp
- *  }
- */
-public class ReportCommand extends BaseCommand {
+public class HistoryCommandProcessor extends BaseCommandProcessor {
 
-    public static final String REPORT = "report";
-    public static final String ONLINE = "online";
-    public static final String OFFLINE = "offline";
+    public static String FMT_HIS_CMD_NOT_SUPPORT = "History command (name: %s) not support yet!";
 
-    public ReportCommand(Map<String, Object> dictionary) {
-        super(dictionary);
+    public HistoryCommandProcessor(Facebook facebook, Messenger messenger) {
+        super(facebook, messenger);
     }
 
-    public ReportCommand(String title) {
-        super(REPORT);
-        setTitle(title);
-    }
-
-    public void setTitle(String title) {
-        put("title", title);
-    }
-    public String getTitle() {
-        return (String) get("title");
+    @Override
+    public List<Content> process(Content content, ReliableMessage rMsg) {
+        assert content instanceof HistoryCommand : "history command error: " + content;
+        HistoryCommand command = (HistoryCommand) content;
+        String text = String.format(FMT_HIS_CMD_NOT_SUPPORT, command.getCmd());
+        return respondText(text, command.getGroup());
     }
 }

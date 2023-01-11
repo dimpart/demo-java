@@ -28,7 +28,7 @@ package chat.dim.protocol;
 import java.util.HashMap;
 import java.util.Map;
 
-import chat.dim.dkd.BaseCommand;
+import chat.dim.dkd.cmd.BaseCommand;
 
 /**
  *  Receipt command message: {

@@ -32,6 +32,13 @@ package chat.dim.cpu;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.cpu.group.ExpelCommandProcessor;
+import chat.dim.cpu.group.InviteCommandProcessor;
+import chat.dim.cpu.group.QueryCommandProcessor;
+import chat.dim.cpu.group.QuitCommandProcessor;
+import chat.dim.cpu.group.ResetCommandProcessor;
+import chat.dim.protocol.ContentType;
+import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.ReceiptCommand;
@@ -44,6 +51,10 @@ public class ClientContentProcessorCreator extends ContentProcessorCreator {
 
     @Override
     public ContentProcessor createContentProcessor(int type) {
+        // history command
+        if (ContentType.HISTORY.equals(type)) {
+            return new HistoryCommandProcessor(getFacebook(), getMessenger());
+        }
         // default
         if (type == 0) {
             return new BaseContentProcessor(getFacebook(), getMessenger());
@@ -54,17 +65,27 @@ public class ClientContentProcessorCreator extends ContentProcessorCreator {
 
     @Override
     public ContentProcessor createCommandProcessor(int type, String name) {
-        // handshake
-        if (name.equals(HandshakeCommand.HANDSHAKE)) {
-            return new HandshakeCommandProcessor(getFacebook(), getMessenger());
-        }
-        // login
-        if (name.equals(LoginCommand.LOGIN)) {
-            return new LoginCommandProcessor(getFacebook(), getMessenger());
-        }
-        // receipt
-        if (name.equals(ReceiptCommand.RECEIPT)) {
-            return new ReceiptCommandProcessor(getFacebook(), getMessenger());
+        switch (name) {
+            case HandshakeCommand.HANDSHAKE:
+                return new HandshakeCommandProcessor(getFacebook(), getMessenger());
+            case LoginCommand.LOGIN:
+                return new LoginCommandProcessor(getFacebook(), getMessenger());
+            case ReceiptCommand.RECEIPT:
+                return new ReceiptCommandProcessor(getFacebook(), getMessenger());
+
+            // group commands
+            case "group":
+                return new GroupCommandProcessor(getFacebook(), getMessenger());
+            case GroupCommand.INVITE:
+                return new InviteCommandProcessor(getFacebook(), getMessenger());
+            case GroupCommand.EXPEL:
+                return new ExpelCommandProcessor(getFacebook(), getMessenger());
+            case GroupCommand.QUIT:
+                return new QuitCommandProcessor(getFacebook(), getMessenger());
+            case GroupCommand.QUERY:
+                return new QueryCommandProcessor(getFacebook(), getMessenger());
+            case GroupCommand.RESET:
+                return new ResetCommandProcessor(getFacebook(), getMessenger());
         }
         // others
         return super.createCommandProcessor(type, name);

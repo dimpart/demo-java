@@ -32,7 +32,7 @@ package chat.dim.protocol;
 
 import java.util.Map;
 
-import chat.dim.dkd.BaseCommand;
+import chat.dim.dkd.cmd.BaseCommand;
 
 /**
  *  Handshake command message: {
