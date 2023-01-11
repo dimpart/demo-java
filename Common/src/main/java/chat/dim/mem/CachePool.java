@@ -30,7 +30,6 @@
  */
 package chat.dim.mem;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -76,7 +75,7 @@ public class CachePool <K, V> {
 
     public int purge(long now) {
         if (now <= 0) {
-            now = new Date().getTime();
+            now = System.currentTimeMillis();
         }
         int count = 0;
         Set<K> allKeys = getKeys();

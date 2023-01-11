@@ -30,8 +30,6 @@
  */
 package chat.dim.database;
 
-import java.util.Date;
-
 import chat.dim.crypto.PlainKey;
 import chat.dim.crypto.SymmetricKey;
 import chat.dim.dbi.CipherKeyDBI;
@@ -56,7 +54,7 @@ public class CipherKeyDatabase implements CipherKeyDBI {
         if (receiver.isBroadcast()) {
             return PlainKey.getInstance();
         }
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         CachePair<SymmetricKey> pair = keyCache.fetch(sender + "->" + receiver, now);
         SymmetricKey key = pair == null ? null : pair.value;
         if (key == null && generate) {

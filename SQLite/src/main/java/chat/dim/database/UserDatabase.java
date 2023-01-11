@@ -31,7 +31,6 @@
 package chat.dim.database;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import chat.dim.dbi.UserDBI;
@@ -67,7 +66,7 @@ public class UserDatabase implements UserDBI {
 
     @Override
     public List<ID> getLocalUsers() {
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         List<ID> users = null;
         CacheHolder<List<ID>> holder = null;
         // 1. check memory cache
@@ -108,7 +107,7 @@ public class UserDatabase implements UserDBI {
 
     @Override
     public List<ID> getContacts(ID user) {
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         List<ID> contacts = null;
         CacheHolder<List<ID>> holder = null;
         // 1. check memory cache

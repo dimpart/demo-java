@@ -91,7 +91,7 @@ public class DocumentDatabase implements DocumentDBI {
 
     @Override
     public Document getDocument(ID entity, String type) {
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         Document doc = null;
         CacheHolder<Document> holder = null;
         // 1. check memory cache

@@ -30,7 +30,6 @@
  */
 package chat.dim.utils;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,7 +48,7 @@ public class FrequencyChecker <K> {
 
     boolean isExpired(K key, long now) {
         if (now <= 0) {
-            now = new Date().getTime();
+            now = System.currentTimeMillis();
         }
         Long value = records.get(key);
         if (value != null && value > now) {

@@ -30,8 +30,6 @@
  */
 package chat.dim.network;
 
-import java.util.Date;
-
 import chat.dim.fsm.BaseState;
 import chat.dim.fsm.State;
 
@@ -90,7 +88,7 @@ public class SessionState extends BaseState<StateMachine, StateTransition> {
     @Override
     public void onEnter(State<StateMachine, StateTransition> previous,
                         StateMachine machine) {
-        timestamp = new Date().getTime();
+        timestamp = System.currentTimeMillis();
     }
 
     @Override

@@ -30,7 +30,6 @@
  */
 package chat.dim.mem;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -89,7 +88,7 @@ public enum CacheManager implements Runnable {
         long nextTime = 0;
         long now;
         while (running) {
-            now = new Date().getTime();
+            now = System.currentTimeMillis();
             if (now < nextTime) {
                 idle(2048);
                 continue;

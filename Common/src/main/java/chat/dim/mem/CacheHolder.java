@@ -30,8 +30,6 @@
  */
 package chat.dim.mem;
 
-import java.util.Date;
-
 public class CacheHolder <V> {
 
     private V value;
@@ -45,7 +43,7 @@ public class CacheHolder <V> {
         value = cacheValue;
         lifeSpan = cacheLifeSpan;
         if (now <= 0) {
-            now = new Date().getTime();
+            now = System.currentTimeMillis();
         }
         expired = now + lifeSpan;
         deprecated = now + lifeSpan << 1;
@@ -58,7 +56,7 @@ public class CacheHolder <V> {
     public void update(V newValue, long now) {
         value = newValue;
         if (now <= 0) {
-            now = new Date().getTime();
+            now = System.currentTimeMillis();
         }
         expired = now + lifeSpan;
         deprecated = now + lifeSpan << 1;
@@ -66,14 +64,14 @@ public class CacheHolder <V> {
 
     public boolean isAlive(long now) {
         if (now <= 0) {
-            now = new Date().getTime();
+            now = System.currentTimeMillis();
         }
         return now < expired;
     }
 
     public boolean isDeprecated(long now) {
         if (now <= 0) {
-            now = new Date().getTime();
+            now = System.currentTimeMillis();
         }
         return now > deprecated;
     }
@@ -83,7 +81,7 @@ public class CacheHolder <V> {
             duration = 128 * 1000;
         }
         if (now <= 0) {
-            now = new Date().getTime();
+            now = System.currentTimeMillis();
         }
         expired = now + duration;
         deprecated = now + lifeSpan << 1;

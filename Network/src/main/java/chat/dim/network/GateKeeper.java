@@ -30,10 +30,10 @@
  */
 package chat.dim.network;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
-import java.util.Date;
 
 import chat.dim.net.Connection;
 import chat.dim.net.Hub;
@@ -119,7 +119,7 @@ public class GateKeeper extends Runner implements Docker.Delegate {
     }
     public boolean setActive(boolean flag, long when) {
         if (when <= 0) {
-            when = new Date().getTime();
+            when = System.currentTimeMillis();
         } else if (when <= lastActive) {
             return false;
         }
@@ -228,14 +228,14 @@ public class GateKeeper extends Runner implements Docker.Delegate {
     }
 
     @Override
-    public void onDockerFailed(Throwable error, Departure ship, Docker docker) {
+    public void onDockerFailed(IOError error, Departure ship, Docker docker) {
         if (ship instanceof MessageWrapper) {
             ((MessageWrapper) ship).onFailed(error);
         }
     }
 
     @Override
-    public void onDockerError(Throwable error, Departure ship, Docker docker) {
+    public void onDockerError(IOError error, Departure ship, Docker docker) {
         if (ship instanceof MessageWrapper) {
             ((MessageWrapper) ship).onError(error);
         }

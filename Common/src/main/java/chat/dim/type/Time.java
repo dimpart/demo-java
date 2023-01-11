@@ -95,33 +95,35 @@ public final class Time extends Date {
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
-
-        long timestamp = date.getTime();
         long midnight = calendar.getTimeInMillis();
 
-        SimpleDateFormat formatter;
+        long timestamp = date.getTime();
         if (timestamp >= midnight) {
             // today
-            formatter = new SimpleDateFormat("a HH:mm", Locale.CHINA);
+            return getTimeString(date, "a HH:mm");
         } else if (timestamp >= (midnight - 72 * 3600 * 1000)) {
             // recently
-            formatter = new SimpleDateFormat("EEEE HH:mm", Locale.CHINA);
-        } else {
-            calendar.set(Calendar.MONTH, 0);
-            calendar.set(Calendar.DAY_OF_MONTH, 0);
-            long first = calendar.getTimeInMillis();
-            if (timestamp >= first) {
-                // this year
-                formatter = new SimpleDateFormat("MM-dd HH:mm", Locale.CHINA);
-            } else {
-                formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA);
-            }
+            return getTimeString(date, "EEEE HH:mm");
         }
+        calendar.set(Calendar.MONTH, 0);
+        calendar.set(Calendar.DAY_OF_MONTH, 0);
+        long begin = calendar.getTimeInMillis();
+        if (timestamp >= begin) {
+            // this year
+            return getTimeString(date, "MM-dd HH:mm");
+        } else {
+            return getTimeString(date, "yyyy-MM-dd HH:mm");
+        }
+    }
+    public static String getTimeString(Date date, String pattern) {
+        SimpleDateFormat formatter = new SimpleDateFormat(pattern, Locale.CHINA);
         return formatter.format(date);
     }
 
-    public static String getFullTimeString(Date now) {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA);
-        return formatter.format(now);
+    public static String getFullTimeString(long date) {
+        return getTimeString(new Date(date), "yyyy-MM-dd HH:mm:ss");
+    }
+    public static String getFullTimeString(Date date) {
+        return getTimeString(date, "yyyy-MM-dd HH:mm:ss");
     }
 }

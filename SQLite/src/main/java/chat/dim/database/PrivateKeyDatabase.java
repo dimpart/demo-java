@@ -31,7 +31,6 @@
 package chat.dim.database;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import chat.dim.crypto.DecryptKey;
@@ -72,7 +71,7 @@ public class PrivateKeyDatabase implements PrivateKeyDBI {
 
     @Override
     public boolean savePrivateKey(PrivateKey key, String type, ID user) {
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         // 1. update memory cache
         if (type != null && type.equals(PrivateKeyStorage.META)) {
             // update 'id_key'
@@ -98,7 +97,7 @@ public class PrivateKeyDatabase implements PrivateKeyDBI {
 
     @Override
     public List<DecryptKey> getPrivateKeysForDecryption(ID user) {
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         List<DecryptKey> decryptKeys = null;
         CacheHolder<List<DecryptKey>> holder = null;
         // 1. check memory cache
@@ -141,7 +140,7 @@ public class PrivateKeyDatabase implements PrivateKeyDBI {
 
     @Override
     public PrivateKey getPrivateKeyForVisaSignature(ID user) {
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         PrivateKey privateKey = null;
         CacheHolder<PrivateKey> holder = null;
         // 1. check memory cache

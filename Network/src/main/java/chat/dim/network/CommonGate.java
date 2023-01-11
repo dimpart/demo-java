@@ -30,6 +30,7 @@
  */
 package chat.dim.network;
 
+import java.io.IOError;
 import java.net.SocketAddress;
 
 import chat.dim.mtp.MTPPacker;
@@ -114,15 +115,16 @@ public abstract class CommonGate extends BaseGate implements Runnable {
     }
 
     @Override
-    public void onConnectionFailed(Throwable error, byte[] data, Connection connection) {
+    public void onConnectionFailed(IOError error, byte[] data, Connection connection) {
         super.onConnectionFailed(error, data, connection);
         Log.error("failed to send " + data.length + " byte(s): " + error + ", " + connection);
     }
 
     @Override
-    public void onConnectionError(Throwable error, Connection connection) {
+    public void onConnectionError(IOError error, Connection connection) {
         super.onConnectionError(error, connection);
-        if (error.getMessage().startsWith("failed to send: ")) {
+        String errMsg = error.getMessage();
+        if (errMsg != null && errMsg.startsWith("failed to send: ")) {
             Log.warning("ignore socket error: " + error + ", " + connection);
         }
     }

@@ -30,8 +30,6 @@
  */
 package chat.dim.database;
 
-import java.util.Date;
-
 import chat.dim.dbi.MetaDBI;
 import chat.dim.mem.CacheHolder;
 import chat.dim.mem.CacheManager;
@@ -83,7 +81,7 @@ public class MetaDatabase implements MetaDBI {
 
     @Override
     public Meta getMeta(ID entity) {
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         Meta meta = null;
         CacheHolder<Meta> holder = null;
         // 1. check memory cache

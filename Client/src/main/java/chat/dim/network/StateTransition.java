@@ -30,8 +30,6 @@
  */
 package chat.dim.network;
 
-import java.util.Date;
-
 import chat.dim.fsm.BaseTransition;
 
 /**
@@ -81,7 +79,7 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
     }
 
     boolean isExpired(SessionState state) {
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         return 0 < state.timestamp && state.timestamp < (now - 30000);
     }
 }

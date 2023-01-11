@@ -30,7 +30,6 @@
  */
 package chat.dim;
 
-import java.util.Date;
 import java.util.Locale;
 
 import chat.dim.core.Packer;
@@ -277,7 +276,7 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
     @Override
     public boolean process() {
         // check timeout
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         if (!isExpired(lastTime, now)) {
             // not expired yet
             return false;
@@ -347,7 +346,7 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
             // broadcast current meta & visa document to all stations
             messenger.handshakeSuccess();
             // update last online time
-            lastTime = new Date().getTime();
+            lastTime = System.currentTimeMillis();
         }
     }
 

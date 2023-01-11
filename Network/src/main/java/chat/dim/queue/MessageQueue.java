@@ -31,7 +31,6 @@
 package chat.dim.queue;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -194,7 +193,7 @@ public final class MessageQueue {
 
     public int purge() {
         int count = 0;
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         MessageWrapper wrapper = eject(now);
         while (wrapper != null) {
             count += 1;
