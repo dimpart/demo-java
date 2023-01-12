@@ -88,7 +88,7 @@ public class ReceiptCommand extends BaseCommand {
     //-------- setters/getters --------
 
     public String getText() {
-        return (String) get("text");
+        return getString("text");
     }
 
     @SuppressWarnings("unchecked")

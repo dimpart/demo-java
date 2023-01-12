@@ -79,7 +79,7 @@ public class LoginCommand extends BaseCommand {
 
     // device ID
     public String getDevice() {
-        return (String) get("device");
+        return getString("device");
     }
     public void setDevice(String device) {
         put("device", device);
@@ -87,7 +87,7 @@ public class LoginCommand extends BaseCommand {
 
     // user-agent
     public String getAgent() {
-        return (String) get("agent");
+        return getString("agent");
     }
     public void setAgent(String agent) {
         put("agent", agent);

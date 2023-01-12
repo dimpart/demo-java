@@ -59,6 +59,6 @@ public class ReportCommand extends BaseCommand {
         put("title", title);
     }
     public String getTitle() {
-        return (String) get("title");
+        return getString("title");
     }
 }

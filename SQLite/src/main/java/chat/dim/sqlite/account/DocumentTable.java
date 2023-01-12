@@ -122,8 +122,8 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
         }
         ID identifier = doc.getIdentifier();
         String type = doc.getType();
-        String data = (String) doc.get("data");
-        String signature = (String) doc.get("signature");
+        String data = doc.getString("data");
+        String signature = doc.getString("signature");
 
         Document old = getDocument(identifier, type);
         if (old == null) {
