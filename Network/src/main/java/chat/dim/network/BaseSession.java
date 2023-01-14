@@ -129,9 +129,7 @@ public abstract class BaseSession extends GateKeeper implements Session {
     @Override
     public void onDockerSent(Departure ship, Docker docker) {
         if (ship instanceof MessageWrapper) {
-            MessageWrapper wrapper = (MessageWrapper) ship;
-            wrapper.onSent();
-            ReliableMessage msg = wrapper.getMessage();
+            ReliableMessage msg = ((MessageWrapper) ship).getMessage();
             if (msg != null) {
                 CommonMessenger messenger = getMessenger();
                 assert messenger != null : "messenger not set yet";
@@ -141,7 +139,7 @@ public abstract class BaseSession extends GateKeeper implements Session {
         }
     }
 
-    private void removeReliableMessage(ReliableMessage msg, ID receiver, MessageDBI db) {
+    private static void removeReliableMessage(ReliableMessage msg, ID receiver, MessageDBI db) {
         // 0. if session ID is empty, means user not login;
         //    this message must be a handshake command, and
         //    its receiver must be the targeted user.

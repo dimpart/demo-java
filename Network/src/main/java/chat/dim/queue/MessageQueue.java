@@ -124,28 +124,11 @@ public final class MessageQueue {
         Lock writeLock = lock.writeLock();
         writeLock.lock();
         try {
-            Iterator<MessageWrapper> iterator;
-            List<MessageWrapper> array;
-            MessageWrapper item;
             for (int priority : priorities) {
-                // 1. get messages with priority
-                array = fleets.get(priority);
-                if (array == null) {
-                    continue;
-                }
-                // 2. seeking new task in this priority
-                iterator = array.iterator();
-                while (iterator.hasNext()) {
-                    item = iterator.next();
-                    if (item.isVirgin()) {
-                        // got it, mark sent
-                        target = item;
-                        item.mark();
-                        break;
-                    }
-                }
-                if (target != null) {
-                    // got
+                // get first message
+                List<MessageWrapper> array = fleets.get(priority);
+                if (array != null && array.size() > 0) {
+                    target = array.remove(0);
                     break;
                 }
             }
@@ -155,51 +138,27 @@ public final class MessageQueue {
         return target;
     }
 
-    private MessageWrapper eject(long now) {
-        MessageWrapper target = null;
+    public void purge() {
         Lock writeLock = lock.writeLock();
         writeLock.lock();
         try {
-            Iterator<MessageWrapper> iterator;
+            Iterator<Integer> pit = priorities.iterator();
+            int prior;
             List<MessageWrapper> array;
-            MessageWrapper item;
-            for (int priority : priorities) {
-                // 1. get messages with priority
-                array = fleets.get(priority);
+            while (pit.hasNext()) {
+                prior = pit.next();
+                array = fleets.get(prior);
                 if (array == null) {
-                    continue;
-                }
-                // 2. seeking new task in this priority
-                iterator = array.iterator();
-                while (iterator.hasNext()) {
-                    item = iterator.next();
-                    if (item.getMessage() == null || item.isFailed(now)) {
-                        // got it, remove from the queue
-                        target = item;
-                        iterator.remove();
-                        break;
-                    }
-                }
-                if (target != null) {
-                    // got
-                    break;
+                    // this priority is empty
+                    pit.remove();
+                } else if (array.size() == 0) {
+                    // this priority is empty
+                    fleets.remove(prior);
+                    pit.remove();
                 }
             }
         } finally {
             writeLock.unlock();
         }
-        return target;
-    }
-
-    public int purge() {
-        int count = 0;
-        long now = System.currentTimeMillis();
-        MessageWrapper wrapper = eject(now);
-        while (wrapper != null) {
-            count += 1;
-            // TODO: callback for failed task?
-            wrapper = eject(now);
-        }
-        return count;
     }
 }

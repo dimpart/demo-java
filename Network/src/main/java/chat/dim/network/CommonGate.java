@@ -50,7 +50,7 @@ import chat.dim.utils.Log;
 /**
  *  Gate with hub for connection
  */
-public abstract class CommonGate extends BaseGate implements Runnable {
+public abstract class CommonGate extends BaseGate /*implements Runnable */{
 
     private boolean running;
 
@@ -68,7 +68,7 @@ public abstract class CommonGate extends BaseGate implements Runnable {
     public boolean isRunning() {
         return running;
     }
-
+    /*/
     @Override
     public void run() {
         //running = true;
@@ -79,7 +79,7 @@ public abstract class CommonGate extends BaseGate implements Runnable {
         }
         // gate closing
     }
-
+    /*/
     protected void idle() {
         idle(256);
     }

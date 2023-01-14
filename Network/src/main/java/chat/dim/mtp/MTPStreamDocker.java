@@ -39,7 +39,6 @@ import chat.dim.net.Connection;
 import chat.dim.pack.DeparturePacker;
 import chat.dim.port.Arrival;
 import chat.dim.port.Departure;
-import chat.dim.startrek.DepartureShip;
 import chat.dim.type.ByteArray;
 import chat.dim.type.Data;
 import chat.dim.type.Pair;
@@ -131,13 +130,13 @@ public class MTPStreamDocker extends PackageDocker implements DeparturePacker {
 
     @Override
     protected Departure createDeparture(Package pkg, int priority) {
-        if (pkg.isResponse()) {
-            // response package needs no response again,
-            // so this ship will be removed immediately after sent.
-            return new MTPStreamDeparture(pkg, priority, DepartureShip.DISPOSABLE);
-        } else {
+        if (pkg.isMessage()) {
             // normal package
             return new MTPStreamDeparture(pkg, priority);
+        } else {
+            // response package needs no response again,
+            // so this ship will be removed immediately after sent.
+            return new MTPStreamDeparture(pkg, priority, 1);
         }
     }
 

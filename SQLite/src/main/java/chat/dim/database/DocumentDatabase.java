@@ -74,11 +74,10 @@ public class DocumentDatabase implements DocumentDBI {
         if (old != null) {
             Date oldTime = old.getTime();
             Date newTime = doc.getTime();
-            if (newTime != null && oldTime != null) {
-                if (oldTime.getTime() >= newTime.getTime()) {
-                    // document expired, drop it
-                    return false;
-                }
+            if (newTime != null && oldTime != null &&
+                    newTime.getTime() < oldTime.getTime()) {
+                // document expired, drop it
+                return false;
             }
         }
         // 1. update memory cache

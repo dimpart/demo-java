@@ -38,23 +38,13 @@ import chat.dim.protocol.ReliableMessage;
 
 public final class MessageWrapper implements Departure {
 
-    private int flag;
-    private ReliableMessage msg;
+    private final ReliableMessage msg;
     private final Departure ship;
 
     public MessageWrapper(ReliableMessage rMsg, Departure departure) {
         super();
-        flag = 0;
         msg = rMsg;
         ship = departure;
-    }
-
-    public void mark() {
-        flag = 1;
-    }
-
-    public boolean isVirgin() {
-        return flag == 0;
     }
 
     public ReliableMessage getMessage() {
@@ -82,23 +72,8 @@ public final class MessageWrapper implements Departure {
     }
 
     @Override
-    public boolean isNew() {
-        return ship.isNew();
-    }
-
-    @Override
-    public boolean isDisposable() {
-        return ship.isDisposable();
-    }
-
-    @Override
-    public boolean isTimeout(long now) {
-        return ship.isTimeout(now);
-    }
-
-    @Override
-    public boolean isFailed(long now) {
-        return ship.isFailed(now);
+    public boolean isImportant() {
+        return ship.isImportant();
     }
 
     @Override
@@ -106,38 +81,8 @@ public final class MessageWrapper implements Departure {
         ship.touch(now);
     }
 
-    //
-    //  Callback
-    //
-
-    /**
-     *  Callback on message appended to outgoing queue
-     */
-    public void onAppended() {
-        // this message was assigned to the worker of StarGate,
-        // update status
-        flag = 2;
-    }
-
-    /**
-     *  Callback on success to send out
-     */
-    public void onSent() {
-        // success, remove message
-        msg = null;
-    }
-
-    /**
-     *  Callback on failed to send ship
-     */
-    public void onFailed(Throwable error) {
-        flag = -1;
-    }
-
-    /**
-     *  Callback on error, failed to append
-     */
-    public void onError(Throwable error) {
-
+    @Override
+    public Status getStatus(long now) {
+        return ship.getStatus(now);
     }
 }

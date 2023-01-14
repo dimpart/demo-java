@@ -161,12 +161,18 @@ public class GateKeeper extends Runner implements Docker.Delegate {
     @Override
     public boolean process() {
         Hub hub = gate.getHub();
-        boolean incoming = hub.process();
-        boolean outgoing = gate.process();
-        if (incoming || outgoing) {
-            // processed income/outgo packages
-            return true;
-        } else if (!isActive()) {
+        try {
+            boolean incoming = hub.process();
+            boolean outgoing = gate.process();
+            if (incoming || outgoing) {
+                // processed income/outgo packages
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        if (!isActive()) {
             // inactive, wait a while to check again
             queue.purge();
             return false;
@@ -187,11 +193,8 @@ public class GateKeeper extends Runner implements Docker.Delegate {
         }
         // try to push
         boolean ok = gate.sendShip(wrapper, remoteAddress, null);
-        if (ok) {
-            wrapper.onAppended();
-        } else {
-            IOException error = new IOException("gate error, failed to send data");
-            wrapper.onError(error);
+        if (!ok) {
+            Log.error("gate error, failed to send data");
         }
         return true;
     }
@@ -222,22 +225,16 @@ public class GateKeeper extends Runner implements Docker.Delegate {
 
     @Override
     public void onDockerSent(Departure ship, Docker docker) {
-        if (ship instanceof MessageWrapper) {
-            ((MessageWrapper) ship).onSent();
-        }
+        // TODO: remove sent message from local cache
     }
 
     @Override
     public void onDockerFailed(IOError error, Departure ship, Docker docker) {
-        if (ship instanceof MessageWrapper) {
-            ((MessageWrapper) ship).onFailed(error);
-        }
+        Log.error("docker failed to send ship: " + ship + ", " + docker);
     }
 
     @Override
     public void onDockerError(IOError error, Departure ship, Docker docker) {
-        if (ship instanceof MessageWrapper) {
-            ((MessageWrapper) ship).onError(error);
-        }
+        Log.error("docker error while sending ship: " + ship + ", " + docker);
     }
 }

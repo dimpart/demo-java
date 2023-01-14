@@ -32,14 +32,14 @@ import chat.dim.type.Time;
 
 public final class Log {
 
-    public static int DEBUG_FLAG = 0x01;
-    public static int INFO_FLAG = 0x02;
-    public static int WARNING_FLAG = 0x04;
-    public static int ERROR_FLAG = 0x08;
+    public static final int DEBUG_FLAG = 0x01;
+    public static final int INFO_FLAG = 0x02;
+    public static final int WARNING_FLAG = 0x04;
+    public static final int ERROR_FLAG = 0x08;
 
-    public static int DEBUG = DEBUG_FLAG | INFO_FLAG | WARNING_FLAG | ERROR_FLAG;
-    public static int DEVELOP = INFO_FLAG | WARNING_FLAG | ERROR_FLAG;
-    public static int RELEASE = WARNING_FLAG | ERROR_FLAG;
+    public static final int DEBUG = DEBUG_FLAG | INFO_FLAG | WARNING_FLAG | ERROR_FLAG;
+    public static final int DEVELOP = INFO_FLAG | WARNING_FLAG | ERROR_FLAG;
+    public static final int RELEASE = WARNING_FLAG | ERROR_FLAG;
 
     public static int LEVEL = RELEASE;
 

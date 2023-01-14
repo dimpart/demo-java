@@ -78,8 +78,7 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         super(target);
     }
 
-    boolean isExpired(SessionState state) {
-        long now = System.currentTimeMillis();
-        return 0 < state.timestamp && state.timestamp < (now - 30000);
+    boolean isExpired(SessionState state, long now) {
+        return 0 < state.timestamp && state.timestamp < (now - 30 * 1000);
     }
 }
