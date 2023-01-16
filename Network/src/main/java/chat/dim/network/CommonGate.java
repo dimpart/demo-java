@@ -137,11 +137,12 @@ public abstract class CommonGate extends BaseGate /*implements Runnable */{
 
     public boolean sendResponse(byte[] payload, Arrival ship, SocketAddress remote, SocketAddress local) {
         assert ship instanceof MTPStreamArrival : "arrival ship error: " + ship;
-        MTPStreamArrival arrival = (MTPStreamArrival) ship;
+        //MTPStreamArrival arrival = (MTPStreamArrival) ship;
         Docker docker = getDocker(remote, local, null);
         assert docker instanceof MTPStreamDocker : "docker error: " + docker;
         MTPStreamDocker worker = (MTPStreamDocker) docker;
-        TransactionID sn = TransactionID.from(new Data(arrival.getSN()));
+        //TransactionID sn = TransactionID.from(new Data(arrival.getSN()));
+        TransactionID sn = TransactionID.generate();
         Package pack = MTPPacker.createMessage(sn, new Data(payload));
         return worker.sendPackage(pack);
     }
