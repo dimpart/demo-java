@@ -30,7 +30,6 @@
  */
 package chat.dim.sqlite;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -70,10 +69,10 @@ public class DatabaseHandler<T> {
         }
     }
 
-    public Connection getConnection() throws SQLException, IOException {
+    public Connection getConnection() throws SQLException {
         return connector.getConnection();
     }
-    public Statement getStatement() throws SQLException, IOException {
+    public Statement getStatement() throws SQLException {
         Statement stat = statement;
         if (stat == null) {
             stat = getConnection().createStatement();
@@ -90,7 +89,7 @@ public class DatabaseHandler<T> {
      * @return rows
      * @throws SQLException on DB error
      */
-    public List<T> executeQuery(String sql, DataRowExtractor<T> extractor) throws SQLException, IOException {
+    public List<T> executeQuery(String sql, DataRowExtractor<T> extractor) throws SQLException {
         List<T> rows = new ArrayList<>();
         try {
             resultSet = getStatement().executeQuery(sql);
@@ -110,14 +109,14 @@ public class DatabaseHandler<T> {
      * @return result
      * @throws SQLException on DB error
      */
-    public int executeUpdate(String sql) throws SQLException, IOException {
+    public int executeUpdate(String sql) throws SQLException {
         try {
             return getStatement().executeUpdate(sql);
         } finally {
             destroy();
         }
     }
-    public void executeUpdate(String... sqlList) throws SQLException, IOException {
+    public void executeUpdate(String... sqlList) throws SQLException {
         try {
             for (String sql : sqlList) {
                 getStatement().executeUpdate(sql);

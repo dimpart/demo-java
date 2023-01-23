@@ -39,8 +39,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import chat.dim.digest.MD5;
-import chat.dim.filesys.ExternalStorage;
-import chat.dim.filesys.PathUtils;
 import chat.dim.filesys.Paths;
 import chat.dim.format.Hex;
 import chat.dim.format.UTF8;
@@ -70,7 +68,7 @@ public class DownloadTask implements Runnable {
      * @return local file path
      */
     public String getFilePath() {
-        if (ExternalStorage.exists(cachePath)) {
+        if (Paths.exists(cachePath)) {
             return cachePath;
         } else {
             return null;
@@ -102,8 +100,8 @@ public class DownloadTask implements Runnable {
     // "/sdcard/chat.dim.sechat/caches/{XX}/{YY}/{filename}"
     private static String getCachePath(String urlString) {
         // get file ext
-        String filename = Paths.getFilename(urlString);
-        String ext = Paths.getExtension(filename);
+        String filename = Paths.filename(urlString);
+        String ext = Paths.extension(filename);
         if (ext == null || ext.length() == 0) {
             ext = "tmp";
         }
@@ -152,9 +150,9 @@ public class DownloadTask implements Runnable {
         HTTPDelegate delegate = getDelegate();
         try {
             // 1. prepare directory
-            String dir = PathUtils.parent(cachePath);
+            String dir = Paths.parent(cachePath);
             assert dir != null : "cache path error: " + cachePath;
-            ExternalStorage.mkdirs(dir);
+            Paths.mkdirs(dir);
             // 2. start download
             String path = download(urlString, cachePath);
             delegate.downloadSuccess(this, path);

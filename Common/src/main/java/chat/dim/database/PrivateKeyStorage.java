@@ -50,7 +50,7 @@ import chat.dim.utils.Template;
  *  (2) Message Keys - paired to visa.key, VOLATILE
  *      file path: '.dim/private/{ADDRESS}/secret_keys.js'
  */
-public class PrivateKeyStorage extends Storage implements PrivateKeyDBI {
+public class PrivateKeyStorage extends LocalStorage implements PrivateKeyDBI {
 
     public static String ID_KEY_PATH = "{PRIVATE}/{ADDRESS}/secret.js";
     public static String MSG_KEYS_PATH = "{PRIVATE}/{ADDRESS}/secret_keys.js";

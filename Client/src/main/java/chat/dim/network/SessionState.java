@@ -86,14 +86,12 @@ public class SessionState extends BaseState<StateMachine, StateTransition> {
     }
 
     @Override
-    public void onEnter(State<StateMachine, StateTransition> previous,
-                        StateMachine machine, long now, long elapsed) {
+    public void onEnter(State<StateMachine, StateTransition> previous, StateMachine machine, long now) {
         timestamp = now;
     }
 
     @Override
-    public void onExit(State<StateMachine, StateTransition> next,
-                       StateMachine machine, long now, long elapsed) {
+    public void onExit(State<StateMachine, StateTransition> next, StateMachine machine, long now) {
         timestamp = 0;
     }
 

@@ -44,7 +44,7 @@ import chat.dim.utils.Template;
  *
  *  file path: '.dim/public/{ADDRESS}/meta.js'
  */
-public class MetaStorage extends Storage implements MetaDBI {
+public class MetaStorage extends LocalStorage implements MetaDBI {
 
     public static String META_PATH = "{PUBLIC}/{ADDRESS}/meta.js";
 

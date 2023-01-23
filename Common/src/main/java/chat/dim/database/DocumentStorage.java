@@ -45,7 +45,7 @@ import chat.dim.utils.Template;
  *
  *  file path: '.dim/public/{ADDRESS}/document.js'
  */
-public class DocumentStorage extends Storage implements DocumentDBI {
+public class DocumentStorage extends LocalStorage implements DocumentDBI {
 
     public static String DOC_PATH = "{PUBLIC}/{ADDRESS}/document.js";
 

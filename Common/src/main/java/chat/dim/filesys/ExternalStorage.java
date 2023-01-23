@@ -30,7 +30,6 @@
  */
 package chat.dim.filesys;
 
-import java.io.File;
 import java.io.IOException;
 
 import chat.dim.format.JSON;
@@ -39,7 +38,7 @@ import chat.dim.format.UTF8;
 /**
  *  RAM access
  */
-public abstract class ExternalStorage extends PathUtils {
+public abstract class ExternalStorage {
 
     /**
      *  Forbid the gallery from scanning media files
@@ -49,8 +48,8 @@ public abstract class ExternalStorage extends PathUtils {
      */
     public static boolean setNoMedia(String dir) {
         try {
-            String path = appendPathComponent(dir, ".nomedia");
-            if (!exists(path)) {
+            String path = Paths.append(dir, ".nomedia");
+            if (!Paths.exists(path)) {
                 Storage file = new Storage();
                 file.setData(UTF8.encode("Moky loves May Lee forever!"));
                 file.write(path);
@@ -60,42 +59,6 @@ public abstract class ExternalStorage extends PathUtils {
             e.printStackTrace();
             return false;
         }
-    }
-
-    /**
-     *  Check whether file exists
-     *
-     * @param path - file path
-     * @return True on exists
-     */
-    public static boolean exists(String path) {
-        Storage file = new Storage();
-        return file.exists(path);
-    }
-
-    /**
-     *  Create directory
-     *
-     * @param path - dir path
-     * @return absolute path
-     */
-    public static String mkdirs(String path) throws IOException {
-        File dir = new File(path);
-        if (!dir.exists() && !dir.mkdirs()) {
-            throw new IOException("failed to create directory: " + path);
-        }
-        return path;
-    }
-
-    /**
-     *  Delete file
-     *
-     * @param path - file path
-     * @return true on success
-     */
-    public static boolean delete(String path) throws IOException {
-        Storage file = new Storage();
-        return file.remove(path);
     }
 
     //-------- read

@@ -30,7 +30,6 @@
  */
 package chat.dim.http;
 
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -99,25 +98,20 @@ public enum HTTPClient implements Runnable, Processor {
         if (built) {
             return base;
         }
-        try {
-            // make sure base directory built
-            ExternalStorage.mkdirs(base);
-            // forbid the gallery from scanning media files
-            ExternalStorage.setNoMedia(base);
-            built = true;
-            return base;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+        // make sure base directory built
+        Paths.mkdirs(base);
+        // forbid the gallery from scanning media files
+        ExternalStorage.setNoMedia(base);
+        built = true;
+        return base;
     }
 
     public String getCachesDirectory() {
-        return Paths.appendPathComponent(getRoot(), "caches");
+        return Paths.append(getRoot(), "caches");
     }
 
     public String getTemporaryDirectory() {
-        return Paths.appendPathComponent(getRoot(), "tmp");
+        return Paths.append(getRoot(), "tmp");
     }
 
     /**
@@ -131,7 +125,7 @@ public enum HTTPClient implements Runnable, Processor {
         String dir = getCachesDirectory();
         String xx = filename.substring(0, 2);
         String yy = filename.substring(2, 4);
-        return Paths.appendPathComponent(dir, xx, yy, filename);
+        return Paths.append(dir, xx, yy, filename);
     }
 
     /**
@@ -142,7 +136,7 @@ public enum HTTPClient implements Runnable, Processor {
      */
     public String getTemporaryFilePath(String filename) {
         String dir = getTemporaryDirectory();
-        return Paths.appendPathComponent(dir, filename);
+        return Paths.append(dir, filename);
     }
 
     /**

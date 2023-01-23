@@ -33,7 +33,7 @@ package chat.dim.database;
 import chat.dim.filesys.ExternalStorage;
 import chat.dim.utils.Template;
 
-public class Storage extends ExternalStorage {
+public class LocalStorage extends ExternalStorage {
 
     public static String rootDirectory = "/var/.dim";
     public static String pubDirTemplate = "{ROOT}/public";
@@ -42,7 +42,7 @@ public class Storage extends ExternalStorage {
     protected final String publicDirectory;
     protected final String privateDirectory;
 
-    public Storage(String rootDir, String publicDir, String privateDir) {
+    public LocalStorage(String rootDir, String publicDir, String privateDir) {
         super();
         if (rootDir == null || rootDir.length() == 0) {
             rootDir = rootDirectory;

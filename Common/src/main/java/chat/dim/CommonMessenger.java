@@ -288,6 +288,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
     public SecureMessage encryptMessage(InstantMessage iMsg) {
         if (!checkReceiver(iMsg)) {
             // receiver not ready
+            Log.warning("receiver not ready: " + iMsg.getReceiver());
             return null;
         }
         return super.encryptMessage(iMsg);
@@ -297,6 +298,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
     public SecureMessage verifyMessage(ReliableMessage rMsg) {
         if (!checkSender(rMsg)) {
             // sender not ready
+            Log.warning("sender not ready: " + rMsg.getSender());
             return null;
         }
         return super.verifyMessage(rMsg);

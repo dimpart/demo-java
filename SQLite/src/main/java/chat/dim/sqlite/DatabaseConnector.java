@@ -30,12 +30,11 @@
  */
 package chat.dim.sqlite;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import chat.dim.filesys.ExternalStorage;
+import chat.dim.filesys.Paths;
 
 public class DatabaseConnector {
 
@@ -63,13 +62,13 @@ public class DatabaseConnector {
         }
     }
 
-    public Connection getConnection() throws SQLException, IOException {
+    public Connection getConnection() throws SQLException {
         Connection conn = connection;
         if (conn == null) {
-            if (!ExternalStorage.exists(dbFilePath)) {
+            if (!Paths.exists(dbFilePath)) {
                 // make sure parent directory exists
-                String dir = ExternalStorage.parent(dbFilePath);
-                ExternalStorage.mkdirs(dir);
+                String dir = Paths.parent(dbFilePath);
+                Paths.mkdirs(dir);
             }
             conn = DriverManager.getConnection("jdbc:sqlite:" + dbFilePath);
             connection = conn;

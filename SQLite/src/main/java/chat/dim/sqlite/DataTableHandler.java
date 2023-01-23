@@ -30,7 +30,6 @@
  */
 package chat.dim.sqlite;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +51,7 @@ public abstract class DataTableHandler<T> extends DatabaseHandler<T> {
         try {
             executeUpdate(sql);
             return true;
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
@@ -63,7 +62,7 @@ public abstract class DataTableHandler<T> extends DatabaseHandler<T> {
         String sql = SQLBuilder.buildInsert(table, columns, values);
         try {
             return executeUpdate(sql);
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return -1;
         }
@@ -82,7 +81,7 @@ public abstract class DataTableHandler<T> extends DatabaseHandler<T> {
                 groupBy, having, orderBy, limit, offset);
         try {
             return executeQuery(sql, getDataRowExtractor());
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return null;
         }
@@ -93,7 +92,7 @@ public abstract class DataTableHandler<T> extends DatabaseHandler<T> {
         String sql = SQLBuilder.buildUpdate(table, values, conditions);
         try {
             return executeUpdate(sql);
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return -1;
         }
@@ -104,7 +103,7 @@ public abstract class DataTableHandler<T> extends DatabaseHandler<T> {
         String sql = SQLBuilder.buildDelete(table, conditions);
         try {
             return executeUpdate(sql);
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return -1;
         }

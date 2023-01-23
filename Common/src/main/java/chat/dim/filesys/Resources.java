@@ -38,7 +38,7 @@ import chat.dim.format.UTF8;
 /**
  *  ROM access
  */
-public abstract class Resources extends PathUtils {
+public abstract class Resources {
 
     private static byte[] load(String path) throws IOException {
         Resource resource = new Resource();

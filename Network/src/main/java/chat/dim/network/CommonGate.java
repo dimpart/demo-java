@@ -79,7 +79,7 @@ public abstract class CommonGate extends BaseGate /*implements Runnable */{
         }
         // gate closing
     }
-    /*/
+
     protected void idle() {
         idle(256);
     }
@@ -91,6 +91,7 @@ public abstract class CommonGate extends BaseGate /*implements Runnable */{
             e.printStackTrace();
         }
     }
+    /*/
 
     @Override
     public void onConnectionStateChanged(ConnectionState previous, ConnectionState current, Connection connection) {

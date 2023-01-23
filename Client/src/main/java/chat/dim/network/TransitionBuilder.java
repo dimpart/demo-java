@@ -45,7 +45,7 @@ class TransitionBuilder {
     StateTransition getDefaultConnectingTransition() {
         return new StateTransition(SessionState.CONNECTING) {
             @Override
-            public boolean evaluate(StateMachine ctx, long now, long elapsed) {
+            public boolean evaluate(StateMachine ctx, long now) {
                 if (ctx.getSessionID() == null) {
                     // current user not set yet
                     return false;
@@ -66,7 +66,7 @@ class TransitionBuilder {
     StateTransition getConnectingConnectedTransition() {
         return new StateTransition(SessionState.CONNECTED) {
             @Override
-            public boolean evaluate(StateMachine ctx, long now, long elapsed) {
+            public boolean evaluate(StateMachine ctx, long now) {
                 Docker.Status status = ctx.getStatus();
                 return status.equals(Docker.Status.READY);
             }
@@ -83,7 +83,7 @@ class TransitionBuilder {
     StateTransition getConnectingErrorTransition() {
         return new StateTransition(SessionState.ERROR) {
             @Override
-            public boolean evaluate(StateMachine ctx, long now, long elapsed) {
+            public boolean evaluate(StateMachine ctx, long now) {
                 if (isExpired(ctx.getCurrentState(), now)) {
                     // connecting expired, do it again
                     return true;
@@ -104,7 +104,7 @@ class TransitionBuilder {
     StateTransition getConnectedHandshakingTransition() {
         return new StateTransition(SessionState.HANDSHAKING) {
             @Override
-            public boolean evaluate(StateMachine ctx, long now, long elapsed) {
+            public boolean evaluate(StateMachine ctx, long now) {
                 if (ctx.getSessionID() == null) {
                     // FIXME: current user lost?
                     //        state will be changed to 'error'
@@ -126,7 +126,7 @@ class TransitionBuilder {
     StateTransition getConnectedErrorTransition() {
         return new StateTransition(SessionState.ERROR) {
             @Override
-            public boolean evaluate(StateMachine ctx, long now, long elapsed) {
+            public boolean evaluate(StateMachine ctx, long now) {
                 if (ctx.getSessionID() == null) {
                     // FIXME: current user lost?
                     return true;
@@ -147,7 +147,7 @@ class TransitionBuilder {
     StateTransition getHandshakingRunningTransition() {
         return new StateTransition(SessionState.RUNNING) {
             @Override
-            public boolean evaluate(StateMachine ctx, long now, long elapsed) {
+            public boolean evaluate(StateMachine ctx, long now) {
                 if (ctx.getSessionID() == null) {
                     // FIXME: current user lost?
                     //        state will be changed to 'error'
@@ -175,7 +175,7 @@ class TransitionBuilder {
     StateTransition getHandshakingConnectedTransition() {
         return new StateTransition(SessionState.CONNECTED) {
             @Override
-            public boolean evaluate(StateMachine ctx, long now, long elapsed) {
+            public boolean evaluate(StateMachine ctx, long now) {
                 if (ctx.getSessionID() == null) {
                     // FIXME: current user lost?
                     //        state will be changed to 'error'
@@ -206,7 +206,7 @@ class TransitionBuilder {
     StateTransition getHandshakingErrorTransition() {
         return new StateTransition(SessionState.ERROR) {
             @Override
-            public boolean evaluate(StateMachine ctx, long now, long elapsed) {
+            public boolean evaluate(StateMachine ctx, long now) {
                 if (ctx.getSessionID() == null) {
                     // FIXME: current user lost?
                     //        state will be changed to 'error'
@@ -231,7 +231,7 @@ class TransitionBuilder {
     StateTransition getRunningDefaultTransition() {
         return new StateTransition(SessionState.DEFAULT) {
             @Override
-            public boolean evaluate(StateMachine ctx, long now, long elapsed) {
+            public boolean evaluate(StateMachine ctx, long now) {
                 Docker.Status status = ctx.getStatus();
                 if (!status.equals(Docker.Status.READY)) {
                     // connection lost, state will be changed to 'error'
@@ -255,7 +255,7 @@ class TransitionBuilder {
     StateTransition getRunningErrorTransition() {
         return new StateTransition(SessionState.ERROR) {
             @Override
-            public boolean evaluate(StateMachine ctx, long now, long elapsed) {
+            public boolean evaluate(StateMachine ctx, long now) {
                 Docker.Status status = ctx.getStatus();
                 return !status.equals(Docker.Status.READY);
             }
@@ -270,7 +270,7 @@ class TransitionBuilder {
     StateTransition getErrorDefaultTransition() {
         return new StateTransition(SessionState.DEFAULT) {
             @Override
-            public boolean evaluate(StateMachine ctx, long now, long elapsed) {
+            public boolean evaluate(StateMachine ctx, long now) {
                 Docker.Status status = ctx.getStatus();
                 return !status.equals(Docker.Status.ERROR);
             }
