@@ -38,7 +38,7 @@ import java.util.List;
 import chat.dim.Messenger;
 import chat.dim.dbi.SessionDBI;
 import chat.dim.mkm.Station;
-import chat.dim.mtp.MTPStreamArrival;
+import chat.dim.mtp.StreamArrival;
 import chat.dim.port.Arrival;
 import chat.dim.port.Docker;
 import chat.dim.utils.ArrayUtils;
@@ -184,7 +184,7 @@ public class ClientSession extends BaseSession {
     }
 
     private static List<byte[]> getDataPackages(Arrival arrival) {
-        MTPStreamArrival ship = (MTPStreamArrival) arrival;
+        StreamArrival ship = (StreamArrival) arrival;
         byte[] payload = ship.getPayload();
         // check payload
         if (payload == null || payload.length == 0) {

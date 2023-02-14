@@ -32,7 +32,9 @@ package chat.dim.network;
 
 import java.io.IOError;
 import java.io.IOException;
+import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 
 import chat.dim.net.Connection;
@@ -49,8 +51,6 @@ import chat.dim.tcp.StreamChannel;
 import chat.dim.utils.Log;
 
 public class GateKeeper extends Runner implements Docker.Delegate {
-
-    public static int SEND_BUFFER_SIZE = 64 * 1024;  // 64 KB
 
     private final SocketAddress remoteAddress;
     private final CommonGate gate;
@@ -105,6 +105,20 @@ public class GateKeeper extends Runner implements Docker.Delegate {
             return hub;
         }
     }
+
+    private static boolean resetSendBufferSize(SocketChannel channel) throws SocketException {
+        return resetSendBufferSize(channel.socket());
+    }
+    private static boolean resetSendBufferSize(Socket socket) throws SocketException {
+        int size = socket.getSendBufferSize();
+        if (size < SEND_BUFFER_SIZE) {
+            socket.setSendBufferSize(SEND_BUFFER_SIZE);
+            return true;
+        } else {
+            return false;
+        }
+    }
+    public static int SEND_BUFFER_SIZE = 64 * 1024;  // 64 KB
 
     public SocketAddress getRemoteAddress() {
         return remoteAddress;
@@ -185,7 +199,7 @@ public class GateKeeper extends Runner implements Docker.Delegate {
             return false;
         }
         // if msg in this wrapper is null (means sent successfully),
-        // it must have bean cleaned already, so iit shoud not be empty here
+        // it must have bean cleaned already, so iit should not be empty here
         ReliableMessage msg = wrapper.getMessage();
         if (msg == null) {
             // msg sent?
