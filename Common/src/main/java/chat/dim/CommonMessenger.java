@@ -40,6 +40,7 @@ import chat.dim.crypto.EncryptKey;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Entity;
 import chat.dim.mkm.User;
+import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Envelope;
@@ -369,5 +370,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         Command.setFactory(LoginCommand.LOGIN, LoginCommand::new);
         // Report
         Command.setFactory(ReportCommand.REPORT, ReportCommand::new);
+        // ANS
+        Command.setFactory(AnsCommand.ANS, AnsCommand::new);
     }
 }
