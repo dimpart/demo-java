@@ -32,9 +32,11 @@ package chat.dim.cpu.group;
 
 import java.util.List;
 
+import chat.dim.CommonFacebook;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
+import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
@@ -79,7 +81,7 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
     }
 
     protected Content respondGroupMembers(ID owner, ID group, List<ID> members) {
-        /*/
+        CommonFacebook facebook = (CommonFacebook) getFacebook();
         User user = facebook.getCurrentUser();
         assert user != null : "current user not set yet";
         if (user.getIdentifier().equals(owner)) {
@@ -87,7 +89,5 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
         } else {
             return GroupCommand.invite(group, members);
         }
-        /*/
-        return null;
     }
 }

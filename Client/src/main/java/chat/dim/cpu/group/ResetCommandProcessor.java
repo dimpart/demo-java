@@ -33,6 +33,7 @@ package chat.dim.cpu.group;
 import java.util.ArrayList;
 import java.util.List;
 
+import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
@@ -53,7 +54,9 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
     }
 
     protected void queryOwner(ID owner, ID group) {
-        // TODO: send QueryCommand to owner
+        GroupCommand command = GroupCommand.query(group);
+        CommonMessenger messenger = (CommonMessenger) getMessenger();
+        messenger.sendContent(null, owner, command, 1);
     }
 
     protected List<Content> temporarySave(GroupCommand command, ID sender) {

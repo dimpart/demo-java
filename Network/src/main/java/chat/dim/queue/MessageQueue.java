@@ -125,7 +125,7 @@ public final class MessageQueue {
         writeLock.lock();
         try {
             for (int priority : priorities) {
-                // get first message
+                // get first task
                 List<MessageWrapper> array = fleets.get(priority);
                 if (array != null && array.size() > 0) {
                     target = array.remove(0);

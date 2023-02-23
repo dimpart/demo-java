@@ -144,12 +144,11 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         }
         assert identifier.isGroup() : "group ID error: " + identifier;
         List<ID> assistants = facebook.getAssistants(identifier);
-        // request to group bots
         if (assistants == null || assistants.size() == 0) {
             // group assistants not found
             return false;
         }
-        // querying members
+        // querying members from bots
         QueryCommand cmd = GroupCommand.query(identifier);
         for (ID bot : assistants) {
             sendContent(null, bot, cmd, 1);
@@ -223,7 +222,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
                 }
                 Map<String, String> error = new HashMap<>();
                 error.put("message", "group meta not found");
-                error.put("user", receiver.toString());
+                error.put("group", receiver.toString());
                 iMsg.put("error", error);
                 return false;
             }
@@ -235,7 +234,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
                 }
                 Map<String, String> error = new HashMap<>();
                 error.put("message", "members not found");
-                error.put("user", receiver.toString());
+                error.put("group", receiver.toString());
                 iMsg.put("error", error);
                 return false;
             }

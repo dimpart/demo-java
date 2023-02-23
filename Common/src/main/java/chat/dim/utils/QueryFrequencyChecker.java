@@ -58,7 +58,7 @@ public enum QueryFrequencyChecker {
 
     QueryFrequencyChecker() {
         // each query will be expired after 10 minutes
-        final int QUERY_EXPIRES = 600 * 1000;  // seconds
+        final int QUERY_EXPIRES = 600 * 1000;  // milliseconds
         metaQueries = new FrequencyChecker<>(QUERY_EXPIRES);
         metaLock = new ReentrantReadWriteLock();
         documentQueries = new FrequencyChecker<>(QUERY_EXPIRES);

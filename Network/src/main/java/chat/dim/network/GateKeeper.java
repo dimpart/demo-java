@@ -132,12 +132,13 @@ public class GateKeeper extends Runner implements Docker.Delegate {
         return active;
     }
     public boolean setActive(boolean flag, long when) {
+        if (active == flag) {
+            // flag not changed
+            return false;
+        }
         if (when <= 0) {
             when = System.currentTimeMillis();
         } else if (when <= lastActive) {
-            return false;
-        }
-        if (active == flag) {
             return false;
         }
         active = flag;
