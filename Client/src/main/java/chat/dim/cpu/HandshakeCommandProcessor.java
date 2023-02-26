@@ -56,7 +56,7 @@ public class HandshakeCommandProcessor extends BaseCommandProcessor {
     @Override
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof HandshakeCommand : "handshake command error: " + content;
-        HandshakeCommand cmd = (HandshakeCommand) content;
+        HandshakeCommand command = (HandshakeCommand) content;
         ClientMessenger messenger = getMessenger();
         ClientSession session = messenger.getSession();
         // update station's default ID ('station@anywhere') to sender (real ID)
@@ -69,10 +69,10 @@ public class HandshakeCommandProcessor extends BaseCommandProcessor {
             assert oid.equals(sender) : "station ID not match: " + oid + ", " + sender;
         }
         // handle handshake command with title & session key
-        String title = cmd.getTitle();
-        String newKey = cmd.getSessionKey();
+        String title = command.getTitle();
+        String newKey = command.getSessionKey();
         String oldKey = session.getKey();
-        assert newKey != null : "new session key should not be empty: " + cmd;
+        assert newKey != null : "new session key should not be empty: " + command;
         if (title.equals("DIM?")) {
             // S -> C: station ask client to handshake again
             if (oldKey == null) {

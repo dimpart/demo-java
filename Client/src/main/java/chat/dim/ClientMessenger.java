@@ -34,7 +34,7 @@ import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
-import chat.dim.protocol.Command;
+import chat.dim.protocol.Content;
 import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.HandshakeCommand;
@@ -76,18 +76,18 @@ public class ClientMessenger extends CommonMessenger {
             Meta meta = user.getMeta();
             Visa visa = user.getVisa();
             Envelope env = Envelope.create(uid, sid, null);
-            Command cmd = HandshakeCommand.start();
+            Content content = HandshakeCommand.start();
             // send first handshake command as broadcast message
-            cmd.setGroup(Station.EVERY);
+            content.setGroup(Station.EVERY);
             // create instant message with meta & visa
-            InstantMessage iMsg = InstantMessage.create(env, cmd);
+            InstantMessage iMsg = InstantMessage.create(env, content);
             iMsg.put("meta", meta.toMap());
             iMsg.put("visa", visa.toMap());
             sendInstantMessage(iMsg, -1);
         } else {
             // handshake again
-            Command cmd = HandshakeCommand.restart(sessionKey);
-            sendContent(null, sid, cmd, -1);
+            Content content = HandshakeCommand.restart(sessionKey);
+            sendContent(null, sid, content, -1);
         }
     }
 
@@ -109,9 +109,9 @@ public class ClientMessenger extends CommonMessenger {
         ID uid = user.getIdentifier();
         Meta meta = user.getMeta();
         Visa visa = user.getVisa();
-        Command cmd = DocumentCommand.response(uid, meta, visa);
+        Content content = DocumentCommand.response(uid, meta, visa);
         // broadcast to 'everyone@everywhere'
-        sendContent(uid, ID.EVERYONE, cmd, 1);
+        sendContent(uid, ID.EVERYONE, content, 1);
     }
 
     /**
@@ -121,27 +121,27 @@ public class ClientMessenger extends CommonMessenger {
         ClientSession session = getSession();
         Station station = session.getStation();
         // create login command
-        LoginCommand cmd = new LoginCommand(sender);
-        cmd.setAgent(userAgent);
-        cmd.setStation(station);
+        LoginCommand content = new LoginCommand(sender);
+        content.setAgent(userAgent);
+        content.setStation(station);
         // broadcast to 'everyone@everywhere'
-        sendContent(sender, ID.EVERYONE, cmd, 1);
+        sendContent(sender, ID.EVERYONE, content, 1);
     }
 
     /**
      *  Send report command to keep user online
      */
     public void reportOnline(ID sender) {
-        Command cmd = new ReportCommand(ReportCommand.ONLINE);
-        sendContent(sender, Station.ANY, cmd, 1);
+        Content content = new ReportCommand(ReportCommand.ONLINE);
+        sendContent(sender, Station.ANY, content, 1);
     }
 
     /**
      *  Send report command to let user offline
      */
     public void reportOffline(ID sender) {
-        Command cmd = new ReportCommand(ReportCommand.OFFLINE);
-        sendContent(sender, Station.ANY, cmd, 1);
+        Content content = new ReportCommand(ReportCommand.OFFLINE);
+        sendContent(sender, Station.ANY, content, 1);
     }
 
     @Override
@@ -151,8 +151,8 @@ public class ClientMessenger extends CommonMessenger {
             // query not expired yet
             return false;
         }
-        Command cmd = MetaCommand.query(identifier);
-        sendContent(null, Station.ANY, cmd, 1);
+        Content content = MetaCommand.query(identifier);
+        sendContent(null, Station.ANY, content, 1);
         return true;
     }
 
@@ -163,8 +163,8 @@ public class ClientMessenger extends CommonMessenger {
             // query not expired yet
             return false;
         }
-        Command cmd = DocumentCommand.query(identifier);
-        sendContent(null, Station.ANY, cmd, 1);
+        Content content = DocumentCommand.query(identifier);
+        sendContent(null, Station.ANY, content, 1);
         return true;
     }
 }

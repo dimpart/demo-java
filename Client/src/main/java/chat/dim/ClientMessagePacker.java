@@ -37,6 +37,7 @@ import chat.dim.crypto.SymmetricKey;
 import chat.dim.digest.SHA256;
 import chat.dim.format.Base64;
 import chat.dim.mkm.User;
+import chat.dim.protocol.Content;
 import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
@@ -86,13 +87,9 @@ public class ClientMessagePacker extends MessagePacker {
         } else {
             key = messenger.getCipherKey(sender, group, false);
         }
-        if (key == null) {
-            // broadcast message has no key
-            return;
-        }
         String digest = getKeyDigest(key);
         if (digest == null) {
-            // key error
+            // broadcast message has no key
             return;
         }
         keys.put("digest", digest);
@@ -101,8 +98,13 @@ public class ClientMessagePacker extends MessagePacker {
 
     // get partially key data for digest
     private static String getKeyDigest(SymmetricKey key) {
+        if (key == null) {
+            // key error
+            return null;
+        }
         byte[] data = key.getData();
         if (data == null || data.length < 6) {
+            // plain key?
             return null;
         }
         // get digest for the last 6 bytes of key.data
@@ -172,9 +174,9 @@ public class ClientMessagePacker extends MessagePacker {
                     // FIXME: user visa not found?
                     throw new NullPointerException("user visa error: " + user.getIdentifier());
                 }
-                DocumentCommand cmd = DocumentCommand.response(user.getIdentifier(), visa);
+                Content content = DocumentCommand.response(user.getIdentifier(), visa);
                 CommonMessenger messenger = (CommonMessenger) getMessenger();
-                messenger.sendContent(user.getIdentifier(), sMsg.getSender(), cmd, 0);
+                messenger.sendContent(user.getIdentifier(), sMsg.getSender(), content, 0);
             } else {
                 throw e;
             }

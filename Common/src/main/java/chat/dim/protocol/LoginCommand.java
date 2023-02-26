@@ -37,7 +37,7 @@ import chat.dim.mkm.Station;
  *      type : 0x88,
  *      sn   : 123,
  *
- *      cmd      : "login",
+ *      command  : "login",
  *      time     : 0,
  *      //---- client info ----
  *      ID       : "{UserID}",
@@ -58,8 +58,8 @@ public class LoginCommand extends BaseCommand {
 
     public static final String LOGIN     = "login";
 
-    public LoginCommand(Map<String, Object> dictionary) {
-        super(dictionary);
+    public LoginCommand(Map<String, Object> content) {
+        super(content);
     }
 
     public LoginCommand(ID identifier) {

@@ -52,7 +52,7 @@ public interface ReliableMessageDBI {
      */
     Pair<List<ReliableMessage>, Integer> getReliableMessages(ID receiver, int start, int limit);
 
-    boolean cacheReliableMessage(ID receiver, ReliableMessage msg);
+    boolean cacheReliableMessage(ID receiver, ReliableMessage rMsg);
 
-    boolean removeReliableMessage(ID receiver, ReliableMessage msg);
+    boolean removeReliableMessage(ID receiver, ReliableMessage rMsg);
 }

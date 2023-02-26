@@ -36,7 +36,7 @@ import chat.dim.utils.ArrayUtils;
  *      type : 0x88,
  *      sn   : 123,
  *
- *      cmd     : "ans",
+ *      command : "ans",
  *      names   : "...",        // query with alias(es, separated by ' ')
  *      records : {             // respond with record(s)
  *          "{alias}": "{ID}",
@@ -47,8 +47,8 @@ public class AnsCommand extends BaseCommand {
 
     public static final String ANS = "ans";
 
-    public AnsCommand(Map<String, Object> dictionary) {
-        super(dictionary);
+    public AnsCommand(Map<String, Object> content) {
+        super(content);
     }
 
     public AnsCommand(String names) {

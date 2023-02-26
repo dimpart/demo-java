@@ -43,5 +43,5 @@ public interface LoginDBI {
 
     Pair<LoginCommand, ReliableMessage> getLoginCommandMessage(ID identifier);
 
-    boolean saveLoginCommandMessage(ID identifier, LoginCommand cmd, ReliableMessage msg);
+    boolean saveLoginCommandMessage(ID identifier, LoginCommand content, ReliableMessage rMsg);
 }

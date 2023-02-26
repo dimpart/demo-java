@@ -48,6 +48,7 @@ import chat.dim.queue.MessageQueue;
 import chat.dim.queue.MessageWrapper;
 import chat.dim.skywalker.Runner;
 import chat.dim.tcp.StreamChannel;
+import chat.dim.tcp.StreamHub;
 import chat.dim.utils.Log;
 
 public class GateKeeper extends Runner implements Docker.Delegate {
@@ -78,7 +79,7 @@ public class GateKeeper extends Runner implements Docker.Delegate {
         return streamGate;
     }
 
-    protected Hub createHub(Connection.Delegate delegate, SocketAddress remote, SocketChannel sock) {
+    protected StreamHub createHub(Connection.Delegate delegate, SocketAddress remote, SocketChannel sock) {
         if (sock == null) {
             // client
             assert remote != null : "remote address empty";

@@ -72,10 +72,10 @@ public interface Session extends Transmitter {
     /**
      *  Pack message into a waiting queue
      *
-     * @param msg      - network message
+     * @param rMsg     - network message
      * @param data     - serialized message
      * @param priority - smaller is faster
      * @return false on error
      */
-    boolean queueMessagePackage(ReliableMessage msg, byte[] data, int priority);
+    boolean queueMessagePackage(ReliableMessage rMsg, byte[] data, int priority);
 }

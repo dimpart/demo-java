@@ -49,13 +49,13 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
         super(facebook, messenger);
     }
 
-    protected List<ID> getMembers(GroupCommand command) {
+    protected List<ID> getMembers(GroupCommand content) {
         // get from 'members'
-        List<ID> members = command.getMembers();
+        List<ID> members = content.getMembers();
         if (members == null) {
             members = new ArrayList<>();
             // get from 'member'
-            ID member = command.getMember();
+            ID member = content.getMember();
             if (member != null) {
                 members.add(member);
             }

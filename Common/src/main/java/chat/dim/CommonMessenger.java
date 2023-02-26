@@ -55,7 +55,6 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
-import chat.dim.protocol.group.QueryCommand;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 import chat.dim.utils.QueryFrequencyChecker;
@@ -150,9 +149,9 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
             return false;
         }
         // querying members from bots
-        QueryCommand cmd = GroupCommand.query(identifier);
+        Content content = GroupCommand.query(identifier);
         for (ID bot : assistants) {
-            sendContent(null, bot, cmd, 1);
+            sendContent(null, bot, content, 1);
         }
         return true;
     }

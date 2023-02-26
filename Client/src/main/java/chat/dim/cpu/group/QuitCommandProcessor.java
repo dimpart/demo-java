@@ -51,9 +51,9 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
     }
 
     @SuppressWarnings("unused")
-    protected List<Content> removeAssistant(QuitCommand command, ReliableMessage rMsg) {
+    protected List<Content> removeAssistant(QuitCommand content, ReliableMessage rMsg) {
         // NOTICE: group assistant should be retired by the owner
-        return respondText(STR_ASSISTANT_CANNOT_QUIT, command.getGroup());
+        return respondText(STR_ASSISTANT_CANNOT_QUIT, content.getGroup());
     }
 
     @Override

@@ -59,11 +59,11 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         messenger.sendContent(null, owner, command, 1);
     }
 
-    protected List<Content> temporarySave(GroupCommand command, ID sender) {
+    protected List<Content> temporarySave(GroupCommand content, ID sender) {
         Facebook facebook = getFacebook();
-        ID group = command.getGroup();
+        ID group = content.getGroup();
         // check whether the owner contained in the new members
-        List<ID> newMembers = getMembers(command);
+        List<ID> newMembers = getMembers(content);
         if (newMembers.size() == 0) {
             return respondText(STR_RESET_CMD_ERROR, group);
         }

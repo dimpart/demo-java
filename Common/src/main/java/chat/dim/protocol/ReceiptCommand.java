@@ -35,9 +35,9 @@ import chat.dim.dkd.cmd.BaseCommand;
  *      type : 0x88,
  *      sn   : 456,
  *
- *      cmd    : "receipt",
- *      text   : "...",  // text message
- *      origin : {       // original message envelope
+ *      command : "receipt",
+ *      text    : "...",  // text message
+ *      origin  : {       // original message envelope
  *          sender    : "...",
  *          receiver  : "...",
  *          time      : 0,
@@ -53,8 +53,8 @@ public class ReceiptCommand extends BaseCommand {
     // original message envelope
     private Envelope envelope;
 
-    public ReceiptCommand(Map<String, Object> dictionary) {
-        super(dictionary);
+    public ReceiptCommand(Map<String, Object> content) {
+        super(content);
         envelope = null;
     }
 
@@ -125,6 +125,36 @@ public class ReceiptCommand extends BaseCommand {
         return (String) origin.get("signature");
     }
 
+    public boolean matchMessage(InstantMessage iMsg) {
+        // check signature
+        String sig1 = getOriginalSignature();
+        if (sig1 != null) {
+            // if contains signature, check it
+            String sig2 = iMsg.getString("signature");
+            if (sig2 != null) {
+                if (sig1.length() > 8) {
+                    sig1 = sig1.substring(0, 8);
+                }
+                if (sig2.length() > 8) {
+                    sig2 = sig2.substring(0, 8);
+                }
+                return sig1.equals(sig2);
+            }
+        }
+        // check envelope
+        Envelope env1 = getOriginalEnvelope();
+        if (env1 != null) {
+            // if contains envelope, check it
+            return env1.equals(iMsg.getEnvelope());
+        }
+        // check serial number
+        // (only the original message's receiver can know this number)
+        Content content = iMsg.getContent();
+        long sn2 = content.getSerialNumber();
+        long sn1 = getOriginalSerialNumber();
+        return sn1 == sn2;
+    }
+
     //
     //  Factory method
     //
@@ -133,13 +163,13 @@ public class ReceiptCommand extends BaseCommand {
      *  Create receipt with text message and origin message envelope
      *
      * @param text - message text
-     * @param msg  - origin message
+     * @param rMsg - origin message
      * @return ReceiptCommand
      */
-    public static ReceiptCommand create(String text, ReliableMessage msg) {
+    public static ReceiptCommand create(String text, ReliableMessage rMsg) {
         Envelope env = null;
-        if (msg != null) {
-            Map<String, Object> info = msg.copyMap(false);
+        if (rMsg != null) {
+            Map<String, Object> info = rMsg.copyMap(false);
             info.remove("data");
             info.remove("key");
             info.remove("keys");

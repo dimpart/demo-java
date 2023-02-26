@@ -34,10 +34,10 @@ import chat.dim.dkd.cmd.BaseCommand;
  *      type : 0x88,
  *      sn   : 123,
  *
- *      cmd   : "report",
- *      title : "online",      // or "offline"
+ *      command : "report",
+ *      title   : "online",      // or "offline"
  *      //---- extra info
- *      time  : 1234567890,    // timestamp
+ *      time    : 1234567890,    // timestamp
  *  }
  */
 public class ReportCommand extends BaseCommand {
@@ -46,8 +46,8 @@ public class ReportCommand extends BaseCommand {
     public static final String ONLINE = "online";
     public static final String OFFLINE = "offline";
 
-    public ReportCommand(Map<String, Object> dictionary) {
-        super(dictionary);
+    public ReportCommand(Map<String, Object> content) {
+        super(content);
     }
 
     public ReportCommand(String title) {

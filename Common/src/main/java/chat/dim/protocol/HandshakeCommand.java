@@ -39,7 +39,7 @@ import chat.dim.dkd.cmd.BaseCommand;
  *      type : 0x88,
  *      sn   : 123,
  *
- *      cmd     : "handshake",    // command name
+ *      command : "handshake",    // command name
  *      title   : "Hello world!", // "DIM?", "DIM!"
  *      session : "{SESSION_KEY}" // session key
  *  }
@@ -48,8 +48,8 @@ public class HandshakeCommand extends BaseCommand {
 
     public final static String HANDSHAKE = "handshake";
 
-    public HandshakeCommand(Map<String, Object> command) {
-        super(command);
+    public HandshakeCommand(Map<String, Object> content) {
+        super(content);
     }
 
     public HandshakeCommand(String text, String session) {
