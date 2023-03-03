@@ -2,12 +2,12 @@
  *
  *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
- *                                Written in 2022 by Moky <albert.moky@gmail.com>
+ *                                Written in 2023 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 Albert Moky
+ * Copyright (c) 2023 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,40 +31,29 @@
 package chat.dim.cpu;
 
 import java.util.List;
+import java.util.Map;
 
-import chat.dim.ClientMessenger;
+import chat.dim.ClientFacebook;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
-import chat.dim.dbi.SessionDBI;
-import chat.dim.network.ClientSession;
+import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.utils.Log;
 
-public class LoginCommandProcessor extends BaseCommandProcessor {
+public class AnsCommandProcessor extends BaseCommandProcessor {
 
-    public LoginCommandProcessor(Facebook facebook, Messenger messenger) {
+    public AnsCommandProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
     }
 
     @Override
     public List<Content> process(Content content, ReliableMessage rMsg) {
-        assert content instanceof LoginCommand : "login command error: " + content;
-        LoginCommand command = (LoginCommand) content;
-        ID sender = command.getIdentifier();
-        assert rMsg.getSender().equals(sender) : "sender not match: " + sender + ", " + rMsg.getSender();
-        // save login command to session db
-        ClientMessenger messenger = (ClientMessenger) getMessenger();
-        ClientSession session = messenger.getSession();
-        SessionDBI db = session.getDatabase();
-        if (db.saveLoginCommandMessage(sender, command, rMsg)) {
-            Log.info("saved login command for user: " + sender);
-        } else {
-            Log.error("failed to save login command: " + sender + ", " + command);
-        }
-        // no need to response login command
+        assert content instanceof AnsCommand : "search command error: " + content;
+        AnsCommand command = (AnsCommand) content;
+        Map<String, String> records = command.getRecords();
+        int count = ClientFacebook.ans.fix(records);
+        Log.info("ANS: update " + count + " record(s), " + records);
         return null;
     }
 }

@@ -325,12 +325,12 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
     //
 
     @Override
-    public void enterState(SessionState next, StateMachine ctx) {
+    public void enterState(SessionState next, StateMachine ctx, long now) {
         // called before state changed
     }
 
     @Override
-    public void exitState(SessionState previous, StateMachine ctx) {
+    public void exitState(SessionState previous, StateMachine ctx, long now) {
         // called after state changed
         ClientMessenger messenger = getMessenger();
         SessionState current = ctx.getCurrentState();
@@ -344,17 +344,17 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
             // broadcast current meta & visa document to all stations
             messenger.handshakeSuccess();
             // update last online time
-            lastTime = System.currentTimeMillis();
+            lastTime = now;
         }
     }
 
     @Override
-    public void pauseState(SessionState current, StateMachine ctx) {
+    public void pauseState(SessionState current, StateMachine ctx, long now) {
 
     }
 
     @Override
-    public void resumeState(SessionState current, StateMachine ctx) {
+    public void resumeState(SessionState current, StateMachine ctx, long now) {
         // TODO: clear session key for re-login?
     }
 }

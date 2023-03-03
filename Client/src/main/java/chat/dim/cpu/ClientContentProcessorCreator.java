@@ -1,6 +1,6 @@
 /* license: https://mit-license.org
  *
- *  DIMP : Decentralized Instant Messaging Protocol
+ *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
  *                                Written in 2022 by Moky <albert.moky@gmail.com>
  *
@@ -37,6 +37,7 @@ import chat.dim.cpu.group.InviteCommandProcessor;
 import chat.dim.cpu.group.QueryCommandProcessor;
 import chat.dim.cpu.group.QuitCommandProcessor;
 import chat.dim.cpu.group.ResetCommandProcessor;
+import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.HandshakeCommand;
@@ -72,6 +73,8 @@ public class ClientContentProcessorCreator extends ContentProcessorCreator {
                 return new LoginCommandProcessor(getFacebook(), getMessenger());
             case ReceiptCommand.RECEIPT:
                 return new ReceiptCommandProcessor(getFacebook(), getMessenger());
+            case AnsCommand.ANS:
+                return new AnsCommandProcessor(getFacebook(), getMessenger());
 
             // group commands
             case "group":

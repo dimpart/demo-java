@@ -30,9 +30,7 @@
  */
 package chat.dim;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import chat.dim.core.FactoryManager;
@@ -41,15 +39,15 @@ import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Entity;
 import chat.dim.mkm.User;
 import chat.dim.protocol.AnsCommand;
+import chat.dim.protocol.BlockCommand;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Envelope;
-import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.LoginCommand;
-import chat.dim.protocol.Meta;
+import chat.dim.protocol.MuteCommand;
 import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.ReportCommand;
@@ -57,8 +55,10 @@ import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
-import chat.dim.utils.QueryFrequencyChecker;
 
+/**
+ *  Common Messenger with Session & Database
+ */
 public abstract class CommonMessenger extends Messenger implements Transmitter {
 
     private final Session session;
@@ -131,33 +131,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
     protected abstract boolean queryDocument(ID identifier);
 
     /**
-     *  Request for group members with group ID
-     *
-     * @param identifier - group ID
-     * @return false on duplicated
-     */
-    protected boolean queryMembers(ID identifier) {
-        QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
-        if (!checker.isMembersQueryExpired(identifier, 0)) {
-            // query not expired yet
-            return false;
-        }
-        assert identifier.isGroup() : "group ID error: " + identifier;
-        List<ID> assistants = facebook.getAssistants(identifier);
-        if (assistants == null || assistants.size() == 0) {
-            // group assistants not found
-            return false;
-        }
-        // querying members from bots
-        Content content = GroupCommand.query(identifier);
-        for (ID bot : assistants) {
-            sendContent(null, bot, content, 1);
-        }
-        return true;
-    }
-
-    /**
-     *  Check whether msg.sender is ready
+     *  Check sender before verifying received message
      *
      * @param rMsg - network message
      * @return false on verify key not found
@@ -174,22 +148,23 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
             return true;
         }
         EncryptKey visaKey = facebook.getPublicKeyForEncryption(sender);
-        if (visaKey != null) {
-            // sender is OK
-            return true;
+        if (visaKey == null) {
+            // sender not ready, try to query document for it
+            if (queryDocument(sender)) {
+                Log.info("querying document for sender: " + sender);
+            }
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "verify key not found");
+            error.put("user", sender.toString());
+            rMsg.put("error", error);
+            return false;
         }
-        if (queryDocument(sender)) {
-            Log.info("querying document for sender: " + sender);
-        }
-        Map<String, String> error = new HashMap<>();
-        error.put("message", "verify key not found");
-        error.put("user", sender.toString());
-        rMsg.put("error", error);
-        return false;
+        // sender is OK
+        return true;
     }
 
     /**
-     *  Check whether msg.receiver is ready
+     *  Check receiver before encrypting message
      *
      * @param iMsg - plain message
      * @return false on encrypt key not found
@@ -199,11 +174,11 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         if (receiver.isBroadcast()) {
             // broadcast message
             return true;
-        }
-        if (receiver.isUser()) {
+        } else if (receiver.isUser()) {
             // check user's meta & document
             EncryptKey visaKey = facebook.getPublicKeyForEncryption(receiver);
             if (visaKey == null) {
+                // receiver not ready, try to query document for it
                 if (queryDocument(receiver)) {
                     Log.info("querying document for receiver: " + receiver);
                 }
@@ -213,51 +188,14 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
                 iMsg.put("error", error);
                 return false;
             }
-        } else {
-            // check group's meta
-            Meta meta = facebook.getMeta(receiver);
-            if (meta == null) {
-                if (queryMeta(receiver)) {
-                    Log.info("querying meta for group: " + receiver);
-                }
-                Map<String, String> error = new HashMap<>();
-                error.put("message", "group meta not found");
-                error.put("group", receiver.toString());
-                iMsg.put("error", error);
-                return false;
-            }
-            // check group members
-            List<ID> members = facebook.getMembers(receiver);
-            if (members == null || members.size() == 0) {
-                if (queryMembers(receiver)) {
-                    Log.info("querying members for group: " + receiver);
-                }
-                Map<String, String> error = new HashMap<>();
-                error.put("message", "members not found");
-                error.put("group", receiver.toString());
-                iMsg.put("error", error);
-                return false;
-            }
-            List<ID> waiting = new ArrayList<>();
-            for (ID item : members) {
-                if (facebook.getPublicKeyForEncryption(item) == null) {
-                    if (queryDocument(item)) {
-                        Log.info("querying document for member: " + item + ", group: " + receiver);
-                    }
-                    waiting.add(item);
-                }
-            }
-            if (waiting.size() > 0) {
-                Map<String, Object> error = new HashMap<>();
-                error.put("message", "encrypt keys not found");
-                error.put("group", receiver.toString());
-                error.put("members", ID.revert(waiting));
-                iMsg.put("error", error);
-                return false;
-            }
+            // receiver is OK
+            return true;
         }
-        // receiver is OK
-        return true;
+        // NOTICE: group message won't send to a station,
+        //         so we DON'T need to check group info here.
+        //         group message will be sent to the group assistant bot first,
+        //         and the bot will separate the message for all members.
+        return false;
     }
 
     /*/
@@ -369,6 +307,10 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         Command.setFactory(LoginCommand.LOGIN, LoginCommand::new);
         // Report
         Command.setFactory(ReportCommand.REPORT, ReportCommand::new);
+        // Mute
+        Command.setFactory(MuteCommand.MUTE, MuteCommand::new);
+        // Block
+        Command.setFactory(BlockCommand.BLOCK, BlockCommand::new);
         // ANS
         Command.setFactory(AnsCommand.ANS, AnsCommand::new);
     }

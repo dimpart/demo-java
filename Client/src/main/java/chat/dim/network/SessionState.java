@@ -96,11 +96,11 @@ public class SessionState extends BaseState<StateMachine, StateTransition> {
     }
 
     @Override
-    public void onPause(StateMachine machine) {
+    public void onPause(StateMachine machine, long now) {
     }
 
     @Override
-    public void onResume(StateMachine machine) {
+    public void onResume(StateMachine machine, long now) {
     }
 }
 

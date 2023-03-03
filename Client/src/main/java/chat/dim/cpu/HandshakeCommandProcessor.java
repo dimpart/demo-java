@@ -1,6 +1,6 @@
 /* license: https://mit-license.org
  *
- *  DIMP : Decentralized Instant Messaging Protocol
+ *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
  *                                Written in 2022 by Moky <albert.moky@gmail.com>
  *
@@ -41,6 +41,7 @@ import chat.dim.protocol.Content;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.utils.Log;
 
 public class HandshakeCommandProcessor extends BaseCommandProcessor {
 
@@ -95,6 +96,7 @@ public class HandshakeCommandProcessor extends BaseCommandProcessor {
                 session.setKey(newKey);
             } else if (oldKey.equals(newKey)) {
                 // duplicated handshake response?
+                Log.warning("duplicated handshake response");
             } else {
                 // FIXME: handshake error
                 // erase session key to handshake again
@@ -102,6 +104,7 @@ public class HandshakeCommandProcessor extends BaseCommandProcessor {
             }
         } else {
             // C -> S: Hello world!
+            Log.warning("Handshake from other user? " + sender + ": " + content);
         }
         return null;
     }
