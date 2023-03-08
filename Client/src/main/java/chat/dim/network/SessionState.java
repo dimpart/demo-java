@@ -48,19 +48,21 @@ import chat.dim.fsm.State;
  */
 public class SessionState extends BaseState<StateMachine, StateTransition> {
 
-    public static final String DEFAULT     = "default";
-    public static final String CONNECTING  = "connecting";
-    public static final String CONNECTED   = "connected";
-    public static final String HANDSHAKING = "handshaking";
-    public static final String RUNNING     = "running";
-    public static final String ERROR       = "error";
+    public enum Order {
+        DEFAULT,  // = 0
+        CONNECTING,
+        CONNECTED,
+        HANDSHAKING,
+        RUNNING,
+        ERROR
+    }
 
-    public final String name;
+    private final String name;
     long timestamp;
 
-    SessionState(String stateName) {
-        super();
-        name = stateName;
+    SessionState(Order stateOrder) {
+        super(stateOrder.ordinal());
+        name = stateOrder.name();
         timestamp = 0;
     }
 
@@ -71,18 +73,20 @@ public class SessionState extends BaseState<StateMachine, StateTransition> {
 
     @Override
     public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        } else if (other instanceof SessionState) {
-            return ((SessionState) other).name.equals(name);
-        } else if (other instanceof String) {
-            return other.equals(name);
+        if (other instanceof SessionState) {
+            if (this == other) {
+                return true;
+            }
+            SessionState state = (SessionState) other;
+            return state.index == index;
+        } else if (other instanceof Order) {
+            return ((Order) other).ordinal() == index;
         } else {
             return false;
         }
     }
-    public boolean equals(String other) {
-        return name.equals(other);
+    public boolean equals(Order other) {
+        return other.ordinal() == index;
     }
 
     @Override
@@ -101,6 +105,78 @@ public class SessionState extends BaseState<StateMachine, StateTransition> {
 
     @Override
     public void onResume(StateMachine machine, long now) {
+    }
+
+    /**
+     *  Session State Delegate
+     *  ~~~~~~~~~~~~~~~~~~~~~~
+     *
+     *  callback when session state changed
+     */
+    public interface Delegate extends chat.dim.fsm.Delegate<StateMachine, StateTransition, SessionState> {
+
+    }
+
+    static class Builder {
+
+        StateTransition.Builder stb;
+
+        Builder(StateTransition.Builder transitionBuilder) {
+            super();
+            stb = transitionBuilder;
+        }
+
+        SessionState getDefaultState() {
+            SessionState state = new SessionState(SessionState.Order.DEFAULT);
+            // Default -> Connecting
+            state.addTransition(stb.getDefaultConnectingTransition());
+            return state;
+        }
+
+        SessionState getConnectingState() {
+            SessionState state = new SessionState(SessionState.Order.CONNECTING);
+            // Connecting -> Connected
+            state.addTransition(stb.getConnectingConnectedTransition());
+            // Connecting -> Error
+            state.addTransition(stb.getConnectingErrorTransition());
+            return state;
+        }
+
+        SessionState getConnectedState() {
+            SessionState state = new SessionState(SessionState.Order.CONNECTED);
+            // Connected -> Handshaking
+            state.addTransition(stb.getConnectedHandshakingTransition());
+            // Connected -> Error
+            state.addTransition(stb.getConnectedErrorTransition());
+            return state;
+        }
+
+        SessionState getHandshakingState() {
+            SessionState state = new SessionState(SessionState.Order.HANDSHAKING);
+            // Handshaking -> Running
+            state.addTransition(stb.getHandshakingRunningTransition());
+            // Handshaking -> Connected
+            state.addTransition(stb.getHandshakingConnectedTransition());
+            // Handshaking -> Error
+            state.addTransition(stb.getHandshakingErrorTransition());
+            return state;
+        }
+
+        SessionState getRunningState() {
+            SessionState state = new SessionState(SessionState.Order.RUNNING);
+            // Running -> Default
+            state.addTransition(stb.getRunningDefaultTransition());
+            // Running -> Error
+            state.addTransition(stb.getRunningErrorTransition());
+            return state;
+        }
+
+        SessionState getErrorState() {
+            SessionState state = new SessionState(SessionState.Order.ERROR);
+            // Error -> Default
+            state.addTransition(stb.getErrorDefaultTransition());
+            return state;
+        }
     }
 }
 

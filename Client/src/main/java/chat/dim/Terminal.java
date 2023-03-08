@@ -33,18 +33,16 @@ package chat.dim;
 import java.util.Locale;
 
 import chat.dim.dbi.SessionDBI;
-import chat.dim.fsm.Delegate;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
 import chat.dim.network.SessionState;
 import chat.dim.network.StateMachine;
-import chat.dim.network.StateTransition;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.skywalker.Runner;
 
-public abstract class Terminal extends Runner implements Delegate<StateMachine, StateTransition, SessionState> {
+public abstract class Terminal extends Runner implements SessionState.Delegate {
 
     public final CommonFacebook facebook;
     public final SessionDBI database;
@@ -211,7 +209,7 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
         if (uid != null) {
             // already signed in, check session state
             SessionState state = machine.getCurrentState();
-            if (state.equals(SessionState.RUNNING)) {
+            if (state.equals(SessionState.Order.RUNNING)) {
                 // report client state
                 transceiver.reportOffline(uid);
                 idle(512);
@@ -235,7 +233,7 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
         if (uid != null) {
             // already signed in, wait a while to check session state
             idle(512);
-            if (getState().equals(SessionState.RUNNING)) {
+            if (getState().equals(SessionState.Order.RUNNING)) {
                 // report client state
                 transceiver.reportOnline(uid);
             }
@@ -287,7 +285,7 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
         }
         ClientSession session = messenger.getSession();
         ID uid = session.getIdentifier();
-        if (uid == null || !getState().equals(SessionState.RUNNING)) {
+        if (uid == null || !getState().equals(SessionState.Order.RUNNING)) {
             // handshake not accepted
             return false;
         }
@@ -337,10 +335,10 @@ public abstract class Terminal extends Runner implements Delegate<StateMachine, 
         if (current == null) {
             return;
         }
-        if (current.equals(SessionState.HANDSHAKING)) {
+        if (current.equals(SessionState.Order.HANDSHAKING)) {
             // start handshake
             messenger.handshake(null);
-        } else if (current.equals(SessionState.RUNNING)) {
+        } else if (current.equals(SessionState.Order.RUNNING)) {
             // broadcast current meta & visa document to all stations
             messenger.handshakeSuccess();
             // update last online time

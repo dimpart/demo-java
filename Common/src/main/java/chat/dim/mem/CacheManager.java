@@ -44,7 +44,7 @@ public enum CacheManager implements Runnable {
         return INSTANCE;
     }
 
-    Map<String, CachePool> poolMap = new HashMap<>();
+    private final Map<String, CachePool> poolMap = new HashMap<>();
 
     // thread for cleaning caches
     private Thread thread;

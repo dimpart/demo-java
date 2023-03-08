@@ -18,7 +18,7 @@ plugins {
 
 group 'chat.dim'
 //version '1.0-SNAPSHOT'
-version '0.0.5'
+version '0.0.6'
 
 def mod = 'SQLite'
 def desc = 'Decentralized Instant Messaging (Java SDK)'
@@ -35,7 +35,7 @@ repositories {
 }
 
 dependencies {
-    compile group: 'chat.dim', name: 'Common', version: '0.0.5'
+    compile group: 'chat.dim', name: 'Common', version: '0.0.6'
 
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.40.0.0'
 

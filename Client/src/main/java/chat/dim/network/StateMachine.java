@@ -36,17 +36,35 @@ import chat.dim.port.Docker;
 import chat.dim.protocol.ID;
 
 /**
- *  Server state machine
+ *  Session States
+ *  ~~~~~~~~~~~~~~
+ *
+ *      +--------------+                +------------------+
+ *      |  0.Default   | .............> |   1.Connecting   |
+ *      +--------------+                +------------------+
+ *          A       A       ................:       :
+ *          :       :       :                       :
+ *          :       :       V                       V
+ *          :   +--------------+        +------------------+
+ *          :   |   5.Error    | <..... |   2.Connected    |
+ *          :   +--------------+        +------------------+
+ *          :       A       A                   A   :
+ *          :       :       :................   :   :
+ *          :       :                       :   :   V
+ *      +--------------+                +------------------+
+ *      |  4.Running   | <............. |  3.Handshaking   |
+ *      +--------------+                +------------------+
+ *
  */
 public class StateMachine extends AutoMachine<StateMachine, StateTransition, SessionState> implements Context {
 
     private final ClientSession session;
 
     public StateMachine(ClientSession clientSession) {
-        super(SessionState.DEFAULT);
+        super();
         session = clientSession;
         // init states
-        StateBuilder builder = createStateBuilder();
+        SessionState.Builder builder = createStateBuilder();
         addState(builder.getDefaultState());
         addState(builder.getConnectingState());
         addState(builder.getConnectedState());
@@ -55,12 +73,8 @@ public class StateMachine extends AutoMachine<StateMachine, StateTransition, Ses
         addState(builder.getErrorState());
     }
 
-    protected StateBuilder createStateBuilder() {
-        return new StateBuilder(new TransitionBuilder());
-    }
-
-    private void addState(SessionState state) {
-        setState(state.name, state);
+    protected SessionState.Builder createStateBuilder() {
+        return new SessionState.Builder(new StateTransition.Builder());
     }
 
     @Override

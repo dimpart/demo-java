@@ -94,6 +94,7 @@ public class Register {
         database.savePrivateKey(idKey, PrivateKeyDBI.META, identifier);
         database.savePrivateKey(msgKey, PrivateKeyDBI.VISA, identifier);
         database.saveDocument(visa);
+        // OK
         return identifier;
     }
 
@@ -117,7 +118,7 @@ public class Register {
         //
         //  Step 2: generate meta with private key (and meta seed)
         //
-        Meta meta = Meta.generate(MetaType.DEFAULT.value, privateKey, seed);
+        Meta meta = Meta.generate(MetaType.MKM.value, privateKey, seed);
         //
         //  Step 3: generate ID with meta
         //
@@ -138,6 +139,7 @@ public class Register {
         List<ID> members = new ArrayList<>();
         members.add(founder);
         database.saveMembers(members, identifier);
+        // OK
         return identifier;
     }
 
@@ -148,7 +150,8 @@ public class Register {
         visa.setName(nickname);
         visa.setAvatar(avatarUrl);
         visa.setKey(visaKey);
-        visa.sign(idKey);
+        byte[] sig = visa.sign(idKey);
+        assert sig != null : "failed to sign visa: " + identifier;
         return visa;
     }
     private static Bulletin createBulletin(ID identifier, String title, SignKey privateKey) {
