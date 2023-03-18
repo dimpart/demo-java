@@ -51,13 +51,12 @@ import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaCommand;
 import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.Visa;
-import chat.dim.utils.Log;
 import chat.dim.utils.QueryFrequencyChecker;
 
 /**
  *  Client Messenger for Handshake & Broadcast Report
  */
-public class ClientMessenger extends CommonMessenger {
+public abstract class ClientMessenger extends CommonMessenger {
 
     public ClientMessenger(Session session, CommonFacebook facebook, MessageDBI database) {
         super(session, facebook, database);
@@ -178,12 +177,7 @@ public class ClientMessenger extends CommonMessenger {
         return true;
     }
 
-    /**
-     *  Request for group members with group ID
-     *
-     * @param identifier - group ID
-     * @return false on duplicated
-     */
+    @Override
     protected boolean queryMembers(ID identifier) {
         QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
         if (!checker.isMembersQueryExpired(identifier, 0)) {
@@ -191,8 +185,8 @@ public class ClientMessenger extends CommonMessenger {
             return false;
         }
         assert identifier.isGroup() : "group ID error: " + identifier;
-        CommonFacebook facebook = getFacebook();
-        List<ID> assistants = facebook.getAssistants(identifier);
+        GroupManager manager = GroupManager.getInstance();
+        List<ID> assistants = manager.getAssistants(identifier);
         if (assistants == null || assistants.size() == 0) {
             // group assistants not found
             return false;
@@ -212,49 +206,32 @@ public class ClientMessenger extends CommonMessenger {
             // broadcast message
             return true;
         } else if (receiver.isGroup()) {
-            CommonFacebook facebook = getFacebook();
-            // check group's meta
-            Meta meta = facebook.getMeta(receiver);
-            if (meta == null) {
-                // group not ready, try to query meta for it
-                if (queryMeta(receiver)) {
-                    Log.info("querying meta for group: " + receiver);
-                }
+            // check group's meta & members
+            List<ID> members = getMembers(receiver);
+            if (members == null) {
+                // group not ready, suspend message for waiting meta/members
                 Map<String, String> error = new HashMap<>();
-                error.put("message", "group meta not found");
+                error.put("message", "group not ready");
                 error.put("group", receiver.toString());
-                iMsg.put("error", error);
-                return false;
-            }
-            // check group members
-            List<ID> members = facebook.getMembers(receiver);
-            if (members == null || members.size() == 0) {
-                // group not ready, try to query members for it
-                if (queryMembers(receiver)) {
-                    Log.info("querying members for group: " + receiver);
-                }
-                Map<String, String> error = new HashMap<>();
-                error.put("message", "members not found");
-                error.put("group", receiver.toString());
-                iMsg.put("error", error);
+                suspendMessage(iMsg, error);  // iMsg.put("error", error);
                 return false;
             }
             List<ID> waiting = new ArrayList<>();
             for (ID item : members) {
-                if (facebook.getPublicKeyForEncryption(item) == null) {
-                    // group member not ready, try to query document for it
-                    if (queryDocument(item)) {
-                        Log.info("querying document for member: " + item + ", group: " + receiver);
-                    }
-                    waiting.add(item);
+                if (getVisaKey(item) != null) {
+                    // member is OK
+                    continue;
                 }
+                // member not ready
+                waiting.add(item);
             }
             if (waiting.size() > 0) {
+                // member(s) not ready, suspend message for waiting document
                 Map<String, Object> error = new HashMap<>();
                 error.put("message", "encrypt keys not found");
                 error.put("group", receiver.toString());
                 error.put("members", ID.revert(waiting));
-                iMsg.put("error", error);
+                suspendMessage(iMsg, error);  // iMsg.put("error", error);
                 return false;
             }
             // receiver is OK

@@ -31,14 +31,19 @@
 package chat.dim;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import chat.dim.dbi.AccountDBI;
+import chat.dim.mkm.Group;
 import chat.dim.mkm.User;
 import chat.dim.port.Departure;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
+import chat.dim.protocol.EntityType;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
@@ -50,16 +55,24 @@ import chat.dim.type.Pair;
 /**
  *  This is for sending group message, or managing group members
  */
-public final class GroupManager {
+public enum GroupManager implements Group.DataSource {
 
-    private final ClientMessenger messenger;
+    INSTANCE;
 
-    private final ID group;
+    public static GroupManager getInstance() {
+        return INSTANCE;
+    }
 
-    public GroupManager(ID gid, ClientMessenger transceiver) {
-        super();
-        group = gid;
-        messenger = transceiver;
+    static private final Map<ID, ID> cachedGroupFounders = new HashMap<>();
+    static private final Map<ID, ID> cachedGroupOwners = new HashMap<>();
+    static private final Map<ID, List<ID>> cachedGroupMembers = new HashMap<>();
+    static private final Map<ID, List<ID>> cachedGroupAssistants = new HashMap<>();
+    static private final List<ID> defaultAssistants = new ArrayList<>();
+
+    public ClientMessenger messenger;
+
+    private CommonFacebook getFacebook() {
+        return messenger.getFacebook();
     }
 
     /**
@@ -68,15 +81,15 @@ public final class GroupManager {
      * @param content - message content
      * @return false on no bots found
      */
-    public boolean sendContent(Content content) {
+    public boolean sendContent(Content content, ID group) {
+        assert group.isGroup() : "group ID error: " + group;
         ID gid = content.getGroup();
         if (gid == null) {
             content.setGroup(group);
         } else if (!gid.equals(group)) {
             throw new IllegalArgumentException("group ID not match: " + gid + ", " + group);
         }
-        CommonFacebook facebook = messenger.getFacebook();
-        List<ID> assistants = facebook.getAssistants(group);
+        List<ID> assistants = getAssistants(group);
         Pair<InstantMessage, ReliableMessage> result;
         for (ID bot : assistants) {
             // send to any bot
@@ -107,14 +120,14 @@ public final class GroupManager {
      * @param newMembers - new members ID list
      * @return true on success
      */
-    public boolean invite(List<ID> newMembers) {
-        CommonFacebook facebook = messenger.getFacebook();
-        List<ID> bots = facebook.getAssistants(group);
+    public boolean invite(List<ID> newMembers, ID group) {
+        assert group.isGroup() : "group ID error: " + group;
 
         // TODO: make sure group meta exists
         // TODO: make sure current user is a member
 
         // 0. build 'meta/document' command
+        CommonFacebook facebook = getFacebook();
         Meta meta = facebook.getMeta(group);
         if (meta == null) {
             throw new NullPointerException("failed to get meta for group: " + group);
@@ -127,14 +140,15 @@ public final class GroupManager {
         } else {
             command = DocumentCommand.response(group, meta, doc);
         }
+        List<ID> bots = getAssistants(group);
         // 1. send 'meta/document' command
         sendCommand(command, bots);                // to all assistants
 
         // 2. update local members and notice all bots & members
-        List<ID> members = facebook.getMembers(group);
-        if (members == null || members.size() <= 2) { // new group?
+        List<ID> members = getMembers(group);
+        if (members.size() <= 2) { // new group?
             // 2.0. update local storage
-            members = addMembers(newMembers);
+            members = addMembers(newMembers, group);
             // 2.1. send 'meta/document' command
             sendCommand(command, members);         // to all members
             // 2.3. send 'invite' command with all members
@@ -150,7 +164,7 @@ public final class GroupManager {
             sendCommand(command, bots);            // to group assistants
             sendCommand(command, members);         // to old members
             // 3. update local storage
-            members = addMembers(newMembers);
+            members = addMembers(newMembers, group);
             // 2.4. send 'invite' command with all members
             command = GroupCommand.invite(group, members);
             sendCommand(command, newMembers);      // to new members
@@ -158,10 +172,10 @@ public final class GroupManager {
 
         return true;
     }
-    public boolean invite(ID member) {
+    public boolean invite(ID member, ID group) {
         List<ID> array = new ArrayList<>();
         array.add(member);
-        return invite(array);
+        return invite(array, group);
     }
 
     /**
@@ -171,10 +185,10 @@ public final class GroupManager {
      * @param outMembers - existed member ID list
      * @return true on success
      */
-    public boolean expel(List<ID> outMembers) {
-        CommonFacebook facebook = messenger.getFacebook();
-        ID owner = facebook.getOwner(group);
-        List<ID> bots = facebook.getAssistants(group);
+    public boolean expel(List<ID> outMembers, ID group) {
+        assert group.isGroup() : "group ID error: " + group;
+        ID owner = getOwner(group);
+        List<ID> bots = getAssistants(group);
 
         // TODO: make sure group meta exists
         // TODO: make sure current user is the owner
@@ -190,7 +204,7 @@ public final class GroupManager {
         }
 
         // 1. update local storage
-        List<ID> members = removeMembers(outMembers);
+        List<ID> members = removeMembers(outMembers, group);
 
         // 2. send 'expel' command
         Command command = GroupCommand.expel(group, outMembers);
@@ -200,10 +214,10 @@ public final class GroupManager {
 
         return true;
     }
-    public boolean expel(ID member) {
+    public boolean expel(ID member, ID group) {
         List<ID> array = new ArrayList<>();
         array.add(member);
-        return expel(array);
+        return expel(array, group);
     }
 
     /**
@@ -212,16 +226,19 @@ public final class GroupManager {
      *
      * @return true on success
      */
-    public boolean quit() {
-        CommonFacebook facebook = messenger.getFacebook();
-        ID owner = facebook.getOwner(group);
-        List<ID> bots = facebook.getAssistants(group);
-        List<ID> members = facebook.getMembers(group);
+    public boolean quit(ID group) {
+        assert group.isGroup() : "group ID error: " + group;
+
+        CommonFacebook facebook = getFacebook();
         User user = facebook.getCurrentUser();
         if (user == null) {
             throw new NullPointerException("failed to get current user");
         }
         ID me = user.getIdentifier();
+
+        ID owner = getOwner(group);
+        List<ID> bots = getAssistants(group);
+        List<ID> members = getMembers(group);
 
         // 0. check permission
         if (bots.contains(me)) {
@@ -231,8 +248,9 @@ public final class GroupManager {
         }
 
         // 1. update local storage
+        boolean ok = false;
         if (members.remove(me)) {
-            facebook.saveMembers(members, group);
+            ok = saveMembers(members, group);
         //} else {
         //    // not a member now
         //    return false;
@@ -243,7 +261,7 @@ public final class GroupManager {
         sendCommand(command, bots);     // to assistants
         sendCommand(command, members);  // to new members
 
-        return true;
+        return ok;
     }
 
     /**
@@ -251,16 +269,156 @@ public final class GroupManager {
      *
      * @return false on error
      */
-    public boolean query() {
+    public boolean query(ID group) {
         return messenger.queryMembers(group);
     }
 
-    //-------- local storage
+    //-------- Data Source
 
-    private List<ID> addMembers(List<ID> newMembers) {
-        CommonFacebook facebook = messenger.getFacebook();
-        List<ID> members = facebook.getMembers(group);
-        assert members != null : "failed to get members for group: " + group;
+    @Override
+    public Meta getMeta(ID group) {
+        CommonFacebook facebook = getFacebook();
+        return facebook.getMeta(group);
+    }
+
+    @Override
+    public Document getDocument(ID group, String type) {
+        CommonFacebook facebook = getFacebook();
+        return facebook.getDocument(group, type);
+    }
+
+    @Override
+    public ID getFounder(ID group) {
+        ID founder = cachedGroupFounders.get(group);
+        if (founder == null) {
+            CommonFacebook facebook = getFacebook();
+            founder = facebook.getFounder(group);
+            if (founder == null) {
+                // place holder
+                founder = ID.FOUNDER;
+            }
+            cachedGroupFounders.put(group, founder);
+        } else if (founder.isBroadcast()) {
+            // founder not found
+            founder = null;
+        }
+        return founder;
+    }
+
+    @Override
+    public ID getOwner(ID group) {
+        ID owner = cachedGroupOwners.get(group);
+        if (owner == null) {
+            CommonFacebook facebook = getFacebook();
+            owner = facebook.getOwner(group);
+            if (owner == null) {
+                // place holder
+                owner = ID.ANYONE;
+            }
+            cachedGroupOwners.put(group, owner);
+        } else if (owner.isBroadcast()) {
+            // owner not found
+            owner = null;
+        }
+        return owner;
+    }
+
+    @Override
+    public List<ID> getMembers(ID group) {
+        List<ID> members = cachedGroupMembers.get(group);
+        if (members == null) {
+            CommonFacebook facebook = getFacebook();
+            members = facebook.getMembers(group);
+            if (members == null) {
+                // place holder
+                members = new ArrayList<>();
+            }
+            cachedGroupMembers.put(group, members);
+        }
+        return members;
+    }
+
+    @Override
+    public List<ID> getAssistants(ID group) {
+        List<ID> assistants = cachedGroupAssistants.get(group);
+        if (assistants == null) {
+            CommonFacebook facebook = getFacebook();
+            assistants = facebook.getAssistants(group);
+            if (assistants == null) {
+                // placeholder
+                assistants = new ArrayList<>();
+            }
+            cachedGroupAssistants.put(group, assistants);
+        }
+        if (assistants.size() > 0) {
+            return assistants;
+        }
+        // get from global setting
+        if (defaultAssistants.size() == 0) {
+            // get from ANS
+            ID bot = ClientFacebook.ans.identifier("assistant");
+            if (bot != null) {
+                defaultAssistants.add(bot);
+            }
+        }
+        return defaultAssistants;
+    }
+
+    public boolean isFounder(ID member, ID group) {
+        ID founder = getFounder(group);
+        if (founder != null) {
+            return founder.equals(member);
+        }
+        // check member's public key with group's meta.key
+        CommonFacebook facebook = getFacebook();
+        Meta gMeta = facebook.getMeta(group);
+        assert gMeta != null : "failed to get meta for group: " + group;
+        Meta mMeta = facebook.getMeta(member);
+        assert mMeta != null : "failed to get meta for member: " + member;
+        return Meta.matches(mMeta.getKey(), gMeta);
+    }
+
+    public boolean isOwner(ID member, ID group) {
+        ID owner = getOwner(group);
+        if (owner != null) {
+            return owner.equals(member);
+        }
+        if (EntityType.GROUP.equals(group.getType())) {
+            // this is a polylogue
+            return isFounder(member, group);
+        }
+        throw new UnsupportedOperationException("only Polylogue so far");
+    }
+
+    //
+    //  members
+    //
+
+    public boolean containsMember(ID member, ID group) {
+        assert member.isUser() && group.isGroup() : "ID error: " + member + ", " + group;
+        List<ID> allMembers = getMembers(group);
+        int pos = allMembers.indexOf(member);
+        if (pos > 0) {
+            return true;
+        }
+        ID owner = getOwner(group);
+        return owner != null && owner.equals(member);
+    }
+
+    public boolean addMember(ID member, ID group) {
+        assert member.isUser() && group.isGroup() : "ID error: " + member + ", " + group;
+        List<ID> allMembers = getMembers(group);
+        int pos = allMembers.indexOf(member);
+        if (pos >= 0) {
+            // already exists
+            return false;
+        }
+        allMembers.add(member);
+        return saveMembers(allMembers, group);
+    }
+
+    private List<ID> addMembers(List<ID> newMembers, ID group) {
+        List<ID> members = getMembers(group);
         int count = 0;
         for (ID member : newMembers) {
             if (members.contains(member)) {
@@ -270,14 +428,12 @@ public final class GroupManager {
             ++count;
         }
         if (count > 0) {
-            facebook.saveMembers(members, group);
+            saveMembers(members, group);
         }
         return members;
     }
-    private List<ID> removeMembers(List<ID> outMembers) {
-        CommonFacebook facebook = messenger.getFacebook();
-        List<ID> members = facebook.getMembers(group);
-        assert members != null : "failed to get members for group: " + group;
+    private List<ID> removeMembers(List<ID> outMembers, ID group) {
+        List<ID> members = getMembers(group);
         int count = 0;
         for (ID member : outMembers) {
             if (!members.contains(member)) {
@@ -287,8 +443,70 @@ public final class GroupManager {
             ++count;
         }
         if (count > 0) {
-            facebook.saveMembers(members, group);
+            saveMembers(members, group);
         }
         return members;
+    }
+
+    public boolean saveMembers(List<ID> members, ID group) {
+        CommonFacebook facebook = getFacebook();
+        AccountDBI db = facebook.getDatabase();
+        if (db.saveMembers(members, group)) {
+            // erase cache for reload
+            cachedGroupMembers.remove(group);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    //
+    //  assistants
+    //
+
+    public boolean containsAssistant(ID user, ID group) {
+        List<ID> assistants = getAssistants(group);
+        if (assistants == defaultAssistants) {
+            // assistants not found
+            return false;
+        }
+        return assistants.contains(user);
+    }
+
+    public void addAssistant(ID bot, ID group) {
+        if (group == null) {
+            defaultAssistants.add(bot);
+            return;
+        }
+        List<ID> assistants = getAssistants(group);
+        if (assistants == defaultAssistants) {
+            // assistants not found
+            assistants = new ArrayList<>();
+        }
+        if (assistants.contains(bot)) {
+            // already exists
+            return;
+        }
+        assistants.add(bot);
+        boolean ok = saveAssistants(assistants, group);
+        assert ok : "failed to save assistants: " + group + ", " + assistants;
+    }
+
+    public boolean saveAssistants(List<ID> bots, ID group) {
+        CommonFacebook facebook = getFacebook();
+        AccountDBI db = facebook.getDatabase();
+        if (db.saveAssistants(bots, group)) {
+            // erase cache for reload
+            cachedGroupAssistants.remove(group);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean removeGroup(ID group) {
+        // TODO: remove group completely
+        //return groupTable.removeGroup(group);
+        return false;
     }
 }

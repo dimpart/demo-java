@@ -35,6 +35,7 @@ import java.util.List;
 
 import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
+import chat.dim.GroupManager;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
 import chat.dim.protocol.Content;
@@ -60,7 +61,7 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
     }
 
     protected List<Content> temporarySave(GroupCommand content, ID sender) {
-        Facebook facebook = getFacebook();
+        GroupManager manager = GroupManager.getInstance();
         ID group = content.getGroup();
         // check whether the owner contained in the new members
         List<ID> newMembers = getMembers(content);
@@ -68,15 +69,15 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
             return respondText(STR_RESET_CMD_ERROR, group);
         }
         for (ID item : newMembers) {
-            if (facebook.getMeta(item) == null) {
+            if (manager.getMeta(item) == null) {
                 // TODO: waiting for member's meta?
                 continue;
-            } else if (!facebook.isOwner(item, group)) {
+            } else if (!manager.isOwner(item, group)) {
                 // not owner, skip it
                 continue;
             }
             // it's a full list, save it now
-            if (facebook.saveMembers(newMembers, group)) {
+            if (manager.saveMembers(newMembers, group)) {
                 if (!item.equals(sender)) {
                     // NOTICE: to prevent counterfeit,
                     //         query the owner for newest member-list
@@ -95,13 +96,13 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof ResetCommand || content instanceof InviteCommand : "reset command error: " + content;
         GroupCommand command = (GroupCommand) content;
-        Facebook facebook = getFacebook();
+        GroupManager manager = GroupManager.getInstance();
 
         // 0. check group
         ID group = command.getGroup();
-        ID owner = facebook.getOwner(group);
-        List<ID> members = facebook.getMembers(group);
-        if (owner == null || members == null || members.size() == 0) {
+        ID owner = manager.getOwner(group);
+        List<ID> members = manager.getMembers(group);
+        if (owner == null || members.size() == 0) {
             // FIXME: group info lost?
             // FIXME: how to avoid strangers impersonating group member?
             return temporarySave(command, rMsg.getSender());
@@ -111,7 +112,7 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         ID sender = rMsg.getSender();
         if (!owner.equals(sender)) {
             // not the owner? check assistants
-            List<ID> assistants = facebook.getAssistants(group);
+            List<ID> assistants = manager.getAssistants(group);
             if (assistants == null || !assistants.contains(sender)) {
                 return respondText(STR_RESET_NOT_ALLOWED, group);
             }
@@ -146,7 +147,7 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         }
         // 2.4. do reset
         if (addedList.size() > 0 || removedList.size() > 0) {
-            if (facebook.saveMembers(newMembers, group)) {
+            if (manager.saveMembers(newMembers, group)) {
                 if (addedList.size() > 0) {
                     command.put("added", addedList);
                 }

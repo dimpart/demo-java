@@ -33,6 +33,7 @@ package chat.dim.cpu.group;
 import java.util.List;
 
 import chat.dim.Facebook;
+import chat.dim.GroupManager;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
 import chat.dim.protocol.Content;
@@ -60,13 +61,13 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof QuitCommand : "quit command error: " + content;
         GroupCommand command = (GroupCommand) content;
-        Facebook facebook = getFacebook();
+        GroupManager manager = GroupManager.getInstance();
 
         // 0. check group
         ID group = command.getGroup();
-        ID owner = facebook.getOwner(group);
-        List<ID> members = facebook.getMembers(group);
-        if (owner == null || members == null || members.size() == 0) {
+        ID owner = manager.getOwner(group);
+        List<ID> members = manager.getMembers(group);
+        if (owner == null || members.size() == 0) {
             return respondText(STR_GROUP_EMPTY, group);
         }
 
@@ -75,7 +76,7 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
         if (owner.equals(sender)) {
             return respondText(STR_OWNER_CANNOT_QUIT, group);
         }
-        List<ID> assistants = facebook.getAssistants(group);
+        List<ID> assistants = manager.getAssistants(group);
         if (assistants != null && assistants.contains(sender)) {
             return removeAssistant((QuitCommand) command, rMsg);
         }
@@ -83,7 +84,7 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
         // 2. remove the sender from group members
         if (members.contains(sender)) {
             members.remove(sender);
-            facebook.saveMembers(members, group);
+            manager.saveMembers(members, group);
         }
 
         // 3. response (no need to response this group command)

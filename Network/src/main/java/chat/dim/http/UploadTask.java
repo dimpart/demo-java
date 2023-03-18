@@ -100,7 +100,7 @@ public class UploadTask implements Runnable {
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(fileData);
+        return urlString.hashCode() * 13 + Arrays.hashCode(fileData);
     }
 
     private static final String BOUNDARY = "BU1kUJ19yLYPqv5xoT3sbKYbHwjUu1JU7roix";

@@ -110,15 +110,6 @@ public class CommonFacebook extends Facebook {
     }
 
     @Override
-    public boolean saveMembers(List<ID> members, ID group) {
-        return database.saveMembers(members, group);
-    }
-
-    public boolean saveAssistants(List<ID> bots, ID group) {
-        return database.saveAssistants(bots, group);
-    }
-
-    @Override
     protected User createUser(ID user) {
         if (!user.isBroadcast()) {
             if (getPublicKeyForEncryption(user) == null) {
