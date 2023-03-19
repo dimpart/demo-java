@@ -51,17 +51,13 @@ public class UserDatabase implements UserDBI {
     private final CachePool<String, List<ID>> dimCache;
     private final CachePool<ID, List<ID>> contactCache;
 
-    public UserDatabase(String rootDir, String publicDir, String privateDir, DatabaseConnector sqliteConnector) {
+    public UserDatabase(DatabaseConnector sqliteConnector) {
         super();
         userTable = new UserTable(sqliteConnector);
         contactTable = new ContactTable(sqliteConnector);
         CacheManager man = CacheManager.getInstance();
         dimCache = man.getPool("dim");
         contactCache = man.getPool("contacts");
-    }
-
-    public void showInfo() {
-        //
     }
 
     @Override
@@ -90,6 +86,10 @@ public class UserDatabase implements UserDBI {
             }
             // 2. check sqlite
             users = userTable.getLocalUsers();
+            if (users == null) {
+                // placeholder
+                users = new ArrayList<>();
+            }
             // update memory cache
             dimCache.update("local_users", users, 36000 * 1000, now);
         }
@@ -131,6 +131,10 @@ public class UserDatabase implements UserDBI {
             }
             // 2. check sqlite
             contacts = contactTable.getContacts(user);
+            if (contacts == null) {
+                // placeholder
+                contacts = new ArrayList<>();
+            }
             // update memory cache
             contactCache.update(user, contacts, 36000 * 1000, now);
         }

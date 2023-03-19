@@ -43,7 +43,7 @@ public class CipherKeyDatabase implements CipherKeyDBI {
 
     private final CachePool<String, SymmetricKey> keyCache;
 
-    public CipherKeyDatabase(String rootDir, String publicDir, String privateDir, DatabaseConnector sqliteConnector) {
+    public CipherKeyDatabase(DatabaseConnector sqliteConnector) {
         super();
         CacheManager man = CacheManager.getInstance();
         keyCache = man.getPool("cipher_key");

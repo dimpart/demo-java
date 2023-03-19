@@ -44,21 +44,15 @@ import chat.dim.sqlite.account.DocumentTable;
 
 public class DocumentDatabase implements DocumentDBI {
 
-    private final DocumentStorage documentStorage;
     private final DocumentTable documentTable;
 
     private final CachePool<ID, Document> documentCache;
 
-    public DocumentDatabase(String rootDir, String publicDir, String privateDir, DatabaseConnector sqliteConnector) {
+    public DocumentDatabase(DatabaseConnector sqliteConnector) {
         super();
-        documentStorage = new DocumentStorage(rootDir, publicDir, privateDir);
         documentTable = new DocumentTable(sqliteConnector);
         CacheManager man = CacheManager.getInstance();
         documentCache = man.getPool("document");
-    }
-
-    public void showInfo() {
-        documentStorage.showInfo();
     }
 
     //
@@ -83,9 +77,7 @@ public class DocumentDatabase implements DocumentDBI {
         // 1. update memory cache
         documentCache.update(identifier, doc, 3600 * 1000, 0);
         // 2. update sqlite
-        documentTable.saveDocument(doc);
-        // 3. store into local storage
-        return documentStorage.saveDocument(doc);
+        return documentTable.saveDocument(doc);
     }
 
     @Override
@@ -114,10 +106,6 @@ public class DocumentDatabase implements DocumentDBI {
             }
             // 2. check sqlite
             doc = documentTable.getDocument(entity, type);
-            if (doc == null) {
-                // 3. check local storage
-                doc = documentStorage.getDocument(entity, type);
-            }
             // update memory cache
             documentCache.update(entity, doc, 36000 * 1000, now);
         }

@@ -42,21 +42,15 @@ import chat.dim.sqlite.account.MetaTable;
 
 public class MetaDatabase implements MetaDBI {
 
-    private final MetaStorage metaStorage;
     private final MetaTable metaTable;
 
     private final CachePool<ID, Meta> metaCache;
 
-    public MetaDatabase(String rootDir, String publicDir, String privateDir, DatabaseConnector sqliteConnector) {
+    public MetaDatabase(DatabaseConnector sqliteConnector) {
         super();
-        metaStorage = new MetaStorage(rootDir, publicDir, privateDir);
         metaTable = new MetaTable(sqliteConnector);
         CacheManager man = CacheManager.getInstance();
         metaCache = man.getPool("meta");
-    }
-
-    public void showInfo() {
-        metaStorage.showInfo();
     }
 
     //
@@ -74,9 +68,7 @@ public class MetaDatabase implements MetaDBI {
         // 1. update memory cache
         metaCache.update(entity, meta, 36000 * 1000, 0);
         // 2. update sqlite
-        metaTable.saveMeta(meta, entity);
-        // 3. store into local storage
-        return metaStorage.saveMeta(meta, entity);
+        return metaTable.saveMeta(meta, entity);
     }
 
     @Override
@@ -105,10 +97,6 @@ public class MetaDatabase implements MetaDBI {
             }
             // 2. check sqlite
             meta = metaTable.getMeta(entity);
-            if (meta == null) {
-                // 3. check local storage
-                meta = metaStorage.getMeta(entity);
-            }
             // update memory cache
             metaCache.update(entity, meta, 36000 * 1000, now);
         }

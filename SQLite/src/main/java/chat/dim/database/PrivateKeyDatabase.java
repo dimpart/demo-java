@@ -46,23 +46,17 @@ import chat.dim.sqlite.account.PrivateKeyTable;
 
 public class PrivateKeyDatabase implements PrivateKeyDBI {
 
-    private final PrivateKeyStorage privateKeyStorage;
     private final PrivateKeyTable privateKeyTable;
 
     private final CachePool<ID, PrivateKey> idKeyCache;
     private final CachePool<ID, List<DecryptKey>> msgKeysCache;
 
-    public PrivateKeyDatabase(String rootDir, String publicDir, String privateDir, DatabaseConnector sqliteConnector) {
+    public PrivateKeyDatabase(DatabaseConnector sqliteConnector) {
         super();
-        privateKeyStorage = new PrivateKeyStorage(rootDir, publicDir, privateDir);
         privateKeyTable = new PrivateKeyTable(sqliteConnector);
         CacheManager man = CacheManager.getInstance();
         idKeyCache = man.getPool("private_id_key");
         msgKeysCache = man.getPool("private_msg_keys");
-    }
-
-    public void showInfo() {
-        privateKeyStorage.showInfo();
     }
 
     //
@@ -73,7 +67,7 @@ public class PrivateKeyDatabase implements PrivateKeyDBI {
     public boolean savePrivateKey(PrivateKey key, String type, ID user) {
         long now = System.currentTimeMillis();
         // 1. update memory cache
-        if (type != null && type.equals(PrivateKeyStorage.META)) {
+        if (type != null && type.equals(PrivateKeyDBI.META)) {
             // update 'id_key'
             idKeyCache.update(user, key, 36000*1000, now);
         } else {
@@ -90,9 +84,7 @@ public class PrivateKeyDatabase implements PrivateKeyDBI {
             msgKeysCache.update(user, decryptKeys, 36000*1000, now);
         }
         // 2. update sqlite
-        privateKeyTable.savePrivateKey(key, type, user);
-        // 3. store into local storage
-        return privateKeyStorage.savePrivateKey(key, type, user);
+        return privateKeyTable.savePrivateKey(key, type, user);
     }
 
     @Override
@@ -121,9 +113,9 @@ public class PrivateKeyDatabase implements PrivateKeyDBI {
             }
             // 2. check sqlite
             decryptKeys = privateKeyTable.getPrivateKeysForDecryption(user);
-            if (decryptKeys == null || decryptKeys.size() == 0) {
-                // 3. check local storage
-                decryptKeys = privateKeyStorage.getPrivateKeysForDecryption(user);
+            if (decryptKeys == null) {
+                // placeholder
+                decryptKeys = new ArrayList<>();
             }
             // update memory cache
             msgKeysCache.update(user, decryptKeys, 36000 * 1000, now);
@@ -164,10 +156,6 @@ public class PrivateKeyDatabase implements PrivateKeyDBI {
             }
             // 2. check sqlite
             privateKey = privateKeyTable.getPrivateKeyForVisaSignature(user);
-            if (privateKey == null) {
-                // 3. check local storage
-                privateKey = privateKeyStorage.getPrivateKeyForVisaSignature(user);
-            }
             // update memory cache
             idKeyCache.update(user, privateKey, 36000 * 1000, now);
         }
