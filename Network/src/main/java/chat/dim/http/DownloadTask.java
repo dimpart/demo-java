@@ -32,90 +32,32 @@ package chat.dim.http;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import chat.dim.digest.MD5;
 import chat.dim.filesys.Paths;
-import chat.dim.format.Hex;
-import chat.dim.format.UTF8;
 import chat.dim.utils.Log;
 
-public class DownloadTask implements Runnable {
+/**
+ *  Download Task
+ *  ~~~~~~~~~~~~~
+ *  running task
+ *
+ *  properties:
+ *      url      - remote URL
+ *      path     - temporary file path
+ *      delegate - HTTP client
+ */
+public class DownloadTask extends DownloadRequest implements Runnable {
 
-    private final WeakReference<HTTPDelegate> delegateRef;
-
-    private final String urlString;
-    private final String cachePath;
-
-    public DownloadTask(String url, HTTPDelegate delegate) {
-        super();
-        urlString = url;
-        cachePath = getCachePath(url);
-        delegateRef = new WeakReference<>(delegate);
+    public DownloadTask(URL url, String path, DownloadDelegate delegate) {
+        super(url, path, delegate);
     }
 
-    public String getUrlString() {
-        return urlString;
-    }
-
-    /**
-     *  Get downloaded file path
-     *
-     * @return local file path
-     */
-    public String getFilePath() {
-        if (Paths.exists(cachePath)) {
-            return cachePath;
-        } else {
-            return null;
-        }
-    }
-
-    public HTTPDelegate getDelegate() {
-        return delegateRef.get();
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (super.equals(other)) {
-            // same object
-            return true;
-        } else if (other instanceof DownloadTask) {
-            DownloadTask task = (DownloadTask) other;
-            return urlString.equals(task.urlString);
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        return urlString.hashCode();
-    }
-
-    // "/sdcard/chat.dim.sechat/caches/{XX}/{YY}/{filename}"
-    private static String getCachePath(String urlString) {
-        // get file ext
-        String filename = Paths.filename(urlString);
-        String ext = Paths.extension(filename);
-        if (ext == null || ext.length() == 0) {
-            ext = "tmp";
-        }
-        // get filename
-        byte[] data = UTF8.encode(urlString);
-        String hash = Hex.encode(MD5.digest(data));
-        HTTPClient client = HTTPClient.getInstance();
-        return client.getCacheFilePath(hash + "." + ext);
-    }
-
-    private static String download(String urlString, String cachePath) throws IOException {
-        String filepath = null;
-
-        URL url = new URL(urlString);
+    private static IOError download(URL url, String filePath) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(false);
         connection.setDoInput(true);
@@ -125,10 +67,12 @@ public class DownloadTask implements Runnable {
         connection.setConnectTimeout(5000);
         //connection.connect();
 
+        IOError error;
+
         int code = connection.getResponseCode();
         if (code == 200) {
             try (InputStream inputStream = connection.getInputStream()) {
-                File file = new File(cachePath);
+                File file = new File(filePath);
                 try (FileOutputStream outputStream = new FileOutputStream(file)) {
                     byte[] buffer = new byte[1024];
                     int len;
@@ -136,30 +80,49 @@ public class DownloadTask implements Runnable {
                         outputStream.write(buffer, 0, len);
                     }
                     outputStream.flush();
-                    filepath = cachePath;
+                    // OK
+                    error = null;
                 }
             }
+        } else {
+            // TODO: fetch error response
+            error = new IOError(null);
         }
         //connection.disconnect();
 
-        return filepath;
+        return error;
     }
 
     @Override
     public void run() {
-        HTTPDelegate delegate = getDelegate();
+        DownloadDelegate delegate = getDelegate();
+        touch();
+        IOError error;
         try {
             // 1. prepare directory
-            String dir = Paths.parent(cachePath);
-            assert dir != null : "cache path error: " + cachePath;
-            Paths.mkdirs(dir);
+            String dir = Paths.parent(path);
+            assert dir != null : "download file path error: " + path;
+            if (!Paths.mkdirs(dir)) {
+                onError();
+                error = new IOError(new IOException("failed to create dir: " + dir));
+                delegate.onDownloadError(this, error);
+            }
             // 2. start download
-            String path = download(urlString, cachePath);
-            delegate.downloadSuccess(this, path);
+            error = download(url, path);
+            if (error == null) {
+                onSuccess();
+                delegate.onDownloadSuccess(this, path);
+            } else {
+                onError();
+                delegate.onDownloadError(this, error);
+            }
         } catch (IOException e) {
             //e.printStackTrace();
-            Log.error("failed to download: " + urlString);
-            delegate.downloadFailed(this, e);
+            Log.error("failed to download: " + url);
+            onError();
+            delegate.onDownloadFailed(this, e);
+        } finally {
+            onFinished();
         }
     }
 }

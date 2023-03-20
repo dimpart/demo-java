@@ -30,203 +30,165 @@
  */
 package chat.dim.http;
 
-import java.lang.ref.WeakReference;
+import java.io.IOError;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import chat.dim.Register;
+import chat.dim.digest.MD5;
 import chat.dim.filesys.ExternalStorage;
 import chat.dim.filesys.Paths;
-import chat.dim.skywalker.Processor;
+import chat.dim.format.Hex;
+import chat.dim.protocol.Address;
+import chat.dim.protocol.ID;
+import chat.dim.skywalker.Runner;
+import chat.dim.utils.Log;
+import chat.dim.utils.Template;
 
-public enum HTTPClient implements Runnable, Processor {
+public class HTTPClient extends Runner implements UploadDelegate, DownloadDelegate {
 
-    INSTANCE;
+    // cache for uploaded file's URL
+    private final Map<String, URL> cdn = new HashMap<>();     // filename => URL
 
-    public static HTTPClient getInstance() {
-        return INSTANCE;
-    }
+    // requests waiting to upload/download
+    private final List<UploadRequest> uploads = new ArrayList<>();
+    private final List<DownloadRequest> downloads = new ArrayList<>();
 
-    /**
-     *  Base directory
-     */
-    private String base = "/tmp/.dim";  // "/sdcard/chat.dim.sechat"
-    private boolean built = false;
+    // tasks running
+    UploadTask uploadingTask = null;
+    UploadRequest uploadingRequest = null;
+    DownloadTask downloadingTask = null;
+    DownloadRequest downloadingRequest = null;
 
-    private final List<UploadTask> uploadTasks;
-    private final ReadWriteLock uploadLock;
-    private final List<DownloadTask> downloadTasks;
-    private final ReadWriteLock downloadLock;
-
-    private WeakReference<HTTPDelegate> delegateRef;
-    private Thread thread;
-    private boolean running;
-
-    HTTPClient() {
-        uploadTasks = new ArrayList<>();
-        uploadLock = new ReentrantReadWriteLock();
-        downloadTasks = new ArrayList<>();
-        downloadLock = new ReentrantReadWriteLock();
-        delegateRef = null;
-        thread = null;
-        running = false;
-
-        // load plugins
-        Register.prepare();
-    }
-
-    public HTTPDelegate getDelegate() {
-        WeakReference<HTTPDelegate> ref = delegateRef;
-        return ref == null ? null : ref.get();
-    }
-    public void setDelegate(HTTPDelegate delegate) {
-        if (delegate == null) {
-            delegateRef = null;
-        } else {
-            delegateRef = new WeakReference<>(delegate);
-        }
-    }
-
-    public void setRoot(String dir) {
-        // lazy create
-        base = dir;
-    }
-    public String getRoot() {
-        if (built) {
-            return base;
-        }
-        // make sure base directory built
-        Paths.mkdirs(base);
-        // forbid the gallery from scanning media files
-        ExternalStorage.setNoMedia(base);
-        built = true;
-        return base;
-    }
-
-    public String getCachesDirectory() {
-        return Paths.append(getRoot(), "caches");
-    }
-
-    public String getTemporaryDirectory() {
-        return Paths.append(getRoot(), "tmp");
-    }
-
-    /**
-     *  Get cache file path: "/sdcard/chat.dim.sechat/caches/{XX}/{YY}/{filename}"
-     *
-     * @param filename - cache file name
-     * @return cache file path
-     */
-    public String getCacheFilePath(String filename) {
-        assert filename.length() > 4 : "filename too short " + filename;
-        String dir = getCachesDirectory();
-        String xx = filename.substring(0, 2);
-        String yy = filename.substring(2, 4);
-        return Paths.append(dir, xx, yy, filename);
-    }
-
-    /**
-     *  Get temporary file path: "/sdcard/chat.dim.sechat/tmp/{filename}"
-     *
-     * @param filename - temporary file name
-     * @return temporary file path
-     */
-    public String getTemporaryFilePath(String filename) {
-        String dir = getTemporaryDirectory();
-        return Paths.append(dir, filename);
-    }
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private Thread thread = null;
 
     /**
      *  Add an upload task
      *
-     * @param url      - target URL
-     * @param name     - var name in form
-     * @param filename - filename
+     * @param api      - remote URL
+     * @param secret   - authentication algorithm: hex(md5(data + secret + salt))
      * @param data     - file data
+     * @param path     - temporary file path
+     * @param var      - form variable
+     * @param sender   - message sender
+     * @param delegate - callback
+     * @return remote URL for downloading when same file already uploaded to CDN
      */
-    public void upload(String url, String name, String filename, byte[] data) {
-        UploadTask task = new UploadTask(url, name, filename, data, getDelegate());
-        Lock writeLock = uploadLock.writeLock();
-        writeLock.lock();
-        try {
-            // check duplicated task
-            if (!uploadTasks.contains(task)) {
-                uploadTasks.add(task);
-            }
-        } finally {
-            writeLock.unlock();
+    public URL upload(URL api, byte[] secret, byte[] data, String path, String var, ID sender,
+                      UploadDelegate delegate) throws IOException {
+        // 1. check previous upload
+        String filename = Paths.filename(path);
+        URL url = getURL(filename);  // filename in format: hex(md5(data)) + ext
+        if (url != null) {
+            // already uploaded
+            return url;
         }
+        // 2. save file data to the local path
+        ExternalStorage.saveBinary(data, path);
+        // 3. build request
+        addUploadRequest(new UploadRequest(api, path, secret, var, sender, delegate));
+        return null;
     }
 
     /**
      *  Add a download task
      *
-     * @param url      - target URL
-     * @return cached file path if already downloaded; null for waiting to download
+     * @param url      - remote URL
+     * @param path     - temporary file path
+     * @param delegate - callback
+     * @return temporary file path when same file already downloaded from CDN
      */
-    public String download(String url) {
-        DownloadTask task = new DownloadTask(url, getDelegate());
-        String path = task.getFilePath();
-        if (path != null) {
+    public String download(URL url, String path, DownloadDelegate delegate) {
+        // 1. check previous download
+        if (Paths.exists(path)) {
             // already downloaded
             return path;
         }
-        Lock writeLock = downloadLock.writeLock();
-        writeLock.lock();
-        try {
-            // check duplicated task
-            if (!downloadTasks.contains(task)) {
-                downloadTasks.add(task);
-            }
-        } finally {
-            writeLock.unlock();
-        }
-        // waiting to download
+        // 2. build request
+        addDownloadRequest(new DownloadRequest(url, path, delegate));
         return null;
     }
 
-    private UploadTask nextUploadTask() {
-        UploadTask task = null;
-        Lock writeLock = uploadLock.writeLock();
+    private URL getURL(String filename) {
+        URL url;
+        Lock writeLock = lock.writeLock();
         writeLock.lock();
         try {
-            if (uploadTasks.size() > 0) {
-                task = uploadTasks.remove(0);
+            url = cdn.get(filename);
+        } finally {
+            writeLock.unlock();
+        }
+        return url;
+    }
+    private void addUploadRequest(UploadRequest req) {
+        Lock writeLock = lock.writeLock();
+        writeLock.lock();
+        try {
+            uploads.add(req);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+    private void addDownloadRequest(DownloadRequest req) {
+        Lock writeLock = lock.writeLock();
+        writeLock.lock();
+        try {
+            downloads.add(req);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    private UploadRequest getUploadRequest() {
+        UploadRequest req = null;
+        Lock writeLock = lock.writeLock();
+        writeLock.lock();
+        try {
+            if (uploads.size() > 0) {
+                req = uploads.remove(0);
             }
         } finally {
             writeLock.unlock();
         }
-        return task;
+        return req;
     }
-
-    private DownloadTask nextDownloadTask() {
-        DownloadTask task = null;
-        Lock writeLock = downloadLock.writeLock();
+    private DownloadRequest getDownloadRequest() {
+        DownloadRequest req = null;
+        Lock writeLock = lock.writeLock();
         writeLock.lock();
         try {
-            if (downloadTasks.size() > 0) {
-                task = downloadTasks.remove(0);
+            if (downloads.size() > 0) {
+                req = downloads.remove(0);
             }
         } finally {
             writeLock.unlock();
         }
-        return task;
+        return req;
     }
 
+    /**
+     *  Start a background thread
+     */
     public void start() {
-        forceStop();
-        running = true;
+        stop();
         Thread thr = new Thread(this);
         thr.setDaemon(true);
         thr.start();
         thread = thr;
     }
 
-    private void forceStop() {
-        running = false;
+    @Override
+    public void stop() {
+        super.stop();
+        // wait for thread stop
         Thread thr = thread;
         if (thr != null) {
             // waiting 2 seconds for stopping the thread
@@ -239,59 +201,261 @@ public enum HTTPClient implements Runnable, Processor {
         }
     }
 
-    public void stop() {
-        forceStop();
-    }
-
-    @Override
-    public void run() {
-        idle(1024);
-        while (running) {
-            if (process()) {
-                // it's busy now, continue to process next task
-                continue;
-            }
-            // no job to do now, have a rest. ^_^
-            idle();
-        }
-    }
-
-    protected void idle() {
-        idle(512);
-    }
-
-    public static void idle(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public boolean process() {
-        UploadTask uploadTask = null;
-        DownloadTask downloadTask = null;
-        // 1. upload one
         try {
-            uploadTask = nextUploadTask();
-            if (uploadTask != null) {
-                uploadTask.run();
+            // drive upload tasks as priority
+            if (driveUpload() || driveDownload()) {
+                // it's busy
+                return true;
             }
+            cleanup();
         } catch (Exception e) {
             e.printStackTrace();
-            idle(1024);
         }
-        // 2. download one
-        try {
-            downloadTask = nextDownloadTask();
-            if (downloadTask != null) {
-                downloadTask.run();
+        return false;
+    }
+
+    private void cleanup() {
+        // TODO: remove expired files in the temporary directory
+    }
+
+    private boolean driveUpload() throws IOException {
+        // 1. check running task
+        UploadTask task = uploadingTask;
+        if (task != null) {
+            TaskStatus status = task.getStatus();
+            switch (status) {
+                case Error:
+                    Log.error("task error: " + task);
+                    break;
+
+                case Running:
+                case Success:
+                    // task is busy now
+                    return true;
+
+                case Expired:
+                    Log.error("task expired: " + task);
+                    break;
+
+                case Finished:
+                    Log.info("task finished: " + task);
+                    break;
+
+                default:
+                    assert TaskStatus.Waiting.equals(status) : "unknown status: " + task;
+                    Log.warning("task status error: " + task);
+                    break;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            idle(1024);
+            // remove task
+            uploadingTask = null;
+            uploadingRequest = null;
         }
-        return uploadTask != null || downloadTask != null;
+
+        // 2. get next request
+        UploadRequest req = getUploadRequest();
+        if (req == null) {
+            // nothing to do now
+            return false;
+        }
+
+        // 3. check previous upload
+        String path = req.path;
+        String filename = Paths.filename(path);
+        URL url = getURL(filename);
+        if (url != null) {
+            UploadDelegate delegate = req.getDelegate();
+            if (delegate != null) {
+                delegate.onUploadSuccess(req, url);
+            }
+            // uploaded previously
+            return true;
+        }
+
+        // hash: md5(data + secret + salt)
+        byte[] data = ExternalStorage.loadBinary(path);
+        byte[] secret = req.secret;
+        byte[] salt = randomData(secret.length);  // 16 bytes
+        byte[] hash = MD5.digest(concat(data, secret, salt));
+
+        // 4. build task
+        String urlString = req.url.toString();
+        // "https://sechat.dim.chat/{ID}/upload?md5={MD5}&salt={SALT}"
+        Address address = req.sender.getAddress();
+        urlString = Template.replace(urlString, "ID", address.toString());
+        urlString = Template.replace(urlString, "MD5", Hex.encode(hash));
+        urlString = Template.replace(urlString, "SALT", Hex.encode(salt));
+        task = new UploadTask(new URL(urlString), req.name, filename, data, this);
+
+        // 5. run it
+        uploadingRequest = req;
+        uploadingTask = task;
+        task.run();
+        return true;
+    }
+    private static byte[] concat(byte[] data, byte[] secret, byte[] salt) {
+        byte[] buffer = new byte[data.length + secret.length + salt.length];
+        System.arraycopy(data, 0, buffer, 0, data.length);
+        System.arraycopy(secret, 0, buffer, data.length, secret.length);
+        System.arraycopy(salt, 0, buffer, data.length + secret.length, salt.length);
+        return buffer;
+    }
+    private static byte[] randomData(int size) {
+        Random random = new Random();
+        byte[] buffer = new byte[size];
+        random.nextBytes(buffer);
+        return buffer;
+    }
+
+    private boolean driveDownload() {
+        // 1. check running task
+        DownloadTask task = downloadingTask;
+        if (task != null) {
+            TaskStatus status = task.getStatus();
+            switch (status) {
+                case Error:
+                    Log.error("task error: " + task);
+                    break;
+
+                case Running:
+                case Success:
+                    // task is busy now
+                    return true;
+
+                case Expired:
+                    Log.error("task failed: " + task);
+                    break;
+
+                case Finished:
+                    Log.info("task finished: " + task);
+                    break;
+
+                default:
+                    assert TaskStatus.Waiting.equals(status) : "unknown status: " + task;
+                    Log.warning("task status error: " + task);
+                    break;
+            }
+            // remove task
+            downloadingTask = null;
+            downloadingRequest = null;
+        }
+
+        // 2. get next request
+        DownloadRequest req = getDownloadRequest();
+        if (req == null) {
+            // nothing to do now
+            return false;
+        }
+
+        // 3. check previous download
+        String path = req.path;
+        if (Paths.exists(path)) {
+            DownloadDelegate delegate = req.getDelegate();
+            if (delegate != null) {
+                delegate.onDownloadSuccess(req, path);
+            }
+            // downloaded previously
+            return true;
+        }
+
+        // 4. build task
+        task = new DownloadTask(req.url, req.path, this);
+
+        // 5. run it
+        downloadingRequest = req;
+        downloadingTask = task;
+        task.run();
+        return true;
+    }
+
+    //-------- UploadDelegate
+
+    @Override
+    public void onUploadSuccess(UploadRequest request, URL url) {
+        assert request instanceof UploadTask : "should not happen: " + request;
+        UploadTask task = (UploadTask) request;
+        UploadRequest req = uploadingRequest;
+        assert task == uploadingTask : "upload tasks not match: " + task + ", " + uploadingTask;
+        assert req != null && req.path.endsWith(task.path) : "upload error: " + task + ", " + req;
+        // 1. cache upload result
+        cdn.put(task.filename, url);
+        // 2. callback
+        UploadDelegate delegate = req.getDelegate();
+        if (delegate != null) {
+            delegate.onUploadSuccess(req, url);
+        }
+    }
+
+    @Override
+    public void onUploadFailed(UploadRequest request, IOException error) {
+        assert request instanceof UploadTask : "should not happen: " + request;
+        UploadTask task = (UploadTask) request;
+        UploadRequest req = uploadingRequest;
+        assert task == uploadingTask : "upload tasks not match: " + task + ", " + uploadingTask;
+        assert req != null && req.path.endsWith(task.filename) : "upload error: " + task + ", " + req;
+        // callback
+        UploadDelegate delegate = req.getDelegate();
+        if (delegate != null) {
+            delegate.onUploadFailed(req, error);
+        }
+    }
+
+    @Override
+    public void onUploadError(UploadRequest request, IOError error) {
+        assert request instanceof UploadTask : "should not happen: " + request;
+        UploadTask task = (UploadTask) request;
+        UploadRequest req = uploadingRequest;
+        assert task == uploadingTask : "upload tasks not match: " + task + ", " + uploadingTask;
+        assert req != null && req.path.endsWith(task.filename) : "upload error: " + task + ", " + req;
+        // callback
+        UploadDelegate delegate = req.getDelegate();
+        if (delegate != null) {
+            delegate.onUploadError(req, error);
+        }
+    }
+
+    //-------- DownloadDelegate
+
+    @Override
+    public void onDownloadSuccess(DownloadRequest request, String path) {
+        assert request instanceof DownloadTask : "should not happen: " + request;
+        DownloadTask task = (DownloadTask) request;
+        DownloadRequest req = downloadingRequest;
+        assert task == downloadingTask : "download tasks not match: " + task + ", " + downloadingTask;
+        assert req != null && req.url.equals(task.url) : "download error: " + task + ", " + req;
+        // callback
+        DownloadDelegate delegate = req.getDelegate();
+        if (delegate != null) {
+            delegate.onDownloadSuccess(req, path);
+        }
+    }
+
+    @Override
+    public void onDownloadFailed(DownloadRequest request, IOException error) {
+        assert request instanceof DownloadTask : "should not happen: " + request;
+        DownloadTask task = (DownloadTask) request;
+        DownloadRequest req = downloadingRequest;
+        assert task == downloadingTask : "download tasks not match: " + task + ", " + downloadingTask;
+        assert req != null && req.url.equals(task.url) : "download error: " + task + ", " + req;
+        // callback
+        DownloadDelegate delegate = req.getDelegate();
+        if (delegate != null) {
+            delegate.onDownloadFailed(req, error);
+        }
+    }
+
+    @Override
+    public void onDownloadError(DownloadRequest request, IOError error) {
+        assert request instanceof DownloadTask : "should not happen: " + request;
+        DownloadTask task = (DownloadTask) request;
+        DownloadRequest req = downloadingRequest;
+        assert task == downloadingTask : "download tasks not match: " + task + ", " + downloadingTask;
+        assert req != null && req.url.equals(task.url) : "download error: " + task + ", " + req;
+        // callback
+        DownloadDelegate delegate = req.getDelegate();
+        if (delegate != null) {
+            delegate.onDownloadError(req, error);
+        }
     }
 }

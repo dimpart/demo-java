@@ -30,15 +30,34 @@
  */
 package chat.dim.http;
 
+import java.io.IOError;
 import java.io.IOException;
+import java.net.URL;
 
-public interface HTTPDelegate {
+public interface UploadDelegate {
 
-    void uploadSuccess(UploadTask task, String response);
+    /**
+     *  Callback when upload task success
+     *
+     * @param request - upload task
+     * @param url     - download URL from server response
+     */
+    void onUploadSuccess(UploadRequest request, URL url);
 
-    void uploadFailed(UploadTask task, IOException error);
+    /**
+     *  Callback when upload task failed
+     *
+     * @param request - upload task
+     * @param error   - error info
+     */
+    void onUploadFailed(UploadRequest request, IOException error);
 
-    void downloadSuccess(DownloadTask task, String filePath);
-
-    void downloadFailed(DownloadTask task, IOException error);
+    /**
+     *  Callback when upload task error
+     *
+     * @param request - upload task
+     * @param error   - error info
+     */
+    void onUploadError(UploadRequest request, IOError error);
 }
+

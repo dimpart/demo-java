@@ -30,77 +30,43 @@
  */
 package chat.dim.http;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
+import java.util.Map;
+import java.util.UnknownFormatConversionException;
 
+import chat.dim.format.JSONMap;
 import chat.dim.format.UTF8;
-import chat.dim.utils.Log;
 
-public class UploadTask implements Runnable {
+/**
+ *  Upload Task
+ *  ~~~~~~~~~~~
+ *  running task
+ *
+ *  properties:
+ *      url      - remote URL
+ *      path     -
+ *      secret   -
+ *      name     - form var name ('avatar' or 'file')
+ *      filename - form file name
+ *      data     - form file data
+ *      sender   -
+ *      delegate - HTTP client
+ */
+public class UploadTask extends UploadRequest implements Runnable {
 
-    private final WeakReference<HTTPDelegate> delegateRef;
+    final String filename;  // file name
+    final byte[] data;      // file data
 
-    private final String urlString;
-    private final String varName;
-    private final String fileName;
-    private final byte[] fileData;
-
-    /**
-     *  Upload data to URL with filename and variable name in form
-     *
-     * @param url      - API
-     * @param name     - variable name in form
-     * @param filename - file name
-     * @param data     - file data
-     */
-    public UploadTask(String url, String name, String filename, byte[] data, HTTPDelegate delegate) {
-        super();
-        urlString = url;
-        varName = name;
-        fileName = filename;
-        fileData = data;
-        delegateRef = new WeakReference<>(delegate);
-    }
-
-    public String getUrlString() {
-        return urlString;
-    }
-    public String getVarName() {
-        return varName;
-    }
-    public String getFileName() {
-        return fileName;
-    }
-    public byte[] getFileData() {
-        return fileData;
-    }
-
-    public HTTPDelegate getDelegate() {
-        return delegateRef.get();
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (super.equals(other)) {
-            // same object
-            return true;
-        } else if (other instanceof UploadTask) {
-            UploadTask task = (UploadTask) other;
-            return urlString.equals(task.urlString) &&
-                    Arrays.equals(fileData, task.fileData);
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        return urlString.hashCode() * 13 + Arrays.hashCode(fileData);
+    public UploadTask(URL url, String var, String fileName, byte[] fileData, UploadDelegate delegate) {
+        super(url, null, null, var, null, delegate);
+        filename = fileName;
+        data = fileData;
     }
 
     private static final String BOUNDARY = "BU1kUJ19yLYPqv5xoT3sbKYbHwjUu1JU7roix";
@@ -123,12 +89,11 @@ public class UploadTask implements Runnable {
         return buffer;
     }
 
-    private static String post(String urlString, String varName, String fileName, byte[] fileData) throws IOException {
+    private static String post(URL url, String varName, String fileName, byte[] fileData) throws IOException {
         String response = null;
 
         byte[] data = buildHTTPBody(varName, fileName, fileData);
 
-        URL url = new URL(urlString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(true);
         connection.setDoInput(true);
@@ -163,16 +128,64 @@ public class UploadTask implements Runnable {
         return response;
     }
 
+    /*  response: {
+            "code": {{code}},
+            "message": "{{message}}",
+            "filename": "{{filename}}",
+            "url": "{{url}}"
+        }
+     */
+    private static URL getURL(String json) throws NoSuchFieldException, MalformedURLException {
+        if (json == null) {
+            // no response?
+            throw new NullPointerException("no response");
+        }
+        Map<?, ?> info = JSONMap.decode(json);
+        if (info == null) {
+            throw new UnknownFormatConversionException("json error: " + json);
+        }
+        String url = (String) info.get("url");
+        if (url == null) {
+            // response error
+            throw new NoSuchFieldException("url not found:  " + json);
+        }
+        return new URL(url);
+    }
+
     @Override
     public void run() {
-        HTTPDelegate delegate = getDelegate();
+        UploadDelegate delegate = getDelegate();
+        touch();
+        // 1. send to server
+        String response;
         try {
-            String response = post(urlString, varName, fileName, fileData);
-            delegate.uploadSuccess(this, response);
+            response = post(url, name, filename, data);
         } catch (IOException e) {
-            //e.printStackTrace();
-            Log.error("failed to upload: " + urlString);
-            delegate.uploadFailed(this, e);
+            e.printStackTrace();
+            onError();
+            if (delegate != null) {
+                delegate.onUploadFailed(this, e);
+            }
+            onFinished();
+            return;
         }
+        // 2. get URL from server response
+        URL url;
+        try {
+            url = getURL(response);
+        } catch (NoSuchFieldException | MalformedURLException | RuntimeException e) {
+            e.printStackTrace();
+            onError();
+            if (delegate != null) {
+                IOError error = new IOError(e);
+                delegate.onUploadError(this, error);
+            }
+            onFinished();
+            return;
+        }
+        // 3. upload success
+        onSuccess();
+        delegate.onUploadSuccess(this, url);
+        onFinished();
     }
 }
