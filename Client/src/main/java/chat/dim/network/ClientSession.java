@@ -92,14 +92,17 @@ public class ClientSession extends BaseSession {
     }
 
     public void start() {
-        forceStop();
+        stop();
         Thread thr = new Thread(this);
         thr.setDaemon(true);
         thr.start();
         thread = thr;
     }
 
-    private void forceStop() {
+    @Override
+    public void stop() {
+        super.stop();
+        // wait for thread stop
         Thread thr = thread;
         if (thr != null) {
             // waiting 2 seconds for stopping the thread
@@ -110,12 +113,6 @@ public class ClientSession extends BaseSession {
                 e.printStackTrace();
             }
         }
-    }
-
-    @Override
-    public void stop() {
-        super.stop();
-        forceStop();
     }
 
     @Override

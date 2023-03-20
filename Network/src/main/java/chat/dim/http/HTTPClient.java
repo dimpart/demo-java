@@ -52,7 +52,7 @@ import chat.dim.skywalker.Runner;
 import chat.dim.utils.Log;
 import chat.dim.utils.Template;
 
-public class HTTPClient extends Runner implements UploadDelegate, DownloadDelegate {
+public abstract class HTTPClient extends Runner implements UploadDelegate, DownloadDelegate {
 
     // cache for uploaded file's URL
     private final Map<String, URL> cdn = new HashMap<>();     // filename => URL
@@ -208,17 +208,19 @@ public class HTTPClient extends Runner implements UploadDelegate, DownloadDelega
             if (driveUpload() || driveDownload()) {
                 // it's busy
                 return true;
+            } else {
+                // nothing to do now, cleanup temporary files
+                cleanup();
             }
-            cleanup();
         } catch (Exception e) {
             e.printStackTrace();
         }
+        // have a rest
         return false;
     }
 
-    private void cleanup() {
-        // TODO: remove expired files in the temporary directory
-    }
+    // clean expired temporary files for upload/download
+    protected abstract void cleanup();
 
     private boolean driveUpload() throws IOException {
         // 1. check running task

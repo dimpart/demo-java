@@ -30,6 +30,7 @@
  */
 package chat.dim.filesys;
 
+import java.io.File;
 import java.io.IOException;
 
 import chat.dim.format.JSON;
@@ -58,6 +59,35 @@ public abstract class ExternalStorage {
         } catch (IOException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    /**
+     *  Remove expired files
+     *
+     * @param dir     - directory
+     * @param expired - expired time (seconds, from Jan 1, 1970 UTC)
+     */
+    public static void cleanup(String dir, long expired) {
+        cleanupFile(new File(dir), expired);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private static void cleanupFile(File file, long expired) {
+        if (file.isDirectory()) {
+            cleanupDirectory(file, expired);
+        } else if (file.lastModified() < expired) {
+            file.delete();
+        }
+    }
+    private static void cleanupDirectory(File dir, long expired) {
+        File[] children = dir.listFiles();
+        if (children == null || children.length == 0) {
+            // directory empty
+            return;
+        }
+        for (File child : children) {
+            cleanupFile(child, expired);
         }
     }
 
