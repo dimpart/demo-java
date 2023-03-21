@@ -60,8 +60,8 @@ import chat.dim.format.UTF8;
  */
 public class UploadTask extends UploadRequest implements Runnable {
 
-    final String filename;  // file name
-    final byte[] data;      // file data
+    public final String filename;  // file name
+    public final byte[] data;      // file data
 
     public UploadTask(URL url, String var, String fileName, byte[] fileData, UploadDelegate delegate) {
         super(url, null, null, var, null, delegate);

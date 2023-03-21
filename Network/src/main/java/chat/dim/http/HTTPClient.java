@@ -92,7 +92,8 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
             return url;
         }
         // 2. save file data to the local path
-        ExternalStorage.saveBinary(data, path);
+        int len = ExternalStorage.saveBinary(data, path);
+        assert len == data.length : "failed to save binary: " + path;
         // 3. build request
         addUploadRequest(new UploadRequest(api, path, secret, var, sender, delegate));
         return null;

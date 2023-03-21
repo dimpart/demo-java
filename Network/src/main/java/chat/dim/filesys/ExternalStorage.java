@@ -63,7 +63,7 @@ public abstract class ExternalStorage {
     }
 
     /**
-     *  Remove expired files
+     *  Delete expired files in this directory cyclically
      *
      * @param dir     - directory
      * @param expired - expired time (seconds, from Jan 1, 1970 UTC)
