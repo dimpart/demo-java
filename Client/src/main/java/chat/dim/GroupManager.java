@@ -95,7 +95,8 @@ public enum GroupManager implements Group.DataSource {
             // send to any bot
             result = messenger.sendContent(null, bot, content, Departure.Priority.NORMAL.value);
             if (result.second != null) {
-                // only send to one bot
+                // only send to one bot, let the bot to split and
+                // forward this message to all members
                 return true;
             }
         }
@@ -242,9 +243,9 @@ public enum GroupManager implements Group.DataSource {
 
         // 0. check permission
         if (bots.contains(me)) {
-            throw new RuntimeException("group assistant cannot quit: " + me);
+            throw new RuntimeException("group assistant cannot quit: " + me + ", group: " + group);
         } else if (me.equals(owner)) {
-            throw new RuntimeException("group owner cannot quit: " + owner);
+            throw new RuntimeException("group owner cannot quit: " + owner + ", group: " + group);
         }
 
         // 1. update local storage
@@ -298,9 +299,10 @@ public enum GroupManager implements Group.DataSource {
                 founder = ID.FOUNDER;
             }
             cachedGroupFounders.put(group, founder);
-        } else if (founder.isBroadcast()) {
+        }
+        if (founder.isBroadcast()) {
             // founder not found
-            founder = null;
+            return null;
         }
         return founder;
     }
@@ -316,9 +318,10 @@ public enum GroupManager implements Group.DataSource {
                 owner = ID.ANYONE;
             }
             cachedGroupOwners.put(group, owner);
-        } else if (owner.isBroadcast()) {
+        }
+        if (owner.isBroadcast()) {
             // owner not found
-            owner = null;
+            return null;
         }
         return owner;
     }
@@ -364,6 +367,10 @@ public enum GroupManager implements Group.DataSource {
         return defaultAssistants;
     }
 
+    //
+    //  MemberShip
+    //
+
     public boolean isFounder(ID member, ID group) {
         ID founder = getFounder(group);
         if (founder != null) {
@@ -398,7 +405,7 @@ public enum GroupManager implements Group.DataSource {
         assert member.isUser() && group.isGroup() : "ID error: " + member + ", " + group;
         List<ID> allMembers = getMembers(group);
         int pos = allMembers.indexOf(member);
-        if (pos > 0) {
+        if (pos >= 0) {
             return true;
         }
         ID owner = getOwner(group);
@@ -473,23 +480,21 @@ public enum GroupManager implements Group.DataSource {
         return assistants.contains(user);
     }
 
-    public void addAssistant(ID bot, ID group) {
+    public boolean addAssistant(ID bot, ID group) {
         if (group == null) {
-            defaultAssistants.add(bot);
-            return;
+            defaultAssistants.add(0, bot);
+            return true;
         }
         List<ID> assistants = getAssistants(group);
         if (assistants == defaultAssistants) {
             // assistants not found
             assistants = new ArrayList<>();
-        }
-        if (assistants.contains(bot)) {
+        } else if (assistants.contains(bot)) {
             // already exists
-            return;
+            return false;
         }
-        assistants.add(bot);
-        boolean ok = saveAssistants(assistants, group);
-        assert ok : "failed to save assistants: " + group + ", " + assistants;
+        assistants.add(0, bot);
+        return saveAssistants(assistants, group);
     }
 
     public boolean saveAssistants(List<ID> bots, ID group) {

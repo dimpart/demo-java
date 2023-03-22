@@ -233,6 +233,8 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
             List<ID> members = getMembers(receiver);
             return members != null;
         }
+        // the facebook will select a user from local users to match this receiver,
+        // if no user matched (private key not found), this message will be ignored.
         return true;
     }
 
@@ -302,7 +304,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
     @Override
     public SecureMessage verifyMessage(ReliableMessage rMsg) {
         if (!checkReceiver(rMsg)) {
-            // receiver not ready
+            // receiver (group) not ready
             Log.warning("receiver not ready: " + rMsg.getReceiver());
             return null;
         }

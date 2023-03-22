@@ -62,10 +62,10 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
     private final List<DownloadRequest> downloads = new ArrayList<>();
 
     // tasks running
-    UploadTask uploadingTask = null;
-    UploadRequest uploadingRequest = null;
-    DownloadTask downloadingTask = null;
-    DownloadRequest downloadingRequest = null;
+    private UploadTask uploadingTask = null;
+    private UploadRequest uploadingRequest = null;
+    private DownloadTask downloadingTask = null;
+    private DownloadRequest downloadingRequest = null;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private Thread thread = null;
@@ -259,7 +259,7 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         // 2. get next request
         UploadRequest req = getUploadRequest();
         if (req == null) {
-            // nothing to do now
+            // nothing to upload now
             return false;
         }
 
@@ -268,10 +268,13 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         String filename = Paths.filename(path);
         URL url = getURL(filename);
         if (url != null) {
+            assert req.getStatus() == TaskStatus.Waiting : "request status error: " + req.getStatus();
+            req.onSuccess();
             UploadDelegate delegate = req.getDelegate();
             if (delegate != null) {
                 delegate.onUploadSuccess(req, url);
             }
+            req.onFinished();
             // uploaded previously
             return true;
         }
@@ -279,7 +282,7 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         // hash: md5(data + secret + salt)
         byte[] data = ExternalStorage.loadBinary(path);
         byte[] secret = req.secret;
-        byte[] salt = randomData(secret.length);  // 16 bytes
+        byte[] salt = random_salt();
         byte[] hash = MD5.digest(concat(data, secret, salt));
 
         // 4. build task
@@ -304,9 +307,9 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         System.arraycopy(salt, 0, buffer, data.length + secret.length, salt.length);
         return buffer;
     }
-    private static byte[] randomData(int size) {
+    private static byte[] random_salt() {
         Random random = new Random();
-        byte[] buffer = new byte[size];
+        byte[] buffer = new byte[16];
         random.nextBytes(buffer);
         return buffer;
     }
@@ -347,17 +350,20 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         // 2. get next request
         DownloadRequest req = getDownloadRequest();
         if (req == null) {
-            // nothing to do now
+            // nothing to download now
             return false;
         }
 
         // 3. check previous download
         String path = req.path;
         if (Paths.exists(path)) {
+            assert req.getStatus() == TaskStatus.Waiting : "request status error: " + req.getStatus();
+            req.onSuccess();
             DownloadDelegate delegate = req.getDelegate();
             if (delegate != null) {
                 delegate.onDownloadSuccess(req, path);
             }
+            req.onFinished();
             // downloaded previously
             return true;
         }
@@ -382,7 +388,9 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         assert task == uploadingTask : "upload tasks not match: " + task + ", " + uploadingTask;
         assert req != null && req.path.endsWith(task.path) : "upload error: " + task + ", " + req;
         // 1. cache upload result
-        cdn.put(task.filename, url);
+        if (url != null) {
+            cdn.put(task.filename, url);
+        }
         // 2. callback
         UploadDelegate delegate = req.getDelegate();
         if (delegate != null) {

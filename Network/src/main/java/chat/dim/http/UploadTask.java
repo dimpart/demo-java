@@ -177,15 +177,16 @@ public class UploadTask extends UploadRequest implements Runnable {
             e.printStackTrace();
             onError();
             if (delegate != null) {
-                IOError error = new IOError(e);
-                delegate.onUploadError(this, error);
+                delegate.onUploadError(this, new IOError(e));
             }
             onFinished();
             return;
         }
         // 3. upload success
         onSuccess();
-        delegate.onUploadSuccess(this, url);
+        if (delegate != null) {
+            delegate.onUploadSuccess(this, url);
+        }
         onFinished();
     }
 }

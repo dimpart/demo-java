@@ -102,27 +102,29 @@ public class DownloadTask extends DownloadRequest implements Runnable {
             // 1. prepare directory
             String dir = Paths.parent(path);
             assert dir != null : "download file path error: " + path;
-            if (!Paths.mkdirs(dir)) {
-                onError();
-                error = new IOError(new IOException("failed to create dir: " + dir));
-                delegate.onDownloadError(this, error);
-            }
-            // 2. start download
-            error = download(url, path);
-            if (error == null) {
-                onSuccess();
-                delegate.onDownloadSuccess(this, path);
+            if (Paths.mkdirs(dir)) {
+                // 2. start download
+                error = download(url, path);
             } else {
-                onError();
-                delegate.onDownloadError(this, error);
+                error = new IOError(new IOException("failed to create dir: " + dir));
             }
         } catch (IOException e) {
             //e.printStackTrace();
             Log.error("failed to download: " + url);
             onError();
-            delegate.onDownloadFailed(this, e);
-        } finally {
+            if (delegate != null) {
+                delegate.onDownloadFailed(this, e);
+            }
             onFinished();
+            return;
         }
+        if (error == null) {
+            onSuccess();
+            delegate.onDownloadSuccess(this, path);
+        } else {
+            onError();
+            delegate.onDownloadError(this, error);
+        }
+        onFinished();
     }
 }
