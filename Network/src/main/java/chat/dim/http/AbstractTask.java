@@ -79,6 +79,15 @@ class AbstractTask {
     }
 
     TaskStatus getStatus() {
+        if (lastActive > 0) {
+            // task started, check for expired
+            long now = System.currentTimeMillis();
+            long expired = lastActive + EXPIRES;
+            if (now > expired) {
+                // TODO: send it again?
+                return TaskStatus.Expired;
+            }
+        }
         if (flag == -1) {
             return TaskStatus.Error;
         } else if (flag == 1) {
@@ -87,13 +96,8 @@ class AbstractTask {
             return TaskStatus.Finished;
         } else if (lastActive == 0) {
             return TaskStatus.Waiting;
-        }
-        long now = System.currentTimeMillis();
-        long expired = lastActive + EXPIRES;
-        if (now < expired) {
-            return TaskStatus.Running;
         } else {
-            return TaskStatus.Expired;
+            return TaskStatus.Running;
         }
     }
 }

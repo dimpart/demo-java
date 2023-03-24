@@ -335,7 +335,8 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
 
     @Override
     public ReliableMessage sendInstantMessage(InstantMessage iMsg, int priority) {
-        Log.debug("sending message: " + iMsg.getReceiver() + ", " + iMsg.getContent());
+        Log.debug("send instant message (type=" + iMsg.getContent().getType() + "): "
+                + iMsg.getSender() + " -> " + iMsg.getReceiver());
         // send message (secured + certified) to target station
         SecureMessage sMsg = encryptMessage(iMsg);
         if (sMsg == null) {

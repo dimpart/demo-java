@@ -423,6 +423,17 @@ public enum GroupManager implements Group.DataSource {
         allMembers.add(member);
         return saveMembers(allMembers, group);
     }
+    public boolean removeMember(ID member, ID group) {
+        assert member.isUser() && group.isGroup() : "ID error: " + member + ", " + group;
+        List<ID> allMembers = getMembers(group);
+        int pos = allMembers.indexOf(member);
+        if (pos < 0) {
+            // not exists
+            return false;
+        }
+        allMembers.remove(pos);
+        return saveMembers(allMembers, group);
+    }
 
     private List<ID> addMembers(List<ID> newMembers, ID group) {
         List<ID> members = getMembers(group);

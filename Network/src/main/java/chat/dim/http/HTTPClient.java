@@ -268,6 +268,7 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         String filename = Paths.filename(path);
         URL url = getURL(filename);
         if (url != null) {
+            // uploaded previously
             assert req.getStatus() == TaskStatus.Waiting : "request status error: " + req.getStatus();
             req.onSuccess();
             UploadDelegate delegate = req.getDelegate();
@@ -275,7 +276,6 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
                 delegate.onUploadSuccess(req, url);
             }
             req.onFinished();
-            // uploaded previously
             return true;
         }
 
@@ -357,6 +357,7 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         // 3. check previous download
         String path = req.path;
         if (Paths.exists(path)) {
+            // downloaded previously
             assert req.getStatus() == TaskStatus.Waiting : "request status error: " + req.getStatus();
             req.onSuccess();
             DownloadDelegate delegate = req.getDelegate();
@@ -364,7 +365,6 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
                 delegate.onDownloadSuccess(req, path);
             }
             req.onFinished();
-            // downloaded previously
             return true;
         }
 
@@ -386,7 +386,7 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         UploadTask task = (UploadTask) request;
         UploadRequest req = uploadingRequest;
         assert task == uploadingTask : "upload tasks not match: " + task + ", " + uploadingTask;
-        assert req != null && req.path.endsWith(task.path) : "upload error: " + task + ", " + req;
+        assert req != null && req.path.endsWith(task.filename) : "upload error: " + task + ", " + req;
         // 1. cache upload result
         if (url != null) {
             cdn.put(task.filename, url);
