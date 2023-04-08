@@ -49,7 +49,7 @@ public class AnsCommandProcessor extends BaseCommandProcessor {
 
     @Override
     public List<Content> process(Content content, ReliableMessage rMsg) {
-        assert content instanceof AnsCommand : "search command error: " + content;
+        assert content instanceof AnsCommand : "ans command error: " + content;
         AnsCommand command = (AnsCommand) content;
         Map<String, String> records = command.getRecords();
         int count = ClientFacebook.ans.fix(records);

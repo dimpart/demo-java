@@ -158,7 +158,8 @@ public class Register {
         assert identifier.isGroup() : "group ID error: " + identifier;
         BaseBulletin doc = new BaseBulletin(identifier);
         doc.setName(title);
-        doc.sign(privateKey);
+        byte[] sig = doc.sign(privateKey);
+        assert sig != null : "failed to sign bulletin: " + identifier;
         return doc;
     }
 

@@ -53,10 +53,9 @@ public enum LocalCache {
         if (built) {
             return base;
         }
-        // make sure base directory built
-        Paths.mkdirs(base);
+        // make sure base directory built, and
         // forbid the gallery from scanning media files
-        if (ExternalStorage.setNoMedia(base)) {
+        if (Paths.mkdirs(base) && ExternalStorage.setNoMedia(base)) {
             built = true;
         }
         return base;

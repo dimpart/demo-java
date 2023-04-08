@@ -69,7 +69,10 @@ public abstract class ExternalStorage {
      * @param expired - expired time (seconds, from Jan 1, 1970 UTC)
      */
     public static void cleanup(String dir, long expired) {
-        cleanupFile(new File(dir), expired);
+        File file = new File(dir);
+        if (file.exists()) {
+            cleanupFile(file, expired);
+        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")

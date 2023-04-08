@@ -63,11 +63,11 @@ public enum GroupManager implements Group.DataSource {
         return INSTANCE;
     }
 
-    static private final Map<ID, ID> cachedGroupFounders = new HashMap<>();
-    static private final Map<ID, ID> cachedGroupOwners = new HashMap<>();
-    static private final Map<ID, List<ID>> cachedGroupMembers = new HashMap<>();
-    static private final Map<ID, List<ID>> cachedGroupAssistants = new HashMap<>();
-    static private final List<ID> defaultAssistants = new ArrayList<>();
+    private final Map<ID, ID>         cachedGroupFounders = new HashMap<>();
+    private final Map<ID, ID>           cachedGroupOwners = new HashMap<>();
+    private final Map<ID, List<ID>>    cachedGroupMembers = new HashMap<>();
+    private final Map<ID, List<ID>> cachedGroupAssistants = new HashMap<>();
+    private final List<ID>              defaultAssistants = new ArrayList<>();
 
     public ClientMessenger messenger;
 

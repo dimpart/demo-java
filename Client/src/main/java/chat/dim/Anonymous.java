@@ -56,6 +56,8 @@ public final class Anonymous {
             return "Station";
         } else if (type == EntityType.ISP.value) {
             return "ISP";
+        } else if (type == EntityType.ICP.value) {
+            return "ICP";
         }
         if (EntityType.isUser(type)) {
             return "User";
@@ -74,6 +76,9 @@ public final class Anonymous {
     }
 
     public static long getNumber(Address address) {
+        if (address.isBroadcast()) {
+            return 0;
+        }
         if (address instanceof BTCAddress) {
             return btcNumber(address.toString());
         }

@@ -18,7 +18,7 @@ plugins {
 
 group 'chat.dim'
 //version '1.0-SNAPSHOT'
-version '0.1.0'
+version '0.1.1'
 
 def mod = 'Common'
 def desc = 'Decentralized Instant Messaging (Java SDK)'
@@ -36,7 +36,7 @@ repositories {
 
 dependencies {
     compile group: 'chat.dim', name: 'SDK', version: '0.8.6'
-    compile group: 'chat.dim', name: 'Plugins', version: '0.4.4'
+    compile group: 'chat.dim', name: 'Plugins', version: '0.4.5'
     compile group: 'chat.dim', name: 'DOS', version: '0.1.3'
 
     testCompile group: 'junit', name: 'junit', version: '4.12'

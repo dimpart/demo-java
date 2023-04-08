@@ -30,6 +30,8 @@
  */
 package chat.dim.network;
 
+import java.lang.ref.WeakReference;
+
 import chat.dim.fsm.AutoMachine;
 import chat.dim.fsm.Context;
 import chat.dim.port.Docker;
@@ -58,11 +60,11 @@ import chat.dim.protocol.ID;
  */
 public class StateMachine extends AutoMachine<StateMachine, StateTransition, SessionState> implements Context {
 
-    private final ClientSession session;
+    private final WeakReference<ClientSession> sessionRef;
 
     public StateMachine(ClientSession clientSession) {
         super();
-        session = clientSession;
+        sessionRef = new WeakReference<>(clientSession);
         // init states
         SessionState.Builder builder = createStateBuilder();
         addState(builder.getDefaultState());
@@ -83,18 +85,24 @@ public class StateMachine extends AutoMachine<StateMachine, StateTransition, Ses
     }
 
     public ClientSession getSession() {
-        return session;
+        return sessionRef.get();
     }
 
     public String getSessionKey() {
-        return session.getKey();
+        ClientSession session = getSession();
+        return session == null ? null : session.getKey();
     }
 
     public ID getSessionID() {
-        return session.getIdentifier();
+        ClientSession session = getSession();
+        return session == null ? null : session.getIdentifier();
     }
 
     Docker.Status getStatus() {
+        ClientSession session = getSession();
+        if (session == null) {
+            return Docker.Status.ERROR;
+        }
         CommonGate gate = session.getGate();
         Docker docker = gate.getDocker(session.getRemoteAddress(), null, null);
         return docker == null ? Docker.Status.ERROR : docker.getStatus();

@@ -39,18 +39,18 @@ import chat.dim.protocol.ID;
 
 public class AddressNameServer implements AddressNameService {
 
-    private final Map<String, Boolean> reserved = new HashMap<>();
-    private final Map<String, ID> caches = new HashMap<>();
+    private final Map<String, Boolean>     reserved = new HashMap<>();
+    private final Map<String, ID>            caches = new HashMap<>();
     private final Map<ID, List<String>> namesTables = new HashMap<>();
 
     protected AddressNameServer() {
         super();
         // constant ANS records
-        caches.put("all", ID.EVERYONE);
+        caches.put("all",      ID.EVERYONE);
         caches.put("everyone", ID.EVERYONE);
-        caches.put("anyone", ID.ANYONE);
-        caches.put("owner", ID.ANYONE);
-        caches.put("founder", ID.FOUNDER);
+        caches.put("anyone",   ID.ANYONE);
+        caches.put("owner",    ID.ANYONE);
+        caches.put("founder",  ID.FOUNDER);
         // reserved names
         for (String item : KEYWORDS) {
             reserved.put(item, true);
