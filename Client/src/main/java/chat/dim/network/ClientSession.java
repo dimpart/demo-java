@@ -68,18 +68,34 @@ import chat.dim.utils.ArrayUtils;
 public class ClientSession extends BaseSession {
 
     private final Station station;
+    private final StateMachine fsm;
+
     private String key;
     private Thread thread;
 
     public ClientSession(Station server, SessionDBI sdb) {
         super(new InetSocketAddress(server.getHost(), server.getPort()), null, sdb);
         station = server;
+        fsm = new StateMachine(this);
         key = null;
         thread = null;
     }
 
     public Station getStation() {
         return station;
+    }
+
+    public void pause() {
+        fsm.pause();
+    }
+
+    public void resume() {
+        fsm.resume();
+    }
+
+    public SessionState getState() {
+        SessionState state = fsm.getCurrentState();
+        return  state != null ? state : fsm.getDefaultState();
     }
 
     @Override
@@ -91,17 +107,25 @@ public class ClientSession extends BaseSession {
         key = sessionKey;
     }
 
-    public void start() {
+    public void start(SessionState.Delegate delegate) {
         stop();
         Thread thr = new Thread(this);
         thr.setDaemon(true);
         thr.start();
         thread = thr;
+
+        // start state machine
+        fsm.setDelegate(delegate);
+        fsm.start();
     }
 
     @Override
     public void stop() {
         super.stop();
+
+        // stop state machine
+        fsm.stop();
+
         // wait for thread stop
         Thread thr = thread;
         if (thr != null) {

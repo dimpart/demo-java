@@ -84,6 +84,11 @@ public class StateMachine extends AutoMachine<StateMachine, StateTransition, Ses
         return this;
     }
 
+    @Override
+    public SessionState getDefaultState() {
+        return super.getDefaultState();
+    }
+
     public ClientSession getSession() {
         return sessionRef.get();
     }

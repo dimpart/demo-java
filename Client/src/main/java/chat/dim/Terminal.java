@@ -48,7 +48,6 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
     public final SessionDBI database;
 
     private ClientMessenger messenger;
-    private StateMachine fsm;  // session state
     private long lastTime;
 
     public Terminal(CommonFacebook barrack, SessionDBI sdb) {
@@ -56,7 +55,6 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         facebook = barrack;
         database = sdb;
         messenger = null;
-        fsm = null;
         // last online time
         lastTime = 0;
     }
@@ -119,14 +117,6 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         return transceiver.getSession();
     }
 
-    public SessionState getState() {
-        StateMachine machine = fsm;
-        if (machine == null) {
-            return null;
-        }
-        return machine.getCurrentState();
-    }
-
     public ClientMessenger connect(String host, int port) {
         ClientMessenger old = messenger;
         if (old != null) {
@@ -139,12 +129,7 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
                     return old;
                 }
             }
-        }
-        // stop the machine & remove old messenger
-        StateMachine machine = fsm;
-        if (machine != null) {
-            machine.stop();
-            fsm = null;
+            session.stop();
         }
         // create new messenger with session
         Station station = createStation(host, port);
@@ -156,11 +141,6 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         messenger.setProcessor(createProcessor(facebook, messenger));
         // set weak reference to messenger
         session.setMessenger(messenger);
-        // create & start state machine
-        machine = new StateMachine(session);
-        machine.setDelegate(this);
-        machine.start();
-        fsm = machine;
         return messenger;
     }
     protected Station createStation(String host, int port) {
@@ -175,7 +155,7 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         if (user != null) {
             session.setIdentifier(user.getIdentifier());
         }
-        session.start();
+        session.start(this);
         return session;
     }
     protected Packer createPacker(CommonFacebook facebook, ClientMessenger messenger) {
@@ -198,8 +178,7 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
 
     public void enterBackground() {
         ClientMessenger transceiver = messenger;
-        StateMachine machine = fsm;
-        if (transceiver == null || machine == null) {
+        if (transceiver == null) {
             // not connect
             return;
         }
@@ -208,7 +187,7 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         ID uid = session.getIdentifier();
         if (uid != null) {
             // already signed in, check session state
-            SessionState state = machine.getCurrentState();
+            SessionState state = session.getState();
             if (state.equals(SessionState.Order.RUNNING)) {
                 // report client state
                 transceiver.reportOffline(uid);
@@ -216,24 +195,24 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
             }
         }
         // pause the session
-        machine.pause();
+        session.pause();
     }
     public void enterForeground() {
         ClientMessenger transceiver = messenger;
-        StateMachine machine = fsm;
-        if (transceiver == null || machine == null) {
+        if (transceiver == null) {
             // not connect
             return;
         }
-        // resume the session
-        machine.resume();
-        // check signed in user
         ClientSession session = transceiver.getSession();
+        // resume the session
+        session.resume();
+        // check signed in user
         ID uid = session.getIdentifier();
         if (uid != null) {
             // already signed in, wait a while to check session state
             idle(512);
-            if (getState().equals(SessionState.Order.RUNNING)) {
+            SessionState state = session.getState();
+            if (state.equals(SessionState.Order.RUNNING)) {
                 // report client state
                 transceiver.reportOnline(uid);
             }
@@ -248,12 +227,6 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
 
     @Override
     public void finish() {
-        // stop state machine
-        StateMachine machine = fsm;
-        if (machine != null) {
-            machine.stop();
-            fsm = null;
-        }
         // stop session in messenger
         Messenger transceiver = messenger;
         if (transceiver != null) {
@@ -285,7 +258,8 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         }
         ClientSession session = messenger.getSession();
         ID uid = session.getIdentifier();
-        if (uid == null || !getState().equals(SessionState.Order.RUNNING)) {
+        SessionState state = session.getState();
+        if (uid == null || !state.equals(SessionState.Order.RUNNING)) {
             // handshake not accepted
             return false;
         }
