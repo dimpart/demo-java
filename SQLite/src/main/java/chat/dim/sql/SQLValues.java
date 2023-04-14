@@ -66,7 +66,9 @@ public final class SQLValues {
             appendEscapeValue(sb, pair.second);
             sb.append(",");
         }
-        sb.deleteCharAt(sb.length() - 1);  // remove last ','
+        if (valueList.size() > 0) {
+            sb.deleteCharAt(sb.length() - 1);  // remove last ','
+        }
     }
 
     static void appendEscapeValue(StringBuilder sb, Object value) {
@@ -74,9 +76,9 @@ public final class SQLValues {
         if (value instanceof Number) {
             sb.append(value);
         } else if (value instanceof String) {
-            SQLValues.appendEscapeString(sb, (String) value);
+            appendEscapeString(sb, (String) value);
         } else {
-            SQLValues.appendEscapeString(sb, value.toString());
+            appendEscapeString(sb, value.toString());
         }
     }
 
@@ -103,7 +105,9 @@ public final class SQLValues {
             appendEscapeValue(sb, item);
             sb.append(",");
         }
-        sb.deleteCharAt(sb.length() - 1);  // remove last ','
+        if (array.length > 0) {
+            sb.deleteCharAt(sb.length() - 1);  // remove last ','
+        }
     }
 
     static void appendStringList(StringBuilder sb, String[] array) {
@@ -111,7 +115,9 @@ public final class SQLValues {
             sb.append(item);
             sb.append(",");
         }
-        sb.deleteCharAt(sb.length() - 1);  // remove last ','
+        if (array.length > 0) {
+            sb.deleteCharAt(sb.length() - 1);  // remove last ','
+        }
     }
 
     static SQLValues from(Map<String, Object> values) {

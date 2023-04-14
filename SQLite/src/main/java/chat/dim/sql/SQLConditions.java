@@ -45,7 +45,7 @@ public final class SQLConditions {
         addCondition(relation, newCondition);
     }
 
-    public void addCondition(Relation relation, Condition newCondition) {
+    private void addCondition(Relation relation, Condition newCondition) {
         if (condition == null) {
             condition = newCondition;
         } else {
@@ -53,10 +53,10 @@ public final class SQLConditions {
         }
     }
 
-    public static Condition createCondition(String name, String operator, Object value) {
+    private static Condition createCondition(String name, String operator, Object value) {
         return new CompareCondition(name, operator, value);
     }
-    public static Condition createCondition(Condition left, Relation relation, Condition right) {
+    private static Condition createCondition(Condition left, Relation relation, Condition right) {
         return new RelatedCondition(left, relation, right);
     }
 

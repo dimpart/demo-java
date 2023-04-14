@@ -32,6 +32,7 @@ package chat.dim.network;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,8 +40,11 @@ import chat.dim.Messenger;
 import chat.dim.dbi.SessionDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mtp.StreamArrival;
+import chat.dim.net.Connection;
 import chat.dim.port.Arrival;
 import chat.dim.port.Docker;
+import chat.dim.tcp.StreamHub;
+import chat.dim.threading.BackgroundThreads;
 import chat.dim.utils.ArrayUtils;
 
 /**
@@ -149,6 +153,22 @@ public class ClientSession extends BaseSession {
     public void finish() {
         setActive(false, 0);
         super.finish();
+    }
+
+    @Override
+    protected StreamHub createHub(Connection.Delegate delegate, SocketAddress remote, SocketChannel sock) {
+        assert sock == null : "client socket error";
+        assert remote != null : "remote address empty";
+        StreamClientHub hub = new StreamClientHub(delegate);
+        BackgroundThreads.wait(new Runnable() {
+            @Override
+            public void run() {
+                Connection conn = hub.connect(remote, null);
+                assert conn != null : "failed to connect remote: " + remote;
+                // TODO: reset send buffer size
+            }
+        });
+        return hub;
     }
 
     //

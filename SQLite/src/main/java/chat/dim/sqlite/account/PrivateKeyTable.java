@@ -94,8 +94,9 @@ public class PrivateKeyTable extends DataTableHandler<PrivateKey> implements Pri
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "user", "=", user.toString());
         conditions.addCondition(SQLConditions.Relation.AND, "decrypt", "=", 1);
+        // WHERE user='$user' AND decrypt=1 ORDER BY type DESC LIMIT 3
         List<PrivateKey> results = select(T_PRIVATE_KEY, SELECT_COLUMNS, conditions,
-                null, null, "type DESC", -1, 0);
+                null, null, "type DESC", 3, 0);
         if (results == null) {
             return null;
         }
@@ -118,9 +119,9 @@ public class PrivateKeyTable extends DataTableHandler<PrivateKey> implements Pri
         conditions.addCondition(null, "user", "=", user.toString());
         conditions.addCondition(SQLConditions.Relation.AND, "type", "=", "M");
         conditions.addCondition(SQLConditions.Relation.AND, "sign", "=", 1);
-
+        // WHERE user='$user' AND type='M' AND decrypt=1 ORDER BY id DESC  LIMIT 1
         List<PrivateKey> results = select(T_PRIVATE_KEY, SELECT_COLUMNS, conditions,
-                null, null, "id DESC", -1, 0);
+                null, null, "id DESC", 1, 0);
         // return first record only
         return results == null || results.size() == 0 ? null : results.get(0);
     }
