@@ -46,6 +46,7 @@ import chat.dim.port.Docker;
 import chat.dim.tcp.StreamHub;
 import chat.dim.threading.BackgroundThreads;
 import chat.dim.utils.ArrayUtils;
+import chat.dim.utils.Log;
 
 /**
  *  Session for Connection
@@ -164,7 +165,11 @@ public class ClientSession extends BaseSession {
             @Override
             public void run() {
                 Connection conn = hub.connect(remote, null);
-                assert conn != null : "failed to connect remote: " + remote;
+                if (conn == null) {
+                    SessionState state = fsm.getCurrentState();
+                    Log.error("failed to connect remote: " + remote + ", state: " + state);
+                    // assert false : "failed to connect remote: " + remote;
+                }
                 // TODO: reset send buffer size
             }
         });
@@ -224,7 +229,7 @@ public class ClientSession extends BaseSession {
         }
     }
 
-    private static List<byte[]> getDataPackages(Arrival arrival) {
+    public static List<byte[]> getDataPackages(Arrival arrival) {
         StreamArrival ship = (StreamArrival) arrival;
         byte[] payload = ship.getPayload();
         // check payload

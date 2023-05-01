@@ -82,12 +82,12 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
             return new StateTransition(SessionState.Order.CONNECTING) {
                 @Override
                 public boolean evaluate(StateMachine ctx, long now) {
-                    if (ctx.getSessionID() == null) {
-                        // current user not set yet
-                        return false;
-                    }
+                    // change to 'connecting' when current user set
+                    return ctx.getSessionID() != null;
+                    /*/
                     Docker.Status status = ctx.getStatus();
                     return status.equals(Docker.Status.PREPARING) || status.equals(Docker.Status.READY);
+                    /*/
                 }
             };
         }

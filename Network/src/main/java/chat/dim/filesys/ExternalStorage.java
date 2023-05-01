@@ -66,7 +66,7 @@ public abstract class ExternalStorage {
      *  Delete expired files in this directory cyclically
      *
      * @param dir     - directory
-     * @param expired - expired time (seconds, from Jan 1, 1970 UTC)
+     * @param expired - expired time (milliseconds, from Jan 1, 1970 UTC)
      */
     public static void cleanup(String dir, long expired) {
         File file = new File(dir);

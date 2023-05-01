@@ -369,7 +369,7 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         }
 
         // 4. build task
-        task = new DownloadTask(req.url, req.path, this);
+        task = new DownloadTask(req.url, path, this);
 
         // 5. run it
         downloadingRequest = req;

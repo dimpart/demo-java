@@ -30,6 +30,8 @@
  */
 package chat.dim;
 
+import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.Locale;
 
 import chat.dim.dbi.SessionDBI;
@@ -38,9 +40,11 @@ import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
 import chat.dim.network.SessionState;
 import chat.dim.network.StateMachine;
+import chat.dim.port.Docker;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.skywalker.Runner;
+import chat.dim.utils.Log;
 
 public abstract class Terminal extends Runner implements SessionState.Delegate {
 
@@ -309,7 +313,23 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         if (current == null) {
             return;
         }
-        if (current.equals(SessionState.Order.HANDSHAKING)) {
+        if (current.equals(SessionState.Order.DEFAULT)) {
+            // check current user
+            ID user = ctx.getSessionID();
+            if (user == null) {
+                Log.warning("current user not set");
+                return;
+            }
+            Log.info("connect for user: " + user);
+            ClientSession session = getSession();
+            SocketAddress remote = session.getRemoteAddress();
+            Docker docker = session.getGate().getDocker(remote, null, new ArrayList<>());
+            if (docker == null) {
+                Log.error("failed to connect: " + remote);
+            } else {
+                Log.info("connected to: " + remote);
+            }
+        } else if (current.equals(SessionState.Order.HANDSHAKING)) {
             // start handshake
             messenger.handshake(null);
         } else if (current.equals(SessionState.Order.RUNNING)) {
