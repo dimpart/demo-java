@@ -38,51 +38,51 @@ public enum LocalCache {
         return INSTANCE;
     }
 
-    /**
-     *  Base directory
-     */
-    private String base = "/tmp/.dim";  // "/sdcard/chat.dim.sechat"
-    private boolean built = false;
-
-    public void setRoot(String dir) {
-        // lazy create
-        base = dir;
-        built = false;
-    }
-    public String getRoot() {
-        if (built) {
-            return base;
-        }
-        // make sure base directory built, and
-        // forbid the gallery from scanning media files
-        if (Paths.mkdirs(base) && ExternalStorage.setNoMedia(base)) {
-            built = true;
-        }
-        return base;
-    }
-
     //
     //  Directories
     //
+    private String cacheDir = "/tmp/.dim";
+    private String tmpDir = "/tmp/.dim";
+    private boolean cacheBuilt = false;
+    private boolean tmpBuilt = false;
+
+    private boolean buildDir(String root, boolean built) {
+        if (built) {
+            return true;
+        }
+        // make sure base directory built, and
+        // forbid the gallery from scanning media files
+        return Paths.mkdirs(root) && ExternalStorage.setNoMedia(root);
+    }
 
     /**
      *  Protected caches directory
      *  (meta/visa/document, image/audio/video, ...)
      *
-     * @return "/sdcard/chat.dim.sechat/caches"
+     * @return "/sdcard/Android/data/chat.dim.sechat/cache"
      */
     public String getCachesDirectory() {
-        return Paths.append(getRoot(), "caches");
+        cacheBuilt = buildDir(cacheDir, cacheBuilt);
+        return cacheDir;
+    }
+    public void setCachesDirectory(String root) {
+        cacheDir = root;
+        cacheBuilt = false;
     }
 
     /**
      *  Protected temporary directory
      *  (uploading, downloaded)
      *
-     * @return "/sdcard/chat.dim.sechat/tmp"
+     * @return "/data/data/chat.dim.sechat/cache"
      */
     public String getTemporaryDirectory() {
-        return Paths.append(getRoot(), "tmp");
+        tmpBuilt = buildDir(tmpDir, tmpBuilt);
+        return tmpDir;
+    }
+    public void setTemporaryDirectory(String root) {
+        tmpDir = root;
+        tmpBuilt = false;
     }
 
     //
