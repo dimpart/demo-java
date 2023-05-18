@@ -57,6 +57,12 @@ public class DownloadTask extends DownloadRequest implements Runnable {
         super(url, path, delegate);
     }
 
+    private static String getTemporaryPath(String filePath) {
+        String dir = Paths.parent(filePath);
+        String filename = Paths.filename(filePath);
+        return Paths.append(dir, filename + ".tmp");
+    }
+
     private static IOError download(URL url, String filePath) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(false);
@@ -68,11 +74,12 @@ public class DownloadTask extends DownloadRequest implements Runnable {
         //connection.connect();
 
         IOError error;
+        String tmpPath = getTemporaryPath(filePath);
 
         int code = connection.getResponseCode();
         if (code == 200) {
             try (InputStream inputStream = connection.getInputStream()) {
-                File file = new File(filePath);
+                File file = new File(tmpPath);
                 try (FileOutputStream outputStream = new FileOutputStream(file)) {
                     byte[] buffer = new byte[1024];
                     int len;
@@ -82,6 +89,9 @@ public class DownloadTask extends DownloadRequest implements Runnable {
                     outputStream.flush();
                     // OK
                     error = null;
+                    // move file
+                    boolean ok = file.renameTo(new File(filePath));
+                    Log.debug("move temporary file: " + tmpPath + " => " + filePath + ", " + ok);
                 }
             }
         } else {
