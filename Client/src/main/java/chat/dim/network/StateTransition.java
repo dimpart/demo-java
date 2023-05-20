@@ -32,6 +32,7 @@ package chat.dim.network;
 
 import chat.dim.fsm.BaseTransition;
 import chat.dim.port.Docker;
+import chat.dim.utils.Log;
 
 /**
  *  Transitions
@@ -308,6 +309,7 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
                 @Override
                 public boolean evaluate(StateMachine ctx, long now) {
                     Docker.Status status = ctx.getStatus();
+                    Log.debug("docker status: " + status);
                     return !status.equals(Docker.Status.ERROR);
                 }
             };
