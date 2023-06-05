@@ -30,15 +30,9 @@
  */
 package chat.dim;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import chat.dim.core.FactoryManager;
-import chat.dim.crypto.EncryptKey;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Entity;
-import chat.dim.mkm.Group;
 import chat.dim.mkm.User;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.BlockCommand;
@@ -49,13 +43,11 @@ import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.LoginCommand;
-import chat.dim.protocol.Meta;
 import chat.dim.protocol.MuteCommand;
 import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.SecureMessage;
-import chat.dim.protocol.Visa;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
@@ -141,133 +133,6 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
      */
     protected abstract boolean queryMembers(ID identifier);
 
-    /**
-     *  Add income message in a queue for waiting sender's visa
-     *
-     * @param rMsg - incoming message
-     * @param info - error info
-     */
-    protected abstract void suspendMessage(ReliableMessage rMsg, Map<String, ?> info);
-
-    /**
-     *  Add outgo message in a queue for waiting receiver's visa
-     *
-     * @param iMsg - outgo message
-     * @param info - error info
-     */
-    protected abstract void suspendMessage(InstantMessage iMsg, Map<String, ?> info);
-
-    // for checking whether user's ready
-    protected EncryptKey getVisaKey(ID user) {
-        EncryptKey visaKey = facebook.getPublicKeyForEncryption(user);
-        if (visaKey != null) {
-            // user is ready
-            return visaKey;
-        }
-        // user not ready, try to query document for it
-        if (queryDocument(user)) {
-            Log.info("querying document for user: " + user);
-        }
-        return null;
-    }
-
-    // for checking whether group's ready
-    protected List<ID> getMembers(ID group) {
-        CommonFacebook facebook = getFacebook();
-        Meta meta = facebook.getMeta(group);
-        if (meta == null/* || meta.getKey() == null*/) {
-            // group not ready, try to query meta for it
-            if (queryMeta(group)) {
-                Log.info("querying meta for group: " + group);
-            }
-            return null;
-        }
-        Group grp = facebook.getGroup(group);
-        List<ID> members = grp.getMembers();
-        if (members == null || members.size() == 0) {
-            // group not ready, try to query members for it
-            if (queryMembers(group)) {
-                Log.info("querying members for group: " + group);
-            }
-            return null;
-        }
-        // group is ready
-        return members;
-    }
-
-    /**
-     *  Check sender before verifying received message
-     *
-     * @param rMsg - network message
-     * @return false on verify key not found
-     */
-    protected boolean checkSender(ReliableMessage rMsg) {
-        ID sender = rMsg.getSender();
-        assert sender.isUser() : "sender error: " + sender;
-        // check sender's meta & document
-        Visa visa = rMsg.getVisa();
-        if (visa != null) {
-            // first handshake?
-            assert visa.getIdentifier().equals(sender) : "visa ID not match: " + sender;
-            //assert Meta.matches(sender, rMsg.getMeta()) : "meta error: " + rMsg;
-            return true;
-        } else if (getVisaKey(sender) != null) {
-            // sender is OK
-            return true;
-        }
-        // sender not ready, suspend message for waiting document
-        Map<String, String> error = new HashMap<>();
-        error.put("message", "verify key not found");
-        error.put("user", sender.toString());
-        suspendMessage(rMsg, error);  // rMsg.put("error", error);
-        return false;
-    }
-
-    protected boolean checkReceiver(SecureMessage sMsg) {
-        ID receiver = sMsg.getReceiver();
-        if (receiver.isBroadcast()) {
-            // broadcast message
-            return true;
-        } else if (receiver.isGroup()) {
-            // check for received group message
-            List<ID> members = getMembers(receiver);
-            return members != null;
-        }
-        // the facebook will select a user from local users to match this receiver,
-        // if no user matched (private key not found), this message will be ignored.
-        return true;
-    }
-
-    /**
-     *  Check receiver before encrypting message
-     *
-     * @param iMsg - plain message
-     * @return false on encrypt key not found
-     */
-    protected boolean checkReceiver(InstantMessage iMsg) {
-        ID receiver = iMsg.getReceiver();
-        if (receiver.isBroadcast()) {
-            // broadcast message
-            return true;
-        } else if (receiver.isGroup()) {
-            // NOTICE: station will never send group message, so
-            //         we don't need to check group info here; and
-            //         if a client wants to send group message,
-            //         that should be sent to a group bot first,
-            //         and the bot will separate it for all members.
-            return false;
-        } else if (getVisaKey(receiver) != null) {
-            // receiver is OK
-            return true;
-        }
-        // receiver not ready, suspend message for waiting document
-        Map<String, String> error = new HashMap<>();
-        error.put("message", "encrypt key not found");
-        error.put("user", receiver.toString());
-        suspendMessage(iMsg, error);  // iMsg.put("error", error);
-        return false;
-    }
-
     /*/
     @Override
     public byte[] serializeKey(SymmetricKey password, InstantMessage iMsg) {
@@ -290,31 +155,6 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         return data;
     }
     /*/
-
-    @Override
-    public SecureMessage encryptMessage(InstantMessage iMsg) {
-        if (!checkReceiver(iMsg)) {
-            // receiver not ready
-            Log.warning("receiver not ready: " + iMsg.getReceiver());
-            return null;
-        }
-        return super.encryptMessage(iMsg);
-    }
-
-    @Override
-    public SecureMessage verifyMessage(ReliableMessage rMsg) {
-        if (!checkReceiver(rMsg)) {
-            // receiver (group) not ready
-            Log.warning("receiver not ready: " + rMsg.getReceiver());
-            return null;
-        }
-        if (!checkSender(rMsg)) {
-            // sender not ready
-            Log.warning("sender not ready: " + rMsg.getSender());
-            return null;
-        }
-        return super.verifyMessage(rMsg);
-    }
 
     //
     //  Interfaces for Transmitting Message

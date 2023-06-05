@@ -30,10 +30,7 @@
  */
 package chat.dim;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Station;
@@ -56,7 +53,7 @@ import chat.dim.utils.QueryFrequencyChecker;
 /**
  *  Client Messenger for Handshake & Broadcast Report
  */
-public abstract class ClientMessenger extends CommonMessenger {
+public class ClientMessenger extends CommonMessenger {
 
     public ClientMessenger(Session session, CommonFacebook facebook, MessageDBI database) {
         super(session, facebook, database);
@@ -199,45 +196,4 @@ public abstract class ClientMessenger extends CommonMessenger {
         return true;
     }
 
-    @Override
-    protected boolean checkReceiver(InstantMessage iMsg) {
-        ID receiver = iMsg.getReceiver();
-        if (receiver.isBroadcast()) {
-            // broadcast message
-            return true;
-        } else if (receiver.isGroup()) {
-            // check group's meta & members
-            List<ID> members = getMembers(receiver);
-            if (members == null) {
-                // group not ready, suspend message for waiting meta/members
-                Map<String, String> error = new HashMap<>();
-                error.put("message", "group not ready");
-                error.put("group", receiver.toString());
-                suspendMessage(iMsg, error);  // iMsg.put("error", error);
-                return false;
-            }
-            List<ID> waiting = new ArrayList<>();
-            for (ID item : members) {
-                if (getVisaKey(item) != null) {
-                    // member is OK
-                    continue;
-                }
-                // member not ready
-                waiting.add(item);
-            }
-            if (waiting.size() > 0) {
-                // member(s) not ready, suspend message for waiting document
-                Map<String, Object> error = new HashMap<>();
-                error.put("message", "encrypt keys not found");
-                error.put("group", receiver.toString());
-                error.put("members", ID.revert(waiting));
-                suspendMessage(iMsg, error);  // iMsg.put("error", error);
-                return false;
-            }
-            // receiver is OK
-            return true;
-        }
-        // check user's meta & document
-        return super.checkReceiver(iMsg);
-    }
 }

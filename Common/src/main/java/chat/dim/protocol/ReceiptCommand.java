@@ -133,10 +133,10 @@ public class ReceiptCommand extends BaseCommand {
             String sig2 = iMsg.getString("signature");
             if (sig2 != null) {
                 if (sig1.length() > 8) {
-                    sig1 = sig1.substring(0, 8);
+                    sig1 = sig1.substring(sig1.length() - 8);
                 }
                 if (sig2.length() > 8) {
-                    sig2 = sig2.substring(0, 8);
+                    sig2 = sig2.substring(sig2.length() - 8);
                 }
                 return sig1.equals(sig2);
             }
