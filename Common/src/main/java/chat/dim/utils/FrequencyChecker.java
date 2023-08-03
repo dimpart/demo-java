@@ -46,14 +46,20 @@ public class FrequencyChecker <K> {
         expires = lifeSpan;
     }
 
-    boolean isExpired(K key, long now) {
+    public boolean isExpired(K key, long now, boolean force) {
         if (now <= 0) {
             now = System.currentTimeMillis();
         }
-        Long value = records.get(key);
-        if (value != null && value > now) {
-            // record exists and not expired yet
-            return false;
+        if (!force) {
+            // if force == true:
+            //     ignore last updated time, force to update now
+            // else:
+            //     check last update time
+            Long value = records.get(key);
+            if (value != null && value > now) {
+                // record exists and not expired yet
+                return false;
+            }
         }
         records.put(key, now + expires);
         return true;

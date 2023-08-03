@@ -135,6 +135,7 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
             }
             session.stop();
         }
+        Log.info("connecting to " + host + ":" + port + " ...");
         // create new messenger with session
         Station station = createStation(host, port);
         ClientSession session = createSession(station);
@@ -313,7 +314,8 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         if (current == null) {
             return;
         }
-        if (current.equals(SessionState.Order.DEFAULT)) {
+        if (current.equals(SessionState.Order.DEFAULT) ||
+                current.equals(SessionState.Order.CONNECTING)) {
             // check current user
             ID user = ctx.getSessionID();
             if (user == null) {
@@ -322,6 +324,10 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
             }
             Log.info("connect for user: " + user);
             ClientSession session = getSession();
+            if (session == null) {
+                Log.warning("session not found");
+                return;
+            }
             SocketAddress remote = session.getRemoteAddress();
             Docker docker = session.getGate().getDocker(remote, null, new ArrayList<>());
             if (docker == null) {

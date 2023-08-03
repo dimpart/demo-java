@@ -42,6 +42,7 @@ import java.util.UnknownFormatConversionException;
 
 import chat.dim.format.JSONMap;
 import chat.dim.format.UTF8;
+import chat.dim.utils.Log;
 
 /**
  *  Upload Task
@@ -92,6 +93,7 @@ public class UploadTask extends UploadRequest implements Runnable {
     private static String post(URL url, String varName, String fileName, byte[] fileData) throws IOException {
         String response = null;
 
+        Log.info("upload " + fileName + " (" + fileData.length + " bytes) onto " + url);
         byte[] data = buildHTTPBody(varName, fileName, fileData);
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -112,7 +114,7 @@ public class UploadTask extends UploadRequest implements Runnable {
         }
 
         int code = connection.getResponseCode();
-        if (code == 200) {
+        if (code == HttpURLConnection.HTTP_OK) {
             try (InputStream inputStream = connection.getInputStream()) {
                 StringBuilder sb = new StringBuilder();
                 byte[] buffer = new byte[1024];
@@ -160,11 +162,13 @@ public class UploadTask extends UploadRequest implements Runnable {
         String response;
         try {
             response = post(url, name, filename, data);
-        } catch (IOException e) {
+        } catch (IOException | AssertionError e) {
+            IOException ie = e instanceof IOException ? (IOException) e : new IOException(e);
             e.printStackTrace();
+            Log.error("failed to upload: " + filename + " -> " + url + ", error: " + e);
             onError();
             if (delegate != null) {
-                delegate.onUploadFailed(this, e);
+                delegate.onUploadFailed(this, ie);
             }
             onFinished();
             return;

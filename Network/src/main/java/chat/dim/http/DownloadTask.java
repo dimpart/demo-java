@@ -64,6 +64,7 @@ public class DownloadTask extends DownloadRequest implements Runnable {
     }
 
     private static IOError download(URL url, String filePath) throws IOException {
+        Log.info("download from " + url);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(false);
         connection.setDoInput(true);
@@ -77,7 +78,7 @@ public class DownloadTask extends DownloadRequest implements Runnable {
         String tmpPath = getTemporaryPath(filePath);
 
         int code = connection.getResponseCode();
-        if (code == 200) {
+        if (code == HttpURLConnection.HTTP_OK) {
             try (InputStream inputStream = connection.getInputStream()) {
                 File file = new File(tmpPath);
                 try (FileOutputStream outputStream = new FileOutputStream(file)) {
@@ -118,12 +119,13 @@ public class DownloadTask extends DownloadRequest implements Runnable {
             } else {
                 error = new IOError(new IOException("failed to create dir: " + dir));
             }
-        } catch (IOException e) {
+        } catch (IOException | AssertionError e) {
+            IOException ie = e instanceof IOException ? (IOException) e : new IOException(e);
             //e.printStackTrace();
-            Log.error("failed to download: " + url);
+            Log.error("failed to download: " + url + ", error: " + e);
             onError();
             if (delegate != null) {
-                delegate.onDownloadFailed(this, e);
+                delegate.onDownloadFailed(this, ie);
             }
             onFinished();
             return;

@@ -56,6 +56,9 @@ public enum QueryFrequencyChecker {
     private final FrequencyChecker<ID> membersQueries;
     private final ReadWriteLock membersLock;
 
+    // response for document
+    private final FrequencyChecker<ID> documentResponses;
+
     QueryFrequencyChecker() {
         // each query will be expired after 10 minutes
         final int QUERY_EXPIRES = 600 * 1000;  // milliseconds
@@ -65,6 +68,7 @@ public enum QueryFrequencyChecker {
         documentLock = new ReentrantReadWriteLock();
         membersQueries = new FrequencyChecker<>(QUERY_EXPIRES);
         membersLock = new ReentrantReadWriteLock();
+        documentResponses = new FrequencyChecker<>(QUERY_EXPIRES);
     }
 
     public boolean isMetaQueryExpired(ID identifier, long now) {
@@ -72,7 +76,7 @@ public enum QueryFrequencyChecker {
         Lock writeLock = metaLock.writeLock();
         writeLock.lock();
         try {
-            expired = metaQueries.isExpired(identifier, now);
+            expired = metaQueries.isExpired(identifier, now, false);
         } finally {
             writeLock.unlock();
         }
@@ -84,7 +88,7 @@ public enum QueryFrequencyChecker {
         Lock writeLock = documentLock.writeLock();
         writeLock.lock();
         try {
-            expired = documentQueries.isExpired(identifier, now);
+            expired = documentQueries.isExpired(identifier, now, false);
         } finally {
             writeLock.unlock();
         }
@@ -96,10 +100,23 @@ public enum QueryFrequencyChecker {
         Lock writeLock = membersLock.writeLock();
         writeLock.lock();
         try {
-            expired = membersQueries.isExpired(identifier, now);
+            expired = membersQueries.isExpired(identifier, now, false);
         } finally {
             writeLock.unlock();
         }
         return expired;
     }
+
+    public boolean isDocumentResponseExpired(ID identifier, long now, boolean force) {
+        boolean expired;
+        Lock writeLock = documentLock.writeLock();
+        writeLock.lock();
+        try {
+            expired = documentResponses.isExpired(identifier, now, force);
+        } finally {
+            writeLock.unlock();
+        }
+        return expired;
+    }
+
 }

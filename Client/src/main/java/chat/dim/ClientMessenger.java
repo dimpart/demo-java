@@ -48,6 +48,7 @@ import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaCommand;
 import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.Visa;
+import chat.dim.utils.Log;
 import chat.dim.utils.QueryFrequencyChecker;
 
 /**
@@ -102,22 +103,27 @@ public class ClientMessenger extends CommonMessenger {
      */
     public void handshakeSuccess() {
         // broadcast current documents after handshake success
-        broadcastDocument();
+        broadcastDocument(false);
     }
 
     /**
      *  Broadcast meta & visa document to all stations
      */
-    public void broadcastDocument() {
+    public void broadcastDocument(boolean updated) {
         CommonFacebook facebook = getFacebook();
         User user = facebook.getCurrentUser();
         assert user != null : "current user not found";
         ID uid = user.getIdentifier();
         Meta meta = user.getMeta();
         Visa visa = user.getVisa();
-        Content content = DocumentCommand.response(uid, meta, visa);
+        DocumentCommand command = DocumentCommand.response(uid, meta, visa);
+        // send to all contacts
+        List<ID> contacts = facebook.getContacts(uid);
+        for (ID item : contacts) {
+            sendVisa(uid, item, command, updated);
+        }
         // broadcast to 'everyone@everywhere'
-        sendContent(uid, ID.EVERYONE, content, 1);
+        sendVisa(uid, ID.EVERYONE, command, updated);
     }
 
     /**
@@ -150,13 +156,26 @@ public class ClientMessenger extends CommonMessenger {
         sendContent(sender, Station.ANY, content, 1);
     }
 
+    private void sendVisa(ID sender, ID receiver, DocumentCommand content, boolean force) {
+        QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
+        if (checker.isDocumentResponseExpired(receiver, 0, force)) {
+            Log.info("push visa to: " + receiver);
+            sendContent(sender, receiver, content, 1);
+        } else {
+            // response not expired yet
+            Log.debug("document response not expired yet: " + receiver);
+        }
+    }
+
     @Override
     protected boolean queryMeta(ID identifier) {
         QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
         if (!checker.isMetaQueryExpired(identifier, 0)) {
             // query not expired yet
+            Log.debug("meta query not expired yet: " + identifier);
             return false;
         }
+        Log.info("querying meta from any station, ID: " + identifier);
         Content content = MetaCommand.query(identifier);
         sendContent(null, Station.ANY, content, 1);
         return true;
@@ -167,8 +186,10 @@ public class ClientMessenger extends CommonMessenger {
         QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
         if (!checker.isDocumentQueryExpired(identifier, 0)) {
             // query not expired yet
+            Log.debug("document query not expired yet: " + identifier);
             return false;
         }
+        Log.info("querying document from any station, ID: " + identifier);
         Content content = DocumentCommand.query(identifier);
         sendContent(null, Station.ANY, content, 1);
         return true;
@@ -179,13 +200,16 @@ public class ClientMessenger extends CommonMessenger {
         QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
         if (!checker.isMembersQueryExpired(identifier, 0)) {
             // query not expired yet
+            Log.debug("members query not expired yet: " + identifier);
             return false;
         }
         assert identifier.isGroup() : "group ID error: " + identifier;
+        Log.info("querying members from any station, ID: " + identifier);
         GroupManager manager = GroupManager.getInstance();
         List<ID> assistants = manager.getAssistants(identifier);
         if (assistants == null || assistants.size() == 0) {
             // group assistants not found
+            Log.error("group assistants not found: " + identifier);
             return false;
         }
         // querying members from bots
