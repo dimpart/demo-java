@@ -128,8 +128,8 @@ public interface PrivateKeyDBI {
         return privateKeys;
     }
     static int findKey(PrivateKey key, List<PrivateKey> privateKeys) {
-        String data = key.getString("data");
-        assert data != null && data.length() > 0 : "key data error: " + key;
+        String data = key.getString("data", "");
+        assert data.length() > 0 : "key data error: " + key;
         PrivateKey item;
         for (int index = 0; index < privateKeys.size(); ++index) {
             item = privateKeys.get(index);

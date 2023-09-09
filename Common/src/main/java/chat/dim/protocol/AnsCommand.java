@@ -59,7 +59,7 @@ public class AnsCommand extends BaseCommand {
     }
 
     public List<String> getNames() {
-        String names = getString("names");
+        String names = getString("names", null);
         if (names == null) {
             return null;
         }

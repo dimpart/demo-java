@@ -30,6 +30,7 @@
  */
 package chat.dim;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -42,6 +43,7 @@ import chat.dim.dbi.AccountDBI;
 import chat.dim.dbi.PrivateKeyDBI;
 import chat.dim.format.Base64;
 import chat.dim.format.DataCoder;
+import chat.dim.format.PortableNetworkFile;
 import chat.dim.mkm.BaseBulletin;
 import chat.dim.mkm.BaseVisa;
 import chat.dim.protocol.Bulletin;
@@ -147,9 +149,16 @@ public class Register {
                                    EncryptKey visaKey, SignKey idKey) {
         assert identifier.isUser() : "user ID error: " + identifier;
         BaseVisa visa = new BaseVisa(identifier);
+        // nick name
         visa.setName(nickname);
-        visa.setAvatar(avatarUrl);
-        visa.setKey(visaKey);
+        // avatar
+        if (avatarUrl != null) {
+            URI url = URI.create(avatarUrl);
+            visa.setAvatar(PortableNetworkFile.create(url, null, null, null));
+        }
+        // public key
+        visa.setPublicKey(visaKey);
+        // sign it
         byte[] sig = visa.sign(idKey);
         assert sig != null : "failed to sign visa: " + identifier;
         return visa;

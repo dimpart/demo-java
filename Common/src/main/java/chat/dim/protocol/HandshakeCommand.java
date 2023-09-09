@@ -64,11 +64,11 @@ public class HandshakeCommand extends BaseCommand {
     }
 
     public String getTitle() {
-        return getString("title");
+        return getString("title", null);
     }
 
     public String getSessionKey() {
-        return getString("session");
+        return getString("session", null);
     }
 
     public HandshakeState getState() {

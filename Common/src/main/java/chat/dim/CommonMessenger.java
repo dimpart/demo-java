@@ -44,7 +44,6 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.MuteCommand;
-import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.SecureMessage;
@@ -217,8 +216,6 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
 
         // Handshake
         Command.setFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
-        // Receipt
-        Command.setFactory(ReceiptCommand.RECEIPT, ReceiptCommand::new);
         // Login
         Command.setFactory(LoginCommand.LOGIN, LoginCommand::new);
         // Report

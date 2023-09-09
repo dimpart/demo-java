@@ -62,10 +62,6 @@ public class ClientMessagePacker extends CommonPacker {
     }
 
     protected static void attachKeyDigest(ReliableMessage rMsg, Messenger messenger) {
-        // check message delegate
-        if (rMsg.getDelegate() == null) {
-            rMsg.setDelegate(messenger);
-        }
         // check msg.key
         if (rMsg.get("key") != null) {
             // getEncryptedKey() != null

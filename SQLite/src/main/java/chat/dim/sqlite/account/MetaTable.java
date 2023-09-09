@@ -127,12 +127,12 @@ public class MetaTable extends DataTableHandler<Meta> implements MetaDBI {
         }
 
         int type = meta.getType();
-        String json = JSON.encode(meta.getKey());
+        String json = JSON.encode(meta.getPublicKey());
         String seed;
         String fingerprint;
         if (MetaType.hasSeed(type)) {
             seed = meta.getSeed();
-            fingerprint = meta.getString("fingerprint");
+            fingerprint = meta.getString("fingerprint", "");
         } else {
             seed = "";
             fingerprint = "";
