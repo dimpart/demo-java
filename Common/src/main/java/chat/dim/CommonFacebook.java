@@ -127,6 +127,11 @@ public class CommonFacebook extends Facebook {
                 // group meta not found
                 return null;
             }
+            List<ID> members = getMembers(group);
+            if (members == null || members.size() == 0) {
+                // group members not ready
+                return null;
+            }
         }
         return super.createGroup(group);
     }
@@ -207,12 +212,21 @@ public class CommonFacebook extends Facebook {
 
     @Override
     public List<ID> getMembers(ID group) {
-        List<ID> users = database.getMembers(group);
-        if (users != null && users.size() > 0) {
-            // got from database
-            return users;
+        ID owner = getOwner(group);
+        if (owner == null) {
+            assert false : "group owner not found: " + group;
+            return null;
         }
-        return super.getMembers(group);
+        List<ID> users = database.getMembers(group);
+        if (users == null || users.size() == 0) {
+            users = super.getMembers(group);
+            if (users == null || users.size() == 0) {
+                users = new ArrayList<>();
+                users.add(owner);
+            }
+        }
+        assert users.get(0).equals(owner) : "group owner must be the first member: " + group;
+        return users;
     }
 
     @Override

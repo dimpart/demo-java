@@ -30,10 +30,9 @@
  */
 package chat.dim.dbi;
 
-import java.util.Set;
+import java.util.List;
 
 import chat.dim.protocol.ID;
-import chat.dim.type.Triplet;
 
 /**
  *  Session DBI
@@ -41,16 +40,13 @@ import chat.dim.type.Triplet;
  */
 public interface ProviderDBI {
 
-    /**
-     *  get all neighbor stations
-     *
-     * @return a set of (host, port, ID)
-     */
-    Set<Triplet<String, Integer, ID>> allNeighbors();
+    // get list of (SP_ID, chosen)
+    List<ProviderInfo> allProviders();
 
-    ID getNeighbor(String ip, int port);
+    boolean addProvider(ID identifier, int chosen);
 
-    boolean addNeighbor(String ip, int port, ID station/* = null */);
+    boolean updateProvider(ID identifier, int chosen);
 
-    boolean removeNeighbor(String ip, int port);
+    boolean removeProvider(ID identifier);
+
 }

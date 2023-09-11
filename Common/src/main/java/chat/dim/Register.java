@@ -154,7 +154,7 @@ public class Register {
         // avatar
         if (avatarUrl != null) {
             URI url = URI.create(avatarUrl);
-            visa.setAvatar(PortableNetworkFile.create(url, null, null, null));
+            visa.setAvatar(PortableNetworkFile.create(url, null));
         }
         // public key
         visa.setPublicKey(visaKey);

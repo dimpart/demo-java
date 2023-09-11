@@ -2,12 +2,12 @@
  *
  *  DIMP : Decentralized Instant Messaging Protocol
  *
- *                                Written in 2022 by Moky <albert.moky@gmail.com>
+ *                                Written in 2023 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 Albert Moky
+ * Copyright (c) 2023 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,5 +30,17 @@
  */
 package chat.dim.dbi;
 
-public interface SessionDBI extends LoginDBI, ProviderDBI, StationDBI {
+import java.util.Map;
+
+import chat.dim.protocol.ID;
+
+/**
+ *  Message DBI
+ *  ~~~~~~~~~~~
+ */
+public interface GroupKeysDBI {
+
+    Map<String, Object> getGroupKeys(ID group, ID sender);
+
+    boolean saveGroupKeys(ID group, ID sender, Map<String, Object> keys);
 }

@@ -30,5 +30,25 @@
  */
 package chat.dim.dbi;
 
-public interface SessionDBI extends LoginDBI, ProviderDBI, StationDBI {
+import java.util.List;
+
+import chat.dim.protocol.ID;
+
+/**
+ *  Session DBI
+ *  ~~~~~~~~~~~
+ */
+public interface StationDBI {
+
+    // get list of (host, port, SP_ID, chosen)
+    List<StationInfo> allStations(ID provider);
+
+    boolean addStation(ID identifier, String host, int port, ID provider, int chosen);
+
+    boolean updateStation(ID identifier, String host, int port, ID provider, int chosen);
+
+    boolean removeStation(String host, int port, ID provider);
+
+    boolean removeStations(ID provider);
+
 }

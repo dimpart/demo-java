@@ -93,8 +93,7 @@ public abstract class CommonPacker extends MessagePacker {
             }
             return null;
         }
-        Group grp = facebook.getGroup(group);
-        List<ID> members = grp.getMembers();
+        List<ID> members = facebook.getMembers(group);
         if (members == null || members.size() == 0) {
             // group not ready, try to query members for it
             if (messenger.queryMembers(group)) {

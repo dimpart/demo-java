@@ -30,5 +30,5 @@
  */
 package chat.dim.dbi;
 
-public interface MessageDBI extends ReliableMessageDBI, CipherKeyDBI {
+public interface MessageDBI extends ReliableMessageDBI, CipherKeyDBI, GroupKeysDBI {
 }
