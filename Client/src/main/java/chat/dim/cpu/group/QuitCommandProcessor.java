@@ -37,7 +37,6 @@ import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
-import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ForwardContent;
@@ -48,6 +47,7 @@ import chat.dim.protocol.group.QuitCommand;
 import chat.dim.protocol.group.ResetCommand;
 import chat.dim.type.Copier;
 import chat.dim.type.Pair;
+import chat.dim.utils.Log;
 
 /**
  *  Quit Group Command Processor
@@ -131,7 +131,8 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
             assert ok : "failed to refresh members: " + group;
         } else {
             // add 'quit' application for waiting admin to update
-            addApplication(command, rMsg);
+            boolean ok = addApplication(command, rMsg);
+            assert ok : "failed to add 'quit' application for group: " + group;
         }
         if (!isMember) {
             return respondReceipt("Permission denied.", rMsg, group, newMap(
@@ -147,12 +148,13 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
     }
 
     private boolean refreshMembers(ID group, ID admin, List<ID> members) {
-        AccountDBI db = getFacebook().getDatabase();
         // 1. create new 'reset' command
         Pair<ResetCommand, ReliableMessage> pair =  createResetCommand(admin, group, members);
         ResetCommand cmd = pair.first;
         ReliableMessage msg = pair.second;
-        if (!updateResetCommandMessage(group, cmd, msg)) {
+        if (updateResetCommandMessage(group, cmd, msg)) {
+            Log.info("updated 'reset' command for group: " + group);
+        } else {
             // failed to save 'reset' command message
             return false;
         }

@@ -93,7 +93,7 @@ public class ConfigParser {
             }
             // check new section
             if (text.charAt(0) == '[' && text.charAt(end) == ']') {
-                if (items.size() > 0) {
+                if (!items.isEmpty()) {
                     // store old section
                     config.put(section, items);
                 }
@@ -113,7 +113,7 @@ public class ConfigParser {
             }
             items.put(name, value);
         }
-        if (items.size() > 0) {
+        if (!items.isEmpty()) {
             // store old section
             config.put(section, items);
         }

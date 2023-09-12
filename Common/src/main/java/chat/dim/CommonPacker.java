@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 
 import chat.dim.crypto.EncryptKey;
-import chat.dim.mkm.Group;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.Meta;
@@ -94,7 +93,7 @@ public abstract class CommonPacker extends MessagePacker {
             return null;
         }
         List<ID> members = facebook.getMembers(group);
-        if (members == null || members.size() == 0) {
+        if (members == null || members.isEmpty()) {
             // group not ready, try to query members for it
             if (messenger.queryMembers(group)) {
                 Log.info("querying members for group: " + group);

@@ -85,10 +85,12 @@ public class JoinCommandProcessor extends GroupCommandProcessor {
             // maybe the sender is already a member,
             // but if it can still receive a 'join' command here,
             // we should respond the sender with the newest membership again.
-            sendResetCommand(group, members, sender);
+            boolean ok = sendResetCommand(group, members, sender);
+            assert ok : "failed to send 'reset' command for group: " + group + " => " + sender;
         } else {
             // add 'join' application for waiting review
-            addApplication(command, rMsg);
+            boolean ok = addApplication(command, rMsg);
+            assert ok : "failed to add 'join' application for group: " + group;
         }
 
         // no need to response this group command

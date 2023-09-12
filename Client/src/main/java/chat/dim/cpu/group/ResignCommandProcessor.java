@@ -110,7 +110,8 @@ public class ResignCommandProcessor extends GroupCommandProcessor {
         if (isAdmin) {
             // admin do exist, remove it and update database
             admins.remove(sender);
-            saveAdministrators(admins, group);
+            boolean ok = saveAdministrators(admins, group);
+            assert ok : "failed to save administrators for group: " + group;
         }
 
         // 4. update bulletin property: 'administrators'
@@ -125,7 +126,8 @@ public class ResignCommandProcessor extends GroupCommandProcessor {
             assert ok : "failed to refresh admins for group: " + group;
         } else {
             // add 'resign' application for waiting owner to update
-            addApplication(command, rMsg);
+            boolean ok = addApplication(command, rMsg);
+            assert ok : "failed to add 'resign' application for group: " + group;
         }
         if (!isAdmin) {
             return respondReceipt("Permission denied.", rMsg, group, newMap(

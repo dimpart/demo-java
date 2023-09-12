@@ -31,6 +31,7 @@
 package chat.dim;
 
 import java.util.List;
+import java.util.Map;
 
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Station;
@@ -39,6 +40,7 @@ import chat.dim.network.ClientSession;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.Envelope;
+import chat.dim.protocol.ForwardContent;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
@@ -46,8 +48,11 @@ import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaCommand;
+import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.ReportCommand;
+import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
+import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 import chat.dim.utils.QueryFrequencyChecker;
 
@@ -217,6 +222,89 @@ public class ClientMessenger extends CommonMessenger {
             sendContent(null, bot, content, 1);
         }
         return true;
+    }
+
+    @Override
+    public ReliableMessage sendInstantMessage(InstantMessage iMsg, int priority) {
+        ID receiver = iMsg.getReceiver();
+        // NOTICE: because group assistant (bot) cannot be a member of the group, so
+        //         if you want to send a group command to any assistant, you must
+        //         set the bot ID as 'receiver' and set the group ID in content;
+        //         this means you must send it to the bot directly.
+        if (receiver.isGroup()) {
+            // so this is a group message (not split yet)
+            return sendGroupMessage(receiver, iMsg, priority);
+        }
+        // this message is sending to a user/member/bot directly
+        return super.sendInstantMessage(iMsg, priority);
+    }
+
+    protected ReliableMessage sendGroupMessage(ID group, InstantMessage iMsg, int priority) {
+        assert iMsg.get("group") == null : "should not happen";
+        CommonFacebook facebook = getFacebook();
+
+        // 0. check group bots
+        List<ID> bots = facebook.getAssistants(group);
+        if (bots == null || bots.isEmpty()) {
+            // assert false : "group bot not found: " + group;
+            int ok = splitGroupMessage(group, iMsg, priority);
+            assert ok > 0 : "failed to split messages for group: " + group;
+            return null;
+        }
+
+        // 1. pack messages
+        SecureMessage sMsg = encryptMessage(iMsg);
+        if (sMsg == null) {
+            assert false : "failed to encrypt message for group: " + group;
+            return null;
+        }
+        ReliableMessage rMsg = signMessage(sMsg);
+        if (rMsg == null) {
+            assert false : "failed to sign message: " + iMsg.getSender() + " => " + group;
+            return null;
+        }
+
+        // forward the group message to any bot
+        ID prime = bots.get(0);
+        Content content = ForwardContent.create(rMsg);
+        Pair<InstantMessage, ReliableMessage> pair = sendContent(null, prime, content, priority);
+        return pair.second;
+    }
+
+    /**
+     *  split group messages and send to all members one by one
+     */
+    protected int splitGroupMessage(ID group, InstantMessage iMsg, int priority) {
+        CommonFacebook facebook = getFacebook();
+        // get members
+        List<ID> allMembers = facebook.getMembers(group);
+        if (allMembers == null/* || allMembers.isEmpty()*/) {
+            assert false : "group empty: " + group;
+            return -1;
+        }
+        int success = 0;
+        // split messages
+        InstantMessage item;
+        ReliableMessage res;
+        for (ID member : allMembers) {
+            Log.info("split group message for member: " + member + ", group: " + group);
+            Map<String, Object> info = iMsg.copyMap(false);
+            // replace 'receiver' with member ID
+            info.put("receiver", member.toString());
+            item = InstantMessage.parse(info);
+            if (item == null) {
+                assert false : "failed to repack message: " + member;
+                continue;
+            }
+            res = super.sendInstantMessage(item, priority);
+            if (res == null) {
+                assert false : "failed to send message: " + member;
+                continue;
+            }
+            success += 1;
+        }
+        // done!
+        return success;
     }
 
 }

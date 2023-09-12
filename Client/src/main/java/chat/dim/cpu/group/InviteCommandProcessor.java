@@ -117,10 +117,12 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
             // maybe the invited users are already become members,
             // but if it can still receive an 'invite' command here,
             // we should respond the sender with the newest membership again.
-            sendResetCommand(group, newMembers, sender);
+            boolean ok = sendResetCommand(group, newMembers, sender);
+            assert ok : "failed to send 'reset' command for group: " + group + " => " + sender;
         } else {
             // add 'invite' application for waiting review
-            addApplication(command, rMsg);
+            boolean ok = addApplication(command, rMsg);
+            assert ok : "failed to add 'invite' application for group: " + group;
         }
 
         // no need to response this group command

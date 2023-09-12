@@ -41,6 +41,7 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.ResetCommand;
 import chat.dim.type.Pair;
+import chat.dim.utils.Log;
 
 /**
  *  Reset Group Command Processor
@@ -134,7 +135,9 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         }
 
         // 3. try to save 'reset' command
-        if (!updateResetCommandMessage(group, command, rMsg)) {
+        if (updateResetCommandMessage(group, command, rMsg)) {
+            Log.info("updated 'reset' command for group: " + group);
+        } else {
             // newer 'reset' command exists, drop this command
             return null;
         }

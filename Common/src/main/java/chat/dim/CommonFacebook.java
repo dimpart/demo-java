@@ -64,7 +64,7 @@ public class CommonFacebook extends Facebook {
         List<User> localUsers = new ArrayList<>();
         User user;
         List<ID> array = database.getLocalUsers();
-        if (array == null || array.size() == 0) {
+        if (array == null || array.isEmpty()) {
             user = current;
             if (user != null) {
                 localUsers.add(user);
@@ -86,7 +86,7 @@ public class CommonFacebook extends Facebook {
         if (user == null) {
             //current = super.getCurrentUser();
             List<User> localUsers = getLocalUsers();
-            if (localUsers.size() > 0) {
+            if (/*localUsers != null && */!localUsers.isEmpty()) {
                 user = localUsers.get(0);
                 current = user;
             }
@@ -198,9 +198,9 @@ public class CommonFacebook extends Facebook {
             return null;
         }
         List<ID> users = database.getMembers(group);
-        if (users == null || users.size() == 0) {
+        if (users == null || users.isEmpty()) {
             users = super.getMembers(group);
-            if (users == null || users.size() == 0) {
+            if (users == null || users.isEmpty()) {
                 users = new ArrayList<>();
                 users.add(owner);
             }
@@ -212,7 +212,7 @@ public class CommonFacebook extends Facebook {
     @Override
     public List<ID> getAssistants(ID group) {
         List<ID> bots = database.getAssistants(group);
-        if (bots != null && bots.size() > 0) {
+        if (bots != null && !bots.isEmpty()) {
             // got from database
             return bots;
         }
