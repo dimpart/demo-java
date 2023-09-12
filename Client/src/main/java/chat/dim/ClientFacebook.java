@@ -31,8 +31,6 @@
 package chat.dim;
 
 import chat.dim.dbi.AccountDBI;
-import chat.dim.mkm.Entity;
-import chat.dim.mkm.Group;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
@@ -58,20 +56,6 @@ public class ClientFacebook extends CommonFacebook {
         }
         // get name from ID
         return Anonymous.getName(identifier);
-    }
-
-    @Override
-    protected Group createGroup(ID group) {
-        Group grp = super.createGroup(group);
-        if (grp != null) {
-            Entity.DataSource delegate = grp.getDataSource();
-            if (delegate == null || delegate == this) {
-                // replace group's data source
-                GroupManager manager = GroupManager.getInstance();
-                grp.setDataSource(manager);
-            }
-        }
-        return grp;
     }
 
     //

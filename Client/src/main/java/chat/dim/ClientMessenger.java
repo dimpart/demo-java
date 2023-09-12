@@ -205,8 +205,7 @@ public class ClientMessenger extends CommonMessenger {
         }
         assert identifier.isGroup() : "group ID error: " + identifier;
         Log.info("querying members from any station, ID: " + identifier);
-        GroupManager manager = GroupManager.getInstance();
-        List<ID> assistants = manager.getAssistants(identifier);
+        List<ID> assistants = getFacebook().getAssistants(identifier);
         if (assistants == null || assistants.size() == 0) {
             // group assistants not found
             Log.error("group assistants not found: " + identifier);
