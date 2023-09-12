@@ -32,21 +32,23 @@ package chat.dim.cpu.group;
 
 import java.util.List;
 
-import chat.dim.CommonFacebook;
 import chat.dim.Facebook;
-import chat.dim.GroupManager;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
-import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.QueryCommand;
 
+/**
+ *  Query Group Command Processor
+ *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ *      1. query for group members-list
+ *      2. any existed member or assistant can query group members-list
+ */
 public class QueryCommandProcessor extends GroupCommandProcessor {
-
-    public static String STR_QUERY_NOT_ALLOWED = "Sorry, you are not allowed to query this group.";
 
     public QueryCommandProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
@@ -56,39 +58,39 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof QueryCommand : "query command error: " + content;
         GroupCommand command = (GroupCommand) content;
-        GroupManager manager = GroupManager.getInstance();
-
-        // 0. check group
         ID group = command.getGroup();
-        ID owner = manager.getOwner(group);
-        List<ID> members = manager.getMembers(group);
-        if (owner == null || members.size() == 0) {
-            return respondText(STR_GROUP_EMPTY, group);
+
+        // 1. check group
+        ID owner = getOwner(group);
+        List<ID> members = getMembers(group);
+        if (owner == null || members == null || members.size() == 0) {
+            // TODO: query group members?
+            return respondReceipt("Group empty.", rMsg, group, newMap(
+                    "template", "Group empty: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
         }
 
         // 1. check permission
         ID sender = rMsg.getSender();
-        if (!members.contains(sender)) {
-            // not a member? check assistants
-            List<ID> assistants = manager.getAssistants(group);
-            if (assistants == null || !assistants.contains(sender)) {
-                return respondText(STR_QUERY_NOT_ALLOWED, group);
-            }
+        List<ID> bots = getAssistants(group);
+        boolean canQuery = members.contains(sender) || (bots != null && bots.contains(sender));
+        if (!canQuery) {
+            return respondReceipt("Permission denied.", rMsg, group, newMap(
+                    "template", "Not allowed to query members of group: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
         }
 
-        // 2. respond
-        Content res = respondGroupMembers(owner, group, members);
-        return respondContent(res);
+        // 3. send the reset command with newest members
+        sendResetCommand(group, members, sender);
+
+        // no need to response this group command
+        return null;
     }
 
-    protected Content respondGroupMembers(ID owner, ID group, List<ID> members) {
-        CommonFacebook facebook = (CommonFacebook) getFacebook();
-        User user = facebook.getCurrentUser();
-        assert user != null : "current user not set yet";
-        if (user.getIdentifier().equals(owner)) {
-            return GroupCommand.reset(group, members);
-        } else {
-            return GroupCommand.invite(group, members);
-        }
-    }
 }

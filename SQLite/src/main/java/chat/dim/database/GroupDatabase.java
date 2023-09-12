@@ -236,4 +236,16 @@ public class GroupDatabase implements GroupDBI {
         // 2. update sqlite
         return groupTable.saveAssistants(bots, group);
     }
+
+    @Override
+    public List<ID> getAdministrators(ID group) {
+        // TODO: load admins
+        return null;
+    }
+
+    @Override
+    public boolean saveAdministrators(List<ID> members, ID group) {
+        // TODO: save admins
+        return false;
+    }
 }

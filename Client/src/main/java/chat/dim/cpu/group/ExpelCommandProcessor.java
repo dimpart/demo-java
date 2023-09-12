@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.Facebook;
-import chat.dim.GroupManager;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
 import chat.dim.protocol.Content;
@@ -42,12 +41,16 @@ import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.ExpelCommand;
+import chat.dim.type.Pair;
 
+/**
+ *  Expel Group Command Processor
+ *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ *      1. remove group member(s)
+ *      2. only group owner or administrator can expel member
+ */
 public class ExpelCommandProcessor extends GroupCommandProcessor {
-
-    public static String STR_EXPEL_CMD_ERROR = "Expel command error.";
-    public static String STR_EXPEL_NOT_ALLOWED = "Sorry, you are not allowed to expel member from this group.";
-    public static String STR_CANNOT_EXPEL_OWNER = "Group owner cannot be expelled.";
 
     public ExpelCommandProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
@@ -57,53 +60,96 @@ public class ExpelCommandProcessor extends GroupCommandProcessor {
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof ExpelCommand : "expel command error: " + content;
         GroupCommand command = (GroupCommand) content;
-        GroupManager manager = GroupManager.getInstance();
 
-        // 0. check group
+        // 0. check command
+        if (isCommandExpired(command)) {
+            // ignore expired command
+            return null;
+        }
         ID group = command.getGroup();
-        ID owner = manager.getOwner(group);
-        List<ID> members = manager.getMembers(group);
-        if (owner == null || members.size() == 0) {
-            return respondText(STR_GROUP_EMPTY, group);
-        }
-
-        // 1. check permission
-        ID sender = rMsg.getSender();
-        if (!owner.equals(sender)) {
-            // not the owner? check assistants
-            List<ID> assistants = manager.getAssistants(group);
-            if (assistants == null || !assistants.contains(sender)) {
-                return respondText(STR_EXPEL_NOT_ALLOWED, group);
-            }
-        }
-
-        // 2. expelling members
         List<ID> expelList = getMembers(command);
         if (expelList.size() == 0) {
-            return respondText(STR_EXPEL_CMD_ERROR, group);
+            return respondReceipt("Command error.", rMsg, group, newMap(
+                    "template", "Expel list is empty: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
+        }
+
+        // 1. check group
+        ID owner = getOwner(group);
+        List<ID> members = getMembers(group);
+        if (owner == null || members == null || members.size() == 0) {
+            // TODO: query group members?
+            return respondReceipt("Group empty.", rMsg, group, newMap(
+                    "template", "Group empty: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
+        }
+
+        // 2. check permission
+        ID sender = rMsg.getSender();
+        List<ID> admins = getAdministrators(group);
+        boolean isAdmin = owner.equals(sender) || (admins != null && admins.contains(sender));
+        if (!isAdmin) {
+            return respondReceipt("Permission denied.", rMsg, group, newMap(
+                    "template", "Not allowed to expel member from group: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
         }
         // 2.1. check owner
         if (expelList.contains(owner)) {
-            return respondText(STR_CANNOT_EXPEL_OWNER, group);
+            return respondReceipt("Permission denied.", rMsg, group, newMap(
+                    "template", "Not allowed to expel owner of group: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
         }
-        // 2.2. build expelled-list
-        List<String> removedList = new ArrayList<>();
-        for (ID item: expelList) {
-            if (!members.contains(item)) {
-                continue;
+        // 2.2. check admins
+        boolean expelAdmin = false;
+        for (ID item : admins) {
+            if (expelList.contains(item)) {
+                expelAdmin = true;
+                break;
             }
-            // removing member found
-            removedList.add(item.toString());
-            members.remove(item);
         }
-        // 2.3. do expelling
-        if (removedList.size() > 0) {
-            if (manager.saveMembers(members, group)) {
-                command.put("removed", removedList);
-            }
+        if (expelAdmin) {
+            return respondReceipt("Permission denied.", rMsg, group, newMap(
+                    "template", "Not allowed to expel administrator of group: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
         }
 
-        // 3. response (no need to response this group command)
+        // 3. do expel
+        Pair<List<ID>, List<ID>> pair = calculateExpelled(members, expelList);
+        List<ID> newMembers = pair.first;
+        List<ID> removeList = pair.second;
+        if (removeList.size() > 0 && saveMembers(newMembers, group)) {
+            content.put("removed", ID.revert(removeList));
+        }
+
+        // no need to response this group command
         return null;
+    }
+
+    private Pair<List<ID>, List<ID>> calculateExpelled(List<ID> members, List<ID> expelList) {
+        List<ID> newMembers = new ArrayList<>();
+        List<ID> removeList = new ArrayList<>();
+        for (ID item : members) {
+            if (expelList.contains(item)) {
+                removeList.add(item);
+            } else {
+                newMembers.add(item);
+            }
+        }
+        return new Pair<>(newMembers, removeList);
     }
 }

@@ -2,12 +2,12 @@
  *
  *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
- *                                Written in 2019 by Moky <albert.moky@gmail.com>
+ *                                Written in 2023 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 Albert Moky
+ * Copyright (c) 2023 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,36 +30,33 @@
  */
 package chat.dim.cpu.group;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.cpu.GroupCommandProcessor;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.protocol.group.InviteCommand;
-import chat.dim.type.Copier;
-import chat.dim.type.Pair;
+import chat.dim.protocol.group.JoinCommand;
 
 /**
- *  Invite Group Command Processor
- *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *  Join Group Command Processor
+ *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
- *      1. add new member(s) to the group
- *      2. any member can invite new member
- *      3. invited by ordinary member should be reviewed by owner/administrator
+ *      1. stranger can join a group
+ *      2. only group owner or administrator can review this command
  */
-public class InviteCommandProcessor extends ResetCommandProcessor {
+public class JoinCommandProcessor extends GroupCommandProcessor {
 
-    public InviteCommandProcessor(Facebook facebook, Messenger messenger) {
+    public JoinCommandProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
     }
 
     @Override
     public List<Content> process(Content content, ReliableMessage rMsg) {
-        assert content instanceof InviteCommand : "invite command error: " + content;
+        assert content instanceof JoinCommand : "join command error: " + content;
         GroupCommand command = (GroupCommand) content;
 
         // 0. check command
@@ -68,15 +65,6 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
             return null;
         }
         ID group = command.getGroup();
-        List<ID> inviteList = getMembers(command);
-        if (inviteList.size() == 0) {
-            return respondReceipt("Command error.", rMsg, group, newMap(
-                    "template", "Invite list is empty: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
-        }
 
         // 1. check group
         ID owner = getOwner(group);
@@ -91,35 +79,15 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
             ));
         }
 
-        // 2. check permission
+        // 1. check membership
         ID sender = rMsg.getSender();
-        if (!members.contains(sender)) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
-                    "template", "Not allowed to invite member into group: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
-        }
-        List<ID> admins = getAdministrators(group);
-
-        // 3. do invite
-        Pair<List<ID>, List<ID>> pair = calculateInvited(members, inviteList);
-        List<ID> newMembers = pair.first;
-        List<ID> addedList = pair.second;
-        if (owner.equals(sender) || (admins != null && admins.contains(sender))) {
-            // invited by owner or admin, so
-            // append them directly.
-            if (addedList.size() > 0 && saveMembers(newMembers, group)) {
-                content.put("added", ID.revert(addedList));
-            }
-        } else if (addedList.size() == 0) {
-            // maybe the invited users are already become members,
-            // but if it can still receive an 'invite' command here,
+        if (members.contains(sender)) {
+            // maybe the sender is already a member,
+            // but if it can still receive a 'join' command here,
             // we should respond the sender with the newest membership again.
-            sendResetCommand(group, newMembers, sender);
+            sendResetCommand(group, members, sender);
         } else {
-            // add 'invite' application for waiting review
+            // add 'join' application for waiting review
             addApplication(command, rMsg);
         }
 
@@ -127,16 +95,4 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
         return null;
     }
 
-    private Pair<List<ID>, List<ID>> calculateInvited(List<ID> members, List<ID> inviteList) {
-        List<ID> newMembers = Copier.copyList(members);
-        List<ID> addedList = new ArrayList<>();
-        for (ID item : inviteList) {
-            if (newMembers.contains(item)) {
-                continue;
-            }
-            newMembers.add(item);
-            addedList.add(item);
-        }
-        return new Pair<>(newMembers, addedList);
-    }
 }

@@ -2,12 +2,12 @@
  *
  *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
- *                                Written in 2019 by Moky <albert.moky@gmail.com>
+ *                                Written in 2023 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 Albert Moky
+ * Copyright (c) 2023 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,39 +33,40 @@ package chat.dim.cpu.group;
 import java.util.ArrayList;
 import java.util.List;
 
+import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
-import chat.dim.dbi.AccountDBI;
+import chat.dim.crypto.SignKey;
 import chat.dim.mkm.User;
+import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.ForwardContent;
-import chat.dim.protocol.GroupCommand;
+import chat.dim.protocol.Document;
+import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.protocol.group.QuitCommand;
-import chat.dim.protocol.group.ResetCommand;
+import chat.dim.protocol.group.ResignCommand;
 import chat.dim.type.Copier;
-import chat.dim.type.Pair;
 
 /**
- *  Quit Group Command Processor
- *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *  Resign Group Admin Command Processor
+ *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
- *      1. remove the sender from members of the group
- *      2. owner and administrator cannot quit
+ *      1. remove the sender from administrators of the group
+ *      2. administrator can be hired/fired by owner only
  */
-public class QuitCommandProcessor extends GroupCommandProcessor {
+public class ResignCommandProcessor extends GroupCommandProcessor {
 
-    public QuitCommandProcessor(Facebook facebook, Messenger messenger) {
+    public ResignCommandProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
     }
 
     @Override
     public List<Content> process(Content content, ReliableMessage rMsg) {
-        assert content instanceof QuitCommand : "quit command error: " + content;
-        GroupCommand command = (GroupCommand) content;
+        assert content instanceof ResignCommand : "resign command error: " + content;
+        ResignCommand command = (ResignCommand) content;
 
         // 0. check command
         if (isCommandExpired(command)) {
@@ -91,51 +92,44 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
         ID sender = rMsg.getSender();
         if (owner.equals(sender)) {
             return respondReceipt("Permission denied.", rMsg, group, newMap(
-                    "template", "Owner cannot quit from group: ${ID}",
+                    "template", "Owner cannot resign from group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
                     )
             ));
         }
         List<ID> admins = getAdministrators(group);
-        if (admins != null && admins.contains(sender)) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
-                    "template", "Administrator cannot quit from group: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+
+        // 3. do resign
+        if (admins == null || admins.size() == 0) {
+            admins = new ArrayList<>();
+        } else {
+            admins = Copier.copyList(admins);
+        }
+        boolean isAdmin = admins.contains(sender);
+        if (isAdmin) {
+            // admin do exist, remove it and update database
+            admins.remove(sender);
+            saveAdministrators(admins, group);
         }
 
-        // 3. do quit
-        members = Copier.copyList(members);
-        boolean isMember = members.contains(sender);
-        if (isMember) {
-            // member do exist, remove it and update database
-            members.remove(sender);
-            if (saveMembers(members, group)) {
-                List<String> removeList = new ArrayList<>();
-                removeList.add(sender.toString());
-                content.put("removed", removeList);
-            }
-        }
-
-        // 4. update 'reset' command
+        // 4. update bulletin property: 'administrators'
         User user = getFacebook().getCurrentUser();
         assert user != null : "failed to get current user";
         ID me = user.getIdentifier();
-        if (owner.equals(me) || (admins != null && admins.contains(me))) {
-            // this is the group owner (or administrator), so
-            // it has permission to reset group members here.
-            boolean ok = refreshMembers(group, me, members);
-            assert ok : "failed to refresh members: " + group;
+        if (owner.equals(me)) {
+            // maybe the bulletin in the owner's storage not contains this administrator,
+            // but if it can still receive a resign command here, then
+            // the owner should update the bulletin and send it out again.
+            boolean ok = refreshAdministrators(group, owner, admins);
+            assert ok : "failed to refresh admins for group: " + group;
         } else {
-            // add 'quit' application for waiting admin to update
+            // add 'resign' application for waiting owner to update
             addApplication(command, rMsg);
         }
-        if (!isMember) {
+        if (!isAdmin) {
             return respondReceipt("Permission denied.", rMsg, group, newMap(
-                    "template", "Not a member of group: ${ID}",
+                    "template", "Not an administrator of group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
                     )
@@ -146,26 +140,43 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
         return null;
     }
 
-    private boolean refreshMembers(ID group, ID admin, List<ID> members) {
-        AccountDBI db = getFacebook().getDatabase();
-        // 1. create new 'reset' command
-        Pair<ResetCommand, ReliableMessage> pair =  createResetCommand(admin, group, members);
-        ResetCommand cmd = pair.first;
-        ReliableMessage msg = pair.second;
-        if (!updateResetCommandMessage(group, cmd, msg)) {
-            // failed to save 'reset' command message
+    private boolean refreshAdministrators(ID group, ID owner, List<ID> admins) {
+        CommonFacebook facebook = getFacebook();
+        // 1. update bulletin
+        Document bulletin = updateAdministrators(group, owner, admins);
+        if (!facebook.saveDocument(bulletin)) {
             return false;
         }
+        Meta meta = facebook.getMeta(group);
+        Content content = DocumentCommand.response(group, meta, bulletin);
+        // 2. send to assistants
         CommonMessenger messenger = getMessenger();
-        Content forward = ForwardContent.create(msg);
-        // 2. forward to assistants
-        List<ID> bots = getAssistants(group);
-        if (bots != null/* && bots.size() > 0*/) {
-            for (ID receiver : bots) {
-                assert !admin.equals(bots) : "group bot should not be admin: " + admin;
-                messenger.sendContent(admin, receiver, forward, 1);
-            }
+        List<ID> bots = facebook.getAssistants(group);
+        for (ID receiver : bots) {
+            assert !owner.equals(receiver) : "group bot should not be owner: " + owner;
+            messenger.sendContent(owner, receiver, content, 1);
         }
         return true;
+    }
+
+    private Document updateAdministrators(ID group, ID owner, List<ID> admins) {
+        CommonFacebook facebook = getFacebook();
+        // update document property
+        Document bulletin = facebook.getDocument(group, "*");
+        if (bulletin == null) {
+            assert false : "failed to get document for group: " + group;
+            return null;
+        }
+        assert bulletin instanceof Bulletin : "group document error: " + bulletin;
+        bulletin.setProperty("administrators", ID.revert(admins));
+        // sign document
+        SignKey sKey = facebook.getPrivateKeyForVisaSignature(owner);
+        if (sKey == null) {
+            assert false : "failed to get sign key for group owner: " + owner + ", group: " + group;
+            return null;
+        }
+        byte[] signature = bulletin.sign(sKey);
+        assert signature != null : "failed to sign bullegin for group: " + group;
+        return bulletin;
     }
 }

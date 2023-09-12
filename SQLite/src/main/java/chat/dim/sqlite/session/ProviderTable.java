@@ -30,9 +30,11 @@
  */
 package chat.dim.sqlite.session;
 
+import java.util.List;
 import java.util.Set;
 
 import chat.dim.dbi.ProviderDBI;
+import chat.dim.dbi.ProviderInfo;
 import chat.dim.protocol.ID;
 import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
@@ -51,22 +53,22 @@ public class ProviderTable extends DataTableHandler<Set<Triplet<String, Integer,
     }
 
     @Override
-    public Set<Triplet<String, Integer, ID>> allNeighbors() {
+    public List<ProviderInfo> allProviders() {
         return null;
     }
 
     @Override
-    public ID getNeighbor(String ip, int port) {
-        return null;
-    }
-
-    @Override
-    public boolean addNeighbor(String ip, int port, ID station) {
+    public boolean addProvider(ID identifier, int chosen) {
         return false;
     }
 
     @Override
-    public boolean removeNeighbor(String ip, int port) {
+    public boolean updateProvider(ID identifier, int chosen) {
+        return false;
+    }
+
+    @Override
+    public boolean removeProvider(ID identifier) {
         return false;
     }
 }

@@ -34,9 +34,11 @@ import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.group.ExpelCommandProcessor;
 import chat.dim.cpu.group.InviteCommandProcessor;
+import chat.dim.cpu.group.JoinCommandProcessor;
 import chat.dim.cpu.group.QueryCommandProcessor;
 import chat.dim.cpu.group.QuitCommandProcessor;
 import chat.dim.cpu.group.ResetCommandProcessor;
+import chat.dim.cpu.group.ResignCommandProcessor;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.GroupCommand;
@@ -83,12 +85,16 @@ public class ClientContentProcessorCreator extends ContentProcessorCreator {
                 return new InviteCommandProcessor(getFacebook(), getMessenger());
             case GroupCommand.EXPEL:
                 return new ExpelCommandProcessor(getFacebook(), getMessenger());
+            case GroupCommand.JOIN:
+                return new JoinCommandProcessor(getFacebook(), getMessenger());
             case GroupCommand.QUIT:
                 return new QuitCommandProcessor(getFacebook(), getMessenger());
             case GroupCommand.QUERY:
                 return new QueryCommandProcessor(getFacebook(), getMessenger());
             case GroupCommand.RESET:
                 return new ResetCommandProcessor(getFacebook(), getMessenger());
+            case GroupCommand.RESIGN:
+                return new ResignCommandProcessor(getFacebook(), getMessenger());
         }
         // others
         return super.createCommandProcessor(type, name);

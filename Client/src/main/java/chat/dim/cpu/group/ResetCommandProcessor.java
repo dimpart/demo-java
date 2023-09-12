@@ -33,131 +33,151 @@ package chat.dim.cpu.group;
 import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
-import chat.dim.GroupManager;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.protocol.group.InviteCommand;
 import chat.dim.protocol.group.ResetCommand;
+import chat.dim.type.Pair;
 
+/**
+ *  Reset Group Command Processor
+ *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ *      1. reset group members
+ *      2. only group owner or assistant can reset group members
+ *
+ *      3. specially, if the group members info lost,
+ *         means you may not known who's the group owner immediately (and he may be not online),
+ *         so we accept the new members-list temporary, and find out who is the owner,
+ *         after that, we will send 'query' to the owner to get the newest members-list.
+ */
 public class ResetCommandProcessor extends GroupCommandProcessor {
-
-    public static String STR_RESET_CMD_ERROR = "Reset command error.";
-    public static String STR_RESET_NOT_ALLOWED = "Sorry, you are not allowed to reset this group.";
 
     public ResetCommandProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
     }
 
-    protected void queryOwner(ID owner, ID group) {
-        GroupCommand command = GroupCommand.query(group);
-        CommonMessenger messenger = (CommonMessenger) getMessenger();
-        messenger.sendContent(null, owner, command, 1);
-    }
-
-    protected List<Content> temporarySave(GroupCommand content, ID sender) {
-        GroupManager manager = GroupManager.getInstance();
-        ID group = content.getGroup();
-        // check whether the owner contained in the new members
-        List<ID> newMembers = getMembers(content);
-        if (newMembers.size() == 0) {
-            return respondText(STR_RESET_CMD_ERROR, group);
-        }
-        for (ID item : newMembers) {
-            if (manager.getMeta(item) == null) {
-                // TODO: waiting for member's meta?
-                continue;
-            } else if (!manager.isOwner(item, group)) {
-                // not owner, skip it
-                continue;
-            }
-            // it's a full list, save it now
-            if (manager.saveMembers(newMembers, group)) {
-                if (!item.equals(sender)) {
-                    // NOTICE: to prevent counterfeit,
-                    //         query the owner for newest member-list
-                    queryOwner(item, group);
-                }
-            }
-            // response (no need to respond this group command)
-            return null;
-        }
-        // NOTICE: this is a partial member-list
-        //         query the sender for full-list
-        return respondContent(GroupCommand.query(group));
-    }
-
     @Override
     public List<Content> process(Content content, ReliableMessage rMsg) {
-        assert content instanceof ResetCommand || content instanceof InviteCommand : "reset command error: " + content;
-        GroupCommand command = (GroupCommand) content;
-        GroupManager manager = GroupManager.getInstance();
+        assert content instanceof ResetCommand : "reset command error: " + content;
+        ResetCommand command = (ResetCommand) content;
 
-        // 0. check group
+        // 0. check command
+        if (isCommandExpired(command)) {
+            // ignore expired command
+            return null;
+        }
         ID group = command.getGroup();
-        ID owner = manager.getOwner(group);
-        List<ID> members = manager.getMembers(group);
-        if (owner == null || members.size() == 0) {
-            // FIXME: group info lost?
-            // FIXME: how to avoid strangers impersonating group member?
-            return temporarySave(command, rMsg.getSender());
-        }
-
-        // 1. check permission
-        ID sender = rMsg.getSender();
-        if (!owner.equals(sender)) {
-            // not the owner? check assistants
-            List<ID> assistants = manager.getAssistants(group);
-            if (assistants == null || !assistants.contains(sender)) {
-                return respondText(STR_RESET_NOT_ALLOWED, group);
-            }
-        }
-
-        // 2. resetting members
         List<ID> newMembers = getMembers(command);
         if (newMembers.size() == 0) {
-            return respondText(STR_RESET_CMD_ERROR, group);
+            return respondReceipt("Command error.", rMsg, group, newMap(
+                    "template", "New member list is empty: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
+        }
+
+        // 1. check group
+        ID owner = getOwner(group);
+        List<ID> members = getMembers(group);
+        if (owner == null || members == null || members.size() == 0) {
+            // TODO: query group members?
+            return respondReceipt("Group empty.", rMsg, group, newMap(
+                    "template", "Group empty: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
+        }
+
+        // 2. check permission
+        ID sender = rMsg.getSender();
+        List<ID> admins = getAdministrators(group);
+        boolean isAdmin = owner.equals(sender) || (admins != null && admins.contains(sender));
+        if (!isAdmin) {
+            return respondReceipt("Permission denied.", rMsg, group, newMap(
+                    "template", "Not allowed to reset members of group: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
         }
         // 2.1. check owner
-        if (!newMembers.contains(owner)) {
-            return respondText(STR_RESET_CMD_ERROR, group);
+        if (!newMembers.get(0).equals(owner)) {
+            return respondReceipt("Permission denied.", rMsg, group, newMap(
+                    "template", "Owner must be the first member of group: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
         }
-        // 2.2. build expelled-list
-        List<String> removedList = new ArrayList<>();
-        for (ID item : members) {
+        // 2.2. check admin
+        // 2.2. check admins
+        boolean expelAdmin = false;
+        for (ID item : admins) {
+            if (!newMembers.contains(item)) {
+                expelAdmin = true;
+                break;
+            }
+        }
+        if (expelAdmin) {
+            return respondReceipt("Permission denied.", rMsg, group, newMap(
+                    "template", "Not allowed to expel administrator of group: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
+        }
+
+        // 3. try to save 'reset' command
+        if (!updateResetCommandMessage(group, command, rMsg)) {
+            // newer 'reset' command exists, drop this command
+            return null;
+        }
+
+        // 4. do reset
+        Pair<List<ID>, List<ID>> pair = resetMembers(group, members, newMembers);
+        List<ID> addList = pair.first;
+        List<ID> removeList = pair.second;
+        if (addList.size() > 0) {
+            content.put("added", ID.revert(addList));
+        }
+        if (removeList.size() > 0) {
+            content.put("removed", ID.revert(removeList));
+        }
+
+        // no need to response this group command
+        return null;
+    }
+
+    private Pair<List<ID>, List<ID>> resetMembers(ID group, List<ID> oldMembers, List<ID> newMembers) {
+        List<ID> addList = new ArrayList<>();
+        List<ID> removeList = new ArrayList<>();
+        // build invited-list
+        for (ID item : newMembers) {
+            if (oldMembers.contains(item)) {
+                continue;
+            }
+            addList.add(item);
+        }
+        // build expelled-list
+        for (ID item : oldMembers) {
             if (newMembers.contains(item)) {
                 continue;
             }
-            // removing member found
-            removedList.add(item.toString());
+            removeList.add(item);
         }
-        // 2.3. build invited-list
-        List<String> addedList = new ArrayList<>();
-        for (ID item : newMembers) {
-            if (members.contains(item)) {
-                continue;
-            }
-            // adding member found
-            addedList.add(item.toString());
-        }
-        // 2.4. do reset
-        if (addedList.size() > 0 || removedList.size() > 0) {
-            if (manager.saveMembers(newMembers, group)) {
-                if (addedList.size() > 0) {
-                    command.put("added", addedList);
-                }
-                if (removedList.size() > 0) {
-                    command.put("removed", removedList);
-                }
+        if (addList.size() > 0 || removeList.size() > 0) {
+            if (!saveMembers(newMembers, group)) {
+                assert false : "failed to save members in group: " + group;
+                addList.clear();
+                removeList.clear();
             }
         }
-
-        // 3. response (no need to response this group command)
-        return null;
+        return new Pair<>(addList, removeList);
     }
 }

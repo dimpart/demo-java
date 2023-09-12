@@ -36,7 +36,6 @@ import java.util.List;
 import chat.dim.crypto.DecryptKey;
 import chat.dim.crypto.SignKey;
 import chat.dim.dbi.AccountDBI;
-import chat.dim.mkm.Group;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
@@ -101,39 +100,20 @@ public class CommonFacebook extends Facebook {
 
     @Override
     public boolean saveMeta(Meta meta, ID identifier) {
+        if (!Meta.matches(identifier, meta)) {
+            assert false : "meta not valid: " + identifier;
+            return false;
+        }
         return database.saveMeta(meta, identifier);
     }
 
     @Override
     public boolean saveDocument(Document doc) {
+        if (!doc.isValid()) {
+            assert false : "document not valid: " + doc.getIdentifier();
+            return false;
+        }
         return database.saveDocument(doc);
-    }
-
-    @Override
-    protected User createUser(ID user) {
-        if (!user.isBroadcast()) {
-            if (getPublicKeyForEncryption(user) == null) {
-                // visa.key not found
-                return null;
-            }
-        }
-        return super.createUser(user);
-    }
-
-    @Override
-    protected Group createGroup(ID group) {
-        if (!group.isBroadcast()) {
-            if (getMeta(group) == null) {
-                // group meta not found
-                return null;
-            }
-            List<ID> members = getMembers(group);
-            if (members == null || members.size() == 0) {
-                // group members not ready
-                return null;
-            }
-        }
-        return super.createGroup(group);
     }
 
     //

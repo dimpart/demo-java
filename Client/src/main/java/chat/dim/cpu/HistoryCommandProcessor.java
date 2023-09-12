@@ -40,8 +40,6 @@ import chat.dim.protocol.ReliableMessage;
 
 public class HistoryCommandProcessor extends BaseCommandProcessor {
 
-    public static String FMT_HIS_CMD_NOT_SUPPORT = "History command (name: %s) not support yet!";
-
     public HistoryCommandProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
     }
@@ -50,7 +48,11 @@ public class HistoryCommandProcessor extends BaseCommandProcessor {
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof HistoryCommand : "history command error: " + content;
         HistoryCommand command = (HistoryCommand) content;
-        String text = String.format(FMT_HIS_CMD_NOT_SUPPORT, command.getCmd());
-        return respondText(text, command.getGroup());
+        return respondReceipt("Command not support.", rMsg, command.getGroup(), newMap(
+                "template", "History command (name: ${command}) not support yet!",
+                "replacements", newMap(
+                        "command", command.getCmd()
+                )
+        ));
     }
 }
