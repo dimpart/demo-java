@@ -174,19 +174,28 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
 
     @Override
     public ReliableMessage sendInstantMessage(InstantMessage iMsg, int priority) {
-        Log.debug("send instant message (type=" + iMsg.getContent().getType() + "): "
-                + iMsg.getSender() + " -> " + iMsg.getReceiver());
-        // send message (secured + certified) to target station
+        // 0. check cycled message
+        if (iMsg.getSender().equals(iMsg.getReceiver())) {
+            Log.warning("drop cycled message: " + iMsg.getContent() + " "
+                    + iMsg.getSender() + " => " + iMsg.getReceiver() + ", " + iMsg.getGroup());
+            return null;
+        } else {
+            Log.debug("send instant message (type=" + iMsg.getContent().getType() + "): "
+                    + iMsg.getSender() + " => " + iMsg.getReceiver() + ", " + iMsg.getGroup());
+        }
+        // 1. encrypt message
         SecureMessage sMsg = encryptMessage(iMsg);
         if (sMsg == null) {
-            // public key not found?
+            // assert false : "public key not found?";
             return null;
         }
+        // 2. sign message
         ReliableMessage rMsg = signMessage(sMsg);
         if (rMsg == null) {
             // TODO: set msg.state = error
             throw new NullPointerException("failed to sign message: " + sMsg);
         }
+        // 3. send message
         if (sendReliableMessage(rMsg, priority)) {
             return rMsg;
         }
@@ -196,6 +205,12 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
 
     @Override
     public boolean sendReliableMessage(ReliableMessage rMsg, int priority) {
+        // 0. check cycled message
+        if (rMsg.getSender().equals(rMsg.getReceiver())) {
+            Log.warning("drop cycled message: "
+                    + rMsg.getSender() + " => " + rMsg.getReceiver() + ", " + rMsg.getGroup());
+            return false;
+        }
         // 1. serialize message
         byte[] data = serializeMessage(rMsg);
         assert data != null : "failed to serialize message: " + rMsg;

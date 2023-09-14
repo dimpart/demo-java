@@ -40,11 +40,11 @@ import chat.dim.cpu.group.QuitCommandProcessor;
 import chat.dim.cpu.group.ResetCommandProcessor;
 import chat.dim.cpu.group.ResignCommandProcessor;
 import chat.dim.protocol.AnsCommand;
+import chat.dim.protocol.Command;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
-import chat.dim.protocol.ReceiptCommand;
 
 public class ClientContentProcessorCreator extends ContentProcessorCreator {
 
@@ -69,12 +69,12 @@ public class ClientContentProcessorCreator extends ContentProcessorCreator {
     @Override
     public ContentProcessor createCommandProcessor(int type, String name) {
         switch (name) {
+            case Command.RECEIPT:
+                return new ReceiptCommandProcessor(getFacebook(), getMessenger());
             case HandshakeCommand.HANDSHAKE:
                 return new HandshakeCommandProcessor(getFacebook(), getMessenger());
             case LoginCommand.LOGIN:
                 return new LoginCommandProcessor(getFacebook(), getMessenger());
-            case ReceiptCommand.RECEIPT:
-                return new ReceiptCommandProcessor(getFacebook(), getMessenger());
             case AnsCommand.ANS:
                 return new AnsCommandProcessor(getFacebook(), getMessenger());
 

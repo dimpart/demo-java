@@ -100,7 +100,7 @@ public class CommonFacebook extends Facebook {
 
     @Override
     public boolean saveMeta(Meta meta, ID identifier) {
-        if (!Meta.matches(identifier, meta)) {
+        if (!meta.matchIdentifier(identifier)) {
             assert false : "meta not valid: " + identifier;
             return false;
         }
