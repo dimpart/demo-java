@@ -52,8 +52,12 @@ public class AnsCommandProcessor extends BaseCommandProcessor {
         assert content instanceof AnsCommand : "ans command error: " + content;
         AnsCommand command = (AnsCommand) content;
         Map<String, String> records = command.getRecords();
-        int count = ClientFacebook.ans.fix(records);
-        Log.info("ANS: update " + count + " record(s), " + records);
+        if (records == null) {
+            Log.info("ANS: querying " + command.getNames());
+        } else {
+            int count = ClientFacebook.ans.fix(records);
+            Log.info("ANS: update " + count + " record(s), " + records);
+        }
         return null;
     }
 }

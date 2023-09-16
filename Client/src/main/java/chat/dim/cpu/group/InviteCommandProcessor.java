@@ -111,7 +111,7 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
             // invited by owner or admin, so
             // append them directly.
             if (addedList.size() > 0 && saveMembers(newMembers, group)) {
-                content.put("added", ID.revert(addedList));
+                command.put("added", ID.revert(addedList));
             }
         } else if (addedList.size() == 0) {
             // maybe the invited users are already become members,

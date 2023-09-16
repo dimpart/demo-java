@@ -36,7 +36,6 @@ import java.util.Locale;
 
 import chat.dim.dbi.SessionDBI;
 import chat.dim.mkm.Station;
-import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
 import chat.dim.network.SessionState;
 import chat.dim.network.StateMachine;
@@ -122,31 +121,36 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
     }
 
     public ClientMessenger connect(String host, int port) {
+        // check old session
         ClientMessenger old = messenger;
         if (old != null) {
             ClientSession session = old.getSession();
             if (session.isActive()) {
                 // current session is active
                 Station station = session.getStation();
+                Log.debug("current station: " + station);
                 if (station.getHost().equals(host) && station.getPort() == port) {
                     // same target
                     return old;
                 }
             }
             session.stop();
+            messenger = null;
         }
         Log.info("connecting to " + host + ":" + port + " ...");
         // create new messenger with session
         Station station = createStation(host, port);
         ClientSession session = createSession(station);
-        messenger = createMessenger(session, facebook);
+        // create new messenger with session
+        ClientMessenger transceiver = createMessenger(session, facebook);
+        messenger = transceiver;
         // create packer, processor for messenger
         // they have weak references to facebook & messenger
-        messenger.setPacker(createPacker(facebook, messenger));
-        messenger.setProcessor(createProcessor(facebook, messenger));
+        transceiver.setPacker(createPacker(facebook, transceiver));
+        transceiver.setProcessor(createProcessor(facebook, transceiver));
         // set weak reference to messenger
-        session.setMessenger(messenger);
-        return messenger;
+        session.setMessenger(transceiver);
+        return transceiver;
     }
     protected Station createStation(String host, int port) {
         Station station = new Station(host, port);
@@ -155,11 +159,6 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
     }
     protected ClientSession createSession(Station station) {
         ClientSession session = new ClientSession(station, database);
-        // set current user for handshaking
-        User user = facebook.getCurrentUser();
-        if (user != null) {
-            session.setIdentifier(user.getIdentifier());
-        }
         session.start(this);
         return session;
     }

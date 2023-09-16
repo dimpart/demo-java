@@ -178,7 +178,7 @@ public class ResignCommandProcessor extends GroupCommandProcessor {
             return null;
         }
         byte[] signature = bulletin.sign(sKey);
-        assert signature != null : "failed to sign bullegin for group: " + group;
+        assert signature != null : "failed to sign bulletin for group: " + group;
         return bulletin;
     }
 }

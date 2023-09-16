@@ -116,7 +116,7 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
             if (saveMembers(members, group)) {
                 List<String> removeList = new ArrayList<>();
                 removeList.add(sender.toString());
-                content.put("removed", removeList);
+                command.put("removed", removeList);
             }
         }
 
@@ -164,7 +164,10 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
         List<ID> bots = getAssistants(group);
         if (bots != null/* && bots.size() > 0*/) {
             for (ID receiver : bots) {
-                assert !admin.equals(bots) : "group bot should not be admin: " + admin;
+                if (admin.equals(receiver)) {
+                    assert false : "group bot should not be admin: " + admin;
+                    continue;
+                }
                 messenger.sendContent(admin, receiver, forward, 1);
             }
         }

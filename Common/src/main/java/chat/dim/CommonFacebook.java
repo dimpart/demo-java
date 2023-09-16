@@ -73,8 +73,11 @@ public class CommonFacebook extends Facebook {
             for (ID item : array) {
                 assert getPrivateKeyForSignature(item) != null : "private key not found: " + item;
                 user = getUser(item);
-                assert user != null : "failed to create user: " + item;
-                localUsers.add(user);
+                if (user != null) {
+                    localUsers.add(user);
+                } else {
+                    assert false : "failed to create user: " + item;
+                }
             }
         }
         return localUsers;
@@ -95,12 +98,15 @@ public class CommonFacebook extends Facebook {
     }
 
     public void setCurrentUser(User user) {
+        if (user.getDataSource() == null) {
+            user.setDataSource(this);
+        }
         current = user;
     }
 
     @Override
     public boolean saveMeta(Meta meta, ID identifier) {
-        if (!meta.matchIdentifier(identifier)) {
+        if (!meta.isValid() || !meta.matchIdentifier(identifier)) {
             assert false : "meta not valid: " + identifier;
             return false;
         }

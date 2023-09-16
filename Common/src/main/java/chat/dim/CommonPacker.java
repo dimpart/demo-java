@@ -119,7 +119,7 @@ public abstract class CommonPacker extends MessagePacker {
             // first handshake?
             assert visa.getIdentifier().equals(sender) : "visa ID not match: " + sender;
             //assert Meta.matches(sender, rMsg.getMeta()) : "meta error: " + rMsg;
-            return true;
+            return sender.equals(visa.getIdentifier());
         } else if (getVisaKey(sender) != null) {
             // sender is OK
             return true;
@@ -144,7 +144,7 @@ public abstract class CommonPacker extends MessagePacker {
         }
         // check for received group message
         List<ID> members = getMembers(receiver);
-        if (members != null) {
+        if (members != null && members.size() > 0) {
             return true;
         }
         // group not ready, suspend message for waiting members

@@ -79,7 +79,7 @@ public class JoinCommandProcessor extends GroupCommandProcessor {
             ));
         }
 
-        // 1. check membership
+        // 2. check membership
         ID sender = rMsg.getSender();
         if (members.contains(sender)) {
             // maybe the sender is already a member,

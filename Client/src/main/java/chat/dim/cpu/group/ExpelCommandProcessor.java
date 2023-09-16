@@ -133,7 +133,7 @@ public class ExpelCommandProcessor extends GroupCommandProcessor {
         List<ID> newMembers = pair.first;
         List<ID> removeList = pair.second;
         if (removeList.size() > 0 && saveMembers(newMembers, group)) {
-            content.put("removed", ID.revert(removeList));
+            command.put("removed", ID.revert(removeList));
         }
 
         // no need to response this group command

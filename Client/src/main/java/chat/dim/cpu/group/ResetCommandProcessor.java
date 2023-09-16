@@ -85,8 +85,8 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         // 1. check group
         ID owner = getOwner(group);
         List<ID> members = getMembers(group);
-        if (owner == null || members == null || members.size() == 0) {
-            // TODO: query group members?
+        if (owner == null/* || members == null || members.size() == 0*/) {
+            // TODO: query group bulletin document?
             return respondReceipt("Group empty.", rMsg, group, newMap(
                     "template", "Group empty: ${ID}",
                     "replacements", newMap(
@@ -116,7 +116,6 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
                     )
             ));
         }
-        // 2.2. check admin
         // 2.2. check admins
         boolean expelAdmin = false;
         for (ID item : admins) {
@@ -147,10 +146,10 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         List<ID> addList = pair.first;
         List<ID> removeList = pair.second;
         if (addList.size() > 0) {
-            content.put("added", ID.revert(addList));
+            command.put("added", ID.revert(addList));
         }
         if (removeList.size() > 0) {
-            content.put("removed", ID.revert(removeList));
+            command.put("removed", ID.revert(removeList));
         }
 
         // no need to response this group command

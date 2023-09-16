@@ -30,22 +30,14 @@
  */
 package chat.dim;
 
-import chat.dim.core.FactoryManager;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Entity;
 import chat.dim.mkm.User;
-import chat.dim.protocol.AnsCommand;
-import chat.dim.protocol.BlockCommand;
-import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Envelope;
-import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
-import chat.dim.protocol.LoginCommand;
-import chat.dim.protocol.MuteCommand;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
@@ -219,27 +211,4 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         return session.queueMessagePackage(rMsg, data, priority);
     }
 
-    /**
-     *  Register All Message/Content/Command Factories
-     */
-    public static void registerAllFactories() {
-        //
-        //  Register core factories
-        //
-        FactoryManager man = FactoryManager.getInstance();
-        man.registerAllFactories();
-
-        // Handshake
-        Command.setFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
-        // Login
-        Command.setFactory(LoginCommand.LOGIN, LoginCommand::new);
-        // Report
-        Command.setFactory(ReportCommand.REPORT, ReportCommand::new);
-        // Mute
-        Command.setFactory(MuteCommand.MUTE, MuteCommand::new);
-        // Block
-        Command.setFactory(BlockCommand.BLOCK, BlockCommand::new);
-        // ANS
-        Command.setFactory(AnsCommand.ANS, AnsCommand::new);
-    }
 }

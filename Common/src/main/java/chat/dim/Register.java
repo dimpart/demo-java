@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import chat.dim.core.FactoryManager;
 import chat.dim.crypto.AsymmetricKey;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.crypto.PrivateKey;
@@ -46,11 +47,18 @@ import chat.dim.format.DataCoder;
 import chat.dim.format.PortableNetworkFile;
 import chat.dim.mkm.BaseBulletin;
 import chat.dim.mkm.BaseVisa;
+import chat.dim.protocol.AnsCommand;
+import chat.dim.protocol.BlockCommand;
 import chat.dim.protocol.Bulletin;
+import chat.dim.protocol.Command;
 import chat.dim.protocol.EntityType;
+import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaType;
+import chat.dim.protocol.MuteCommand;
+import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.Visa;
 
 public class Register {
@@ -181,7 +189,7 @@ public class Register {
         chat.dim.Plugins.registerPlugins();
 
         // load message/content factories
-        CommonMessenger.registerAllFactories();
+        registerAllFactories();
 
         // fix base64 coder
         Base64.coder = new DataCoder() {
@@ -204,4 +212,30 @@ public class Register {
         loaded = true;
     }
     private static boolean loaded = false;
+
+
+    /**
+     *  Register All Message/Content/Command Factories
+     */
+    public static void registerAllFactories() {
+        //
+        //  Register core factories
+        //
+        FactoryManager man = FactoryManager.getInstance();
+        man.registerAllFactories();
+
+        // Handshake
+        Command.setFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
+        // Login
+        Command.setFactory(LoginCommand.LOGIN, LoginCommand::new);
+        // Report
+        Command.setFactory(ReportCommand.REPORT, ReportCommand::new);
+        // Mute
+        Command.setFactory(MuteCommand.MUTE, MuteCommand::new);
+        // Block
+        Command.setFactory(BlockCommand.BLOCK, BlockCommand::new);
+        // ANS
+        Command.setFactory(AnsCommand.ANS, AnsCommand::new);
+    }
+
 }

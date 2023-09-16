@@ -84,17 +84,15 @@ public class ClientMessenger extends CommonMessenger {
             CommonFacebook facebook = getFacebook();
             User user = facebook.getCurrentUser();
             assert user != null : "current user not found";
-            ID uid = user.getIdentifier();
-            Meta meta = user.getMeta();
-            Visa visa = user.getVisa();
-            Envelope env = Envelope.create(uid, sid, null);
+            ID me = user.getIdentifier();
+            Envelope env = Envelope.create(me, sid, null);
             Content content = HandshakeCommand.start();
             // send first handshake command as broadcast message
             content.setGroup(Station.EVERY);
             // create instant message with meta & visa
             InstantMessage iMsg = InstantMessage.create(env, content);
-            iMsg.put("meta", meta.toMap());
-            iMsg.put("visa", visa.toMap());
+            iMsg.setMap("meta", user.getMeta());
+            iMsg.setMap("visa", user.getVisa());
             sendInstantMessage(iMsg, -1);
         } else {
             // handshake again
@@ -118,17 +116,23 @@ public class ClientMessenger extends CommonMessenger {
         CommonFacebook facebook = getFacebook();
         User user = facebook.getCurrentUser();
         assert user != null : "current user not found";
-        ID uid = user.getIdentifier();
-        Meta meta = user.getMeta();
         Visa visa = user.getVisa();
-        DocumentCommand command = DocumentCommand.response(uid, meta, visa);
+        if (visa == null) {
+            assert false : "visa not found: " + user;
+            return;
+        }
+        ID me = user.getIdentifier();
+        Meta meta = user.getMeta();
+        DocumentCommand command = DocumentCommand.response(me, meta, visa);
         // send to all contacts
-        List<ID> contacts = facebook.getContacts(uid);
-        for (ID item : contacts) {
-            sendVisa(uid, item, command, updated);
+        List<ID> contacts = facebook.getContacts(me);
+        if (contacts != null) {
+            for (ID item : contacts) {
+                sendVisa(me, item, command, updated);
+            }
         }
         // broadcast to 'everyone@everywhere'
-        sendVisa(uid, ID.EVERYONE, command, updated);
+        sendVisa(me, ID.EVERYONE, command, updated);
     }
 
     /**
@@ -163,13 +167,13 @@ public class ClientMessenger extends CommonMessenger {
 
     private void sendVisa(ID sender, ID receiver, DocumentCommand content, boolean force) {
         QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
-        if (checker.isDocumentResponseExpired(receiver, 0, force)) {
-            Log.info("push visa to: " + receiver);
-            sendContent(sender, receiver, content, 1);
-        } else {
+        if (!checker.isDocumentResponseExpired(receiver, 0, force)) {
             // response not expired yet
             Log.debug("document response not expired yet: " + receiver);
+            return;
         }
+        Log.info("push visa to: " + receiver);
+        sendContent(sender, receiver, content, 1);
     }
 
     @Override
@@ -209,19 +213,27 @@ public class ClientMessenger extends CommonMessenger {
             return false;
         }
         assert identifier.isGroup() : "group ID error: " + identifier;
-        Log.info("querying members from any station, ID: " + identifier);
-        List<ID> assistants = getFacebook().getAssistants(identifier);
-        if (assistants == null || assistants.size() == 0) {
-            // group assistants not found
-            Log.error("group assistants not found: " + identifier);
-            return false;
-        }
-        // querying members from bots
         Content content = GroupCommand.query(identifier);
-        for (ID bot : assistants) {
-            sendContent(null, bot, content, 1);
+        // 1. check group bots
+        List<ID> bots = getFacebook().getAssistants(identifier);
+        if (bots != null && bots.size() > 0) {
+            // querying members from bots
+            Log.info("querying members from bots: " + bots + ", group: " + identifier);
+            for (ID receiver : bots) {
+                sendContent(null, receiver, content, 1);
+            }
+            return true;
         }
-        return true;
+        // 2.. check group owner
+        ID owner = getFacebook().getOwner(identifier);
+        if (owner != null) {
+            // querying members from owner
+            Log.info("querying members from owner: " + owner + ", group: " + identifier);
+            sendContent(null, owner, content, 1);
+            return true;
+        }
+        Log.warning("group not ready: " + identifier);
+        return false;
     }
 
     @Override
@@ -233,22 +245,26 @@ public class ClientMessenger extends CommonMessenger {
         //         this means you must send it to the bot directly.
         if (receiver.isGroup()) {
             // so this is a group message (not split yet)
-            return sendGroupMessage(receiver, iMsg, priority);
+            return sendGroupMessage(iMsg, priority);
         }
         // this message is sending to a user/member/bot directly
         return super.sendInstantMessage(iMsg, priority);
     }
 
-    protected ReliableMessage sendGroupMessage(ID group, InstantMessage iMsg, int priority) {
+    protected ReliableMessage sendGroupMessage(InstantMessage iMsg, int priority) {
         assert iMsg.get("group") == null : "should not happen";
+        ID group = iMsg.getReceiver();
+        assert group.isGroup() : "group ID error: " + group;
         CommonFacebook facebook = getFacebook();
 
         // 0. check group bots
         List<ID> bots = facebook.getAssistants(group);
         if (bots == null || bots.isEmpty()) {
-            // assert false : "group bot not found: " + group;
+            // no 'assistants' found in group's bulletin document?
+            // split group messages and send to all members one by one
             int ok = splitGroupMessage(group, iMsg, priority);
             assert ok > 0 : "failed to split messages for group: " + group;
+            // TODO:
             return null;
         }
 
@@ -264,7 +280,7 @@ public class ClientMessenger extends CommonMessenger {
             return null;
         }
 
-        // forward the group message to any bot
+        // 2. forward the group message to any bot
         ID prime = bots.get(0);
         Content content = ForwardContent.create(rMsg);
         Pair<InstantMessage, ReliableMessage> pair = sendContent(null, prime, content, priority);
@@ -274,7 +290,7 @@ public class ClientMessenger extends CommonMessenger {
     /**
      *  split group messages and send to all members one by one
      */
-    protected int splitGroupMessage(ID group, InstantMessage iMsg, int priority) {
+    private int splitGroupMessage(ID group, InstantMessage iMsg, int priority) {
         CommonFacebook facebook = getFacebook();
         // get members
         List<ID> allMembers = facebook.getMembers(group);
