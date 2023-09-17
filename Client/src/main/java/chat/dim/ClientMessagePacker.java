@@ -35,9 +35,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import chat.dim.crypto.SymmetricKey;
-import chat.dim.digest.SHA256;
-import chat.dim.format.Base64;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.DocumentCommand;
@@ -62,101 +59,6 @@ public class ClientMessagePacker extends CommonPacker {
         assert facebook instanceof ClientFacebook : "facebook error: " + facebook;
         return (ClientFacebook) facebook;
     }
-
-    protected static void attachKeyDigest(ReliableMessage rMsg, Messenger messenger) {
-        // check msg.key
-        if (rMsg.get("key") != null) {
-            // getEncryptedKey() != null
-            return;
-        }
-        // check msg.keys
-        Map<String, Object> keys = rMsg.getEncryptedKeys();
-        if (keys == null) {
-            keys = new HashMap<>();
-        } else if (keys.get("digest") != null) {
-            // key digest already exists
-            return;
-        }
-        // get key with direction
-        SymmetricKey key;
-        ID sender = rMsg.getSender();
-        ID group = rMsg.getGroup();
-        if (group == null) {
-            ID receiver = rMsg.getReceiver();
-            key = messenger.getCipherKey(sender, receiver, false);
-        } else {
-            key = messenger.getCipherKey(sender, group, false);
-        }
-        String digest = getKeyDigest(key);
-        if (digest == null) {
-            // broadcast message has no key
-            return;
-        }
-        keys.put("digest", digest);
-        rMsg.put("keys", keys);
-    }
-
-    // get partially key data for digest
-    private static String getKeyDigest(SymmetricKey key) {
-        if (key == null) {
-            // key error
-            return null;
-        }
-        byte[] data = key.getData();
-        if (data == null || data.length < 6) {
-            // plain key?
-            return null;
-        }
-        // get digest for the last 6 bytes of key.data
-        byte[] part = new byte[6];
-        System.arraycopy(data, data.length-6, part, 0, 6);
-        byte[] digest = SHA256.digest(part);
-        String base64 = Base64.encode(digest);
-        base64 = base64.trim();
-        int pos = base64.length() - 8;
-        return base64.substring(pos);
-    }
-
-    @Override
-    public byte[] serializeMessage(ReliableMessage rMsg) {
-        attachKeyDigest(rMsg, getMessenger());
-        return super.serializeMessage(rMsg);
-    }
-
-    @Override
-    public ReliableMessage deserializeMessage(byte[] data) {
-        if (data == null || data.length < 2) {
-            // message data error
-            return null;
-        }
-        return super.deserializeMessage(data);
-    }
-
-    @Override
-    public ReliableMessage signMessage(SecureMessage sMsg) {
-        if (sMsg instanceof ReliableMessage) {
-            // already signed
-            return (ReliableMessage) sMsg;
-        }
-        return super.signMessage(sMsg);
-    }
-
-    /*/
-    @Override
-    public SecureMessage encryptMessage(InstantMessage iMsg) {
-        // make sure visa.key exists before encrypting message
-        SecureMessage sMsg = super.encryptMessage(iMsg);
-        ID receiver = iMsg.getReceiver();
-        if (receiver.isGroup()) {
-            // reuse group message keys
-            Messenger messenger = getMessenger();
-            SymmetricKey key = messenger.getCipherKey(iMsg.getSender(), receiver, false);
-            key.put("reused", true);
-        }
-        // TODO: reuse personal message key?
-        return sMsg;
-    }
-    /*/
 
     @Override
     public InstantMessage decryptMessage(SecureMessage sMsg) {

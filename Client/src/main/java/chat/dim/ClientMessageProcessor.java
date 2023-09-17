@@ -119,7 +119,7 @@ public class ClientMessageProcessor extends MessageProcessor {
     }
 
     @Override
-    protected ContentProcessor.Creator createCreator(Facebook facebook, Messenger messenger) {
-        return new ClientContentProcessorCreator(facebook, messenger);
+    protected ContentProcessor.Creator createCreator() {
+        return new ClientContentProcessorCreator(getFacebook(), getMessenger());
     }
 }

@@ -186,12 +186,26 @@ public abstract class CommonPacker extends MessagePacker {
     }
 
     @Override
+    public SecureMessage encryptMessage(InstantMessage iMsg) {
+        // 1. check contact info
+        // 2. check group members info
+        if (!checkReceiver(iMsg)) {
+            // receiver not ready
+            Log.warning("receiver not ready: " + iMsg.getReceiver());
+            return null;
+        }
+        return super.encryptMessage(iMsg);
+    }
+
+    @Override
     public SecureMessage verifyMessage(ReliableMessage rMsg) {
+        // 1. check sender's meta
         if (!checkSender(rMsg)) {
             // sender not ready
             Log.warning("sender not ready: " + rMsg.getSender());
             return null;
         }
+        // 2. check receiver/group with local user
         if (!checkReceiver(rMsg)) {
             // receiver (group) not ready
             Log.warning("receiver not ready: " + rMsg.getReceiver());
@@ -201,13 +215,74 @@ public abstract class CommonPacker extends MessagePacker {
     }
 
     @Override
-    public SecureMessage encryptMessage(InstantMessage iMsg) {
-        if (!checkReceiver(iMsg)) {
-            // receiver not ready
-            Log.warning("receiver not ready: " + iMsg.getReceiver());
+    public ReliableMessage signMessage(SecureMessage sMsg) {
+        if (sMsg instanceof ReliableMessage) {
+            // already signed
+            return (ReliableMessage) sMsg;
+        }
+        return super.signMessage(sMsg);
+    }
+
+    @Override
+    public ReliableMessage deserializeMessage(byte[] data) {
+        if (data == null || data.length < 2) {
+            // message data error
+            return null;
+        //} else if (data[0] != '{' || data[data.length-1] != '}') {
+        //    // only support JsON format now
+        //    return null;
+        }
+        return super.deserializeMessage(data);
+    }
+
+    /*/
+    @Override
+    public byte[] serializeMessage(ReliableMessage rMsg) {
+        SymmetricKey key = getMessenger().getDecryptKey(rMsg);
+        assert key != null : "encrypt key should not empty here";
+        String digest = getKeyDigest(key);
+        if (digest != null) {
+            boolean reused = key.getBoolean("reused", false);
+            if (reused) {
+                // replace key/keys with key digest
+                Map<String, Object> keys = new HashMap<>();
+                keys.put("digest", digest);
+                rMsg.put("keys", keys);
+                rMsg.remove("key");
+            } else {
+                // reuse it next time
+                key.put("reused", true);
+            }
+        }
+        return super.serializeMessage(rMsg);
+    }
+
+    // get partially key data for digest
+    private static String getKeyDigest(SymmetricKey key) {
+        if (key == null) {
+            // key error
             return null;
         }
-        return super.encryptMessage(iMsg);
+        String value = key.getString("digest", null);
+        if (value != null) {
+            return value;
+        }
+        byte[] data = key.getData();
+        if (data == null || data.length < 6) {
+            // plain key?
+            return null;
+        }
+        // get digest for the last 6 bytes of key.data
+        byte[] part = new byte[6];
+        System.arraycopy(data, data.length-6, part, 0, 6);
+        byte[] digest = SHA256.digest(part);
+        String base64 = Base64.encode(digest);
+        base64 = base64.trim();
+        int pos = base64.length() - 8;
+        value = base64.substring(pos);
+        key.put("digest", value);
+        return value;
     }
+    /*/
 
 }

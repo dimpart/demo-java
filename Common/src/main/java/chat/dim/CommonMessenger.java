@@ -30,6 +30,7 @@
  */
 package chat.dim;
 
+import chat.dim.crypto.SymmetricKey;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Entity;
 import chat.dim.mkm.User;
@@ -39,6 +40,7 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
+import chat.dim.type.Converter;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
@@ -124,28 +126,31 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
      */
     protected abstract boolean queryMembers(ID identifier);
 
-    /*/
     @Override
     public byte[] serializeKey(SymmetricKey password, InstantMessage iMsg) {
-        // try to reuse message key
+        // TODO: reuse message key
+
+        // 0. check message key
         Object reused = password.get("reused");
-        if (reused != null) {
-            ID receiver = iMsg.getReceiver();
-            if (receiver.isGroup()) {
-                // reuse key for grouped message
-                return null;
-            }
-            // remove before serialize key
-            password.remove("reused");
+        Object digest = password.get("digest");
+        if (reused == null && digest == null) {
+            // flags not exist, serialize it directly
+            return super.serializeKey(password, iMsg);
         }
+        // 1. remove before serializing key
+        password.remove("reused");
+        password.remove("digest");
+        // 2. serialize key without flags
         byte[] data = super.serializeKey(password, iMsg);
-        if (reused != null) {
-            // put it back
-            password.put("reused", reused);
+        // 3. put it back after serialized
+        if (Converter.getBoolean(reused, false)) {
+            password.put("reused", true);
+        }
+        if (digest != null) {
+            password.put("digest", digest);
         }
         return data;
     }
-    /*/
 
     //
     //  Interfaces for Transmitting Message
