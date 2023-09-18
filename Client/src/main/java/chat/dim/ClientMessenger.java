@@ -268,6 +268,14 @@ public class ClientMessenger extends CommonMessenger {
             return null;
         }
 
+        // group bots designated, let group bot to split the message, so
+        // here must expose the group ID; this will cause the client to
+        // use a "user-to-group" encrypt key to encrypt the message content,
+        // this key will be encrypted by each member's public key, so
+        // all members will received a message split by the group bot,
+        // but the group bots cannot decrypt it.
+        iMsg.setString("group", group);
+
         // 1. pack messages
         SecureMessage sMsg = encryptMessage(iMsg);
         if (sMsg == null) {

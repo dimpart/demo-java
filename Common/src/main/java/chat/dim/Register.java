@@ -156,25 +156,30 @@ public class Register {
     private static Visa createVisa(ID identifier, String nickname, String avatarUrl,
                                    EncryptKey visaKey, SignKey idKey) {
         assert identifier.isUser() : "user ID error: " + identifier;
-        BaseVisa visa = new BaseVisa(identifier);
-        // nick name
-        visa.setName(nickname);
+        Visa doc = new BaseVisa(identifier);
+        // App ID
+        doc.setProperty("app_id", "chat.dim.tarsier");
+        // nickname
+        doc.setName(nickname);
         // avatar
         if (avatarUrl != null) {
-            URI url = URI.create(avatarUrl);
-            visa.setAvatar(PortableNetworkFile.create(url, null));
+            doc.setAvatar(PortableNetworkFile.parse(avatarUrl));
         }
         // public key
-        visa.setPublicKey(visaKey);
+        doc.setPublicKey(visaKey);
         // sign it
-        byte[] sig = visa.sign(idKey);
+        byte[] sig = doc.sign(idKey);
         assert sig != null : "failed to sign visa: " + identifier;
-        return visa;
+        return doc;
     }
     private static Bulletin createBulletin(ID identifier, String title, SignKey privateKey) {
         assert identifier.isGroup() : "group ID error: " + identifier;
-        BaseBulletin doc = new BaseBulletin(identifier);
+        Bulletin doc = new BaseBulletin(identifier);
+        // App ID
+        doc.setProperty("app_id", "chat.dim.tarsier");
+        // group name
         doc.setName(title);
+        // sign it
         byte[] sig = doc.sign(privateKey);
         assert sig != null : "failed to sign bulletin: " + identifier;
         return doc;

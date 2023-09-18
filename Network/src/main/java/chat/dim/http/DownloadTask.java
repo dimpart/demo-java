@@ -91,8 +91,12 @@ public class DownloadTask extends DownloadRequest implements Runnable {
                     // OK
                     error = null;
                     // move file
-                    boolean ok = file.renameTo(new File(filePath));
-                    Log.debug("move temporary file: " + tmpPath + " => " + filePath + ", " + ok);
+                    if (file.length() == 0) {
+                        Log.error("failed to download file: " + url);
+                    } else {
+                        boolean ok = file.renameTo(new File(filePath));
+                        Log.debug("move temporary file: " + tmpPath + " => " + filePath + ", " + ok);
+                    }
                 }
             }
         } else {
