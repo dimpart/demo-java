@@ -30,6 +30,7 @@
  */
 package chat.dim.http;
 
+import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
 import java.net.URL;
@@ -356,7 +357,8 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
 
         // 3. check previous download
         String path = req.path;
-        if (Paths.exists(path)) {
+        File file = new File(path);
+        if (file.exists() && file.length() > 0) {
             // downloaded previously
             assert req.getStatus() == TaskStatus.Waiting : "request status error: " + req.getStatus();
             req.onSuccess();

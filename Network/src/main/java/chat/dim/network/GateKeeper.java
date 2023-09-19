@@ -36,6 +36,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 
 import chat.dim.net.Connection;
 import chat.dim.net.Hub;
@@ -216,7 +217,7 @@ public class GateKeeper extends Runner implements Docker.Delegate {
     }
 
     protected Departure dockerPack(byte[] payload, int priority) {
-        Docker docker = gate.getDocker(remoteAddress, null, null);
+        Docker docker = gate.getDocker(remoteAddress, null, new ArrayList<>());
         assert docker instanceof DeparturePacker : "departure packer error: " + docker;
         return ((DeparturePacker) docker).packData(payload, priority);
     }
