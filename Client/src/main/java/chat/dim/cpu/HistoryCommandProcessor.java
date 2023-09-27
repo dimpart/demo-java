@@ -48,7 +48,7 @@ public class HistoryCommandProcessor extends BaseCommandProcessor {
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof HistoryCommand : "history command error: " + content;
         HistoryCommand command = (HistoryCommand) content;
-        return respondReceipt("Command not support.", rMsg, command.getGroup(), newMap(
+        return respondReceipt("Command not support.", rMsg.getEnvelope(), command, newMap(
                 "template", "History command (name: ${command}) not support yet!",
                 "replacements", newMap(
                         "command", command.getCmd()

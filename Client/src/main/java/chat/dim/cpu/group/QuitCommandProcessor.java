@@ -33,21 +33,17 @@ package chat.dim.cpu.group;
 import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
-import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.ForwardContent;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.QuitCommand;
-import chat.dim.protocol.group.ResetCommand;
 import chat.dim.type.Copier;
 import chat.dim.type.Pair;
-import chat.dim.utils.Log;
+import chat.dim.type.Triplet;
 
 /**
  *  Quit Group Command Processor
@@ -68,38 +64,41 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
         GroupCommand command = (GroupCommand) content;
 
         // 0. check command
-        if (isCommandExpired(command)) {
+        Pair<ID, List<Content>> pair = checkCommandExpired(command, rMsg);
+        ID group = pair.first;
+        if (group == null) {
             // ignore expired command
-            return null;
+            return pair.second;
         }
-        ID group = command.getGroup();
 
         // 1. check group
-        ID owner = getOwner(group);
-        List<ID> members = getMembers(group);
-        if (owner == null || members == null || members.size() == 0) {
-            // TODO: query group members?
-            return respondReceipt("Group empty.", rMsg, group, newMap(
-                    "template", "Group empty: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+        Triplet<ID, List<ID>, List<Content>> trip = checkGroupMembers(command, rMsg);
+        ID owner = trip.first;
+        List<ID> members = trip.second;
+        if (owner == null || members == null || members.isEmpty()) {
+            return trip.third;
         }
 
-        // 2. check permission
         ID sender = rMsg.getSender();
-        if (owner.equals(sender)) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
+        List<ID> admins = getAdministrators(group);
+        if (admins == null) {
+            admins = new ArrayList<>();
+        }
+        boolean isOwner = owner.equals(sender);
+        boolean isAdmin = admins.contains(sender);
+        boolean isMember = members.contains(sender);
+
+        // 2. check permission
+        if (isOwner) {
+            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Owner cannot quit from group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
                     )
             ));
         }
-        List<ID> admins = getAdministrators(group);
-        if (admins != null && admins.contains(sender)) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
+        if (isAdmin) {
+            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Administrator cannot quit from group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
@@ -108,69 +107,21 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
         }
 
         // 3. do quit
-        members = Copier.copyList(members);
-        boolean isMember = members.contains(sender);
         if (isMember) {
             // member do exist, remove it and update database
+            members = Copier.copyList(members);
             members.remove(sender);
             if (saveMembers(members, group)) {
                 List<String> removeList = new ArrayList<>();
                 removeList.add(sender.toString());
                 command.put("removed", removeList);
+            } else {
+                assert false : "failed to save members for group: " + group;
             }
-        }
-
-        // 4. update 'reset' command
-        User user = getFacebook().getCurrentUser();
-        assert user != null : "failed to get current user";
-        ID me = user.getIdentifier();
-        if (owner.equals(me) || (admins != null && admins.contains(me))) {
-            // this is the group owner (or administrator), so
-            // it has permission to reset group members here.
-            boolean ok = refreshMembers(group, me, members);
-            assert ok : "failed to refresh members: " + group;
-        } else {
-            // add 'quit' application for waiting admin to update
-            boolean ok = addApplication(command, rMsg);
-            assert ok : "failed to add 'quit' application for group: " + group;
-        }
-        if (!isMember) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
-                    "template", "Not a member of group: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
         }
 
         // no need to response this group command
         return null;
     }
 
-    private boolean refreshMembers(ID group, ID admin, List<ID> members) {
-        // 1. create new 'reset' command
-        Pair<ResetCommand, ReliableMessage> pair =  createResetCommand(admin, group, members);
-        ResetCommand cmd = pair.first;
-        ReliableMessage msg = pair.second;
-        if (updateResetCommandMessage(group, cmd, msg)) {
-            Log.info("updated 'reset' command for group: " + group);
-        } else {
-            // failed to save 'reset' command message
-            return false;
-        }
-        CommonMessenger messenger = getMessenger();
-        Content forward = ForwardContent.create(msg);
-        // 2. forward to assistants
-        List<ID> bots = getAssistants(group);
-        if (bots != null/* && bots.size() > 0*/) {
-            for (ID receiver : bots) {
-                if (admin.equals(receiver)) {
-                    assert false : "group bot should not be admin: " + admin;
-                    continue;
-                }
-                messenger.sendContent(admin, receiver, forward, 1);
-            }
-        }
-        return true;
-    }
 }

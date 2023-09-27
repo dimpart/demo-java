@@ -35,6 +35,7 @@ import java.util.List;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
@@ -42,6 +43,7 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.InviteCommand;
 import chat.dim.type.Copier;
 import chat.dim.type.Pair;
+import chat.dim.type.Triplet;
 
 /**
  *  Invite Group Command Processor
@@ -63,73 +65,92 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
         GroupCommand command = (GroupCommand) content;
 
         // 0. check command
-        if (isCommandExpired(command)) {
+        Pair<ID, List<Content>> pair = checkCommandExpired(command, rMsg);
+        ID group = pair.first;
+        if (group == null) {
             // ignore expired command
-            return null;
+            return pair.second;
         }
-        ID group = command.getGroup();
-        List<ID> inviteList = getMembers(command);
-        if (inviteList.size() == 0) {
-            return respondReceipt("Command error.", rMsg, group, newMap(
-                    "template", "Invite list is empty: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+        Pair<List<ID>, List<Content>> pair1 = checkCommandMembers(command, rMsg);
+        List<ID> inviteList = pair1.first;
+        if (inviteList == null || inviteList.isEmpty()) {
+            // command error
+            return pair1.second;
         }
 
         // 1. check group
-        ID owner = getOwner(group);
-        List<ID> members = getMembers(group);
-        if (owner == null || members == null || members.size() == 0) {
-            // TODO: query group members?
-            return respondReceipt("Group empty.", rMsg, group, newMap(
-                    "template", "Group empty: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+        Triplet<ID, List<ID>, List<Content>> trip = checkGroupMembers(command, rMsg);
+        ID owner = trip.first;
+        List<ID> members = trip.second;
+        if (owner == null || members == null || members.isEmpty()) {
+            return trip.third;
         }
 
-        // 2. check permission
         ID sender = rMsg.getSender();
-        if (!members.contains(sender)) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
+        List<ID> admins = getAdministrators(group);
+        if (admins == null) {
+            admins = new ArrayList<>();
+        }
+        boolean isOwner = owner.equals(sender);
+        boolean isAdmin = admins.contains(sender);
+        boolean isMember = members.contains(sender);
+        boolean canReset = isOwner || isAdmin;
+
+        // 2. check permission
+        if (!isMember) {
+            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Not allowed to invite member into group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
                     )
             ));
         }
-        List<ID> admins = getAdministrators(group);
+
+        User user = getFacebook().getCurrentUser();
+        if (user == null) {
+            assert false : "failed to get current user";
+            return null;
+        }
+        ID me = user.getIdentifier();
 
         // 3. do invite
-        Pair<List<ID>, List<ID>> pair = calculateInvited(members, inviteList);
-        List<ID> newMembers = pair.first;
-        List<ID> addedList = pair.second;
-        if (owner.equals(sender) || (admins != null && admins.contains(sender))) {
-            // invited by owner or admin, so
-            // append them directly.
-            if (addedList.size() > 0 && saveMembers(newMembers, group)) {
-                command.put("added", ID.revert(addedList));
-            }
-        } else if (addedList.size() == 0) {
-            // maybe the invited users are already become members,
+        Pair<List<ID>, List<ID>> memPair = calculateInvited(members, inviteList);
+        List<ID> newMembers = memPair.first;
+        List<ID> addedList = memPair.second;
+        if (addedList.isEmpty()) {
+            // maybe those users are already become members,
             // but if it can still receive an 'invite' command here,
             // we should respond the sender with the newest membership again.
-            boolean ok = sendResetCommand(group, newMembers, sender);
-            assert ok : "failed to send 'reset' command for group: " + group + " => " + sender;
-        } else {
-            // add 'invite' application for waiting review
-            boolean ok = addApplication(command, rMsg);
+            if (!canReset && owner.equals(user.getIdentifier())) {
+                // invited by ordinary member, and I am the owner, so
+                // send a 'reset' command to update members in the sender's memory
+                boolean ok = sendResetCommand(group, newMembers, sender);
+                assert ok : "failed to send 'reset' command for group: " + group + " => " + sender;
+            }
+        } else if (canReset) {
+            // invited by the owen/administrator,
+            // so just save the new members directly.
+            if (saveMembers(newMembers, group)) {
+                // invited by owner or admin, so
+                // append the new members directly.
+                command.put("added", ID.revert(addedList));
+            } else {
+                assert false : "failed to save members for group: " + group;
+            }
+        } else if (owner.equals(me) || admins.contains(me)) {
+            // invited by ordinary member, and I am the owner/administrator,
+            // attach it as an 'invite' application and wait for review.
+            boolean ok = attachApplication(command, rMsg);
             assert ok : "failed to add 'invite' application for group: " + group;
+        //} else {
+        //    // I am not the administrator, just ignore it
         }
 
         // no need to response this group command
         return null;
     }
 
-    private Pair<List<ID>, List<ID>> calculateInvited(List<ID> members, List<ID> inviteList) {
+    protected Pair<List<ID>, List<ID>> calculateInvited(List<ID> members, List<ID> inviteList) {
         List<ID> newMembers = Copier.copyList(members);
         List<ID> addedList = new ArrayList<>();
         for (ID item : inviteList) {

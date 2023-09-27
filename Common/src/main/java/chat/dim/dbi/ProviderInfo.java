@@ -31,10 +31,10 @@
 package chat.dim.dbi;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import chat.dim.core.TwinsHelper;
 import chat.dim.mkm.Identifier;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
@@ -73,10 +73,10 @@ public class ProviderInfo {
     public static List<Map<String, Object>> revert(List<ProviderInfo> providers) {
         List<Map<String, Object>> array = new ArrayList<>();
         for (ProviderInfo info : providers) {
-            array.add(new HashMap<String, Object>() {{
-                put("ID", info.identifier.toString());
-                put("chosen", info.chosen);
-            }});
+            array.add(TwinsHelper.newMap(
+                    "ID", info.identifier.toString(),
+                    "chosen", info.chosen
+            ));
         }
         return array;
     }

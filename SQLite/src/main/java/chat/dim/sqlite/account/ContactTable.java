@@ -32,14 +32,14 @@ package chat.dim.sqlite.account;
 
 import java.util.List;
 
-import chat.dim.dbi.UserDBI;
+import chat.dim.dbi.ContactDBI;
 import chat.dim.protocol.ID;
 import chat.dim.sql.SQLConditions;
 import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
 
-public class ContactTable extends DataTableHandler<ID> implements UserDBI {
+public class ContactTable extends DataTableHandler<ID> implements ContactDBI {
 
     private DataRowExtractor<ID> extractor;
 
@@ -78,16 +78,6 @@ public class ContactTable extends DataTableHandler<ID> implements UserDBI {
     private static final String[] SELECT_COLUMNS = {"contact"/*, "alias"*/};
     private static final String[] INSERT_COLUMNS = {"user", "contact"/*, "alias"*/};
     private static final String T_CONTACT = "t_contact";
-
-    @Override
-    public List<ID> getLocalUsers() {
-        throw new AssertionError("call UserTable");
-    }
-
-    @Override
-    public boolean saveLocalUsers(List<ID> users) {
-        throw new AssertionError("call UserTable");
-    }
 
     @Override
     public List<ID> getContacts(ID user) {

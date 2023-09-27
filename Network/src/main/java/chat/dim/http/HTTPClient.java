@@ -110,7 +110,8 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
      */
     public String download(URL url, String path, DownloadDelegate delegate) {
         // 1. check previous download
-        if (Paths.exists(path)) {
+        File file = new File(path);
+        if (file.exists() && file.length() > 0) {
             // already downloaded
             return path;
         }

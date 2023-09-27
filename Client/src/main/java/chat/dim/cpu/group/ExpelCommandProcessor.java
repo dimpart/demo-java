@@ -42,6 +42,7 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.ExpelCommand;
 import chat.dim.type.Pair;
+import chat.dim.type.Triplet;
 
 /**
  *  Expel Group Command Processor
@@ -62,40 +63,39 @@ public class ExpelCommandProcessor extends GroupCommandProcessor {
         GroupCommand command = (GroupCommand) content;
 
         // 0. check command
-        if (isCommandExpired(command)) {
+        Pair<ID, List<Content>> pair = checkCommandExpired(command, rMsg);
+        ID group = pair.first;
+        if (group == null) {
             // ignore expired command
-            return null;
+            return pair.second;
         }
-        ID group = command.getGroup();
-        List<ID> expelList = getMembers(command);
-        if (expelList.size() == 0) {
-            return respondReceipt("Command error.", rMsg, group, newMap(
-                    "template", "Expel list is empty: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+        Pair<List<ID>, List<Content>> pair1 = checkCommandMembers(command, rMsg);
+        List<ID> expelList = pair1.first;
+        if (expelList == null || expelList.isEmpty()) {
+            // command error
+            return pair1.second;
         }
 
         // 1. check group
-        ID owner = getOwner(group);
-        List<ID> members = getMembers(group);
-        if (owner == null || members == null || members.size() == 0) {
-            // TODO: query group members?
-            return respondReceipt("Group empty.", rMsg, group, newMap(
-                    "template", "Group empty: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+        Triplet<ID, List<ID>, List<Content>> trip = checkGroupMembers(command, rMsg);
+        ID owner = trip.first;
+        List<ID> members = trip.second;
+        if (owner == null || members == null || members.isEmpty()) {
+            return trip.third;
         }
 
-        // 2. check permission
         ID sender = rMsg.getSender();
         List<ID> admins = getAdministrators(group);
-        boolean isAdmin = owner.equals(sender) || (admins != null && admins.contains(sender));
-        if (!isAdmin) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
+        if (admins == null) {
+            admins = new ArrayList<>();
+        }
+        boolean isOwner = owner.equals(sender);
+        boolean isAdmin = admins.contains(sender);
+
+        // 2. check permission
+        boolean canExpel = isOwner || isAdmin;
+        if (!canExpel) {
+            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Not allowed to expel member from group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
@@ -104,7 +104,7 @@ public class ExpelCommandProcessor extends GroupCommandProcessor {
         }
         // 2.1. check owner
         if (expelList.contains(owner)) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
+            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Not allowed to expel owner of group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
@@ -120,7 +120,7 @@ public class ExpelCommandProcessor extends GroupCommandProcessor {
             }
         }
         if (expelAdmin) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
+            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Not allowed to expel administrator of group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
@@ -129,9 +129,9 @@ public class ExpelCommandProcessor extends GroupCommandProcessor {
         }
 
         // 3. do expel
-        Pair<List<ID>, List<ID>> pair = calculateExpelled(members, expelList);
-        List<ID> newMembers = pair.first;
-        List<ID> removeList = pair.second;
+        Pair<List<ID>, List<ID>> memPair = calculateExpelled(members, expelList);
+        List<ID> newMembers = memPair.first;
+        List<ID> removeList = memPair.second;
         if (removeList.size() > 0 && saveMembers(newMembers, group)) {
             command.put("removed", ID.revert(removeList));
         }
@@ -140,7 +140,7 @@ public class ExpelCommandProcessor extends GroupCommandProcessor {
         return null;
     }
 
-    private Pair<List<ID>, List<ID>> calculateExpelled(List<ID> members, List<ID> expelList) {
+    protected Pair<List<ID>, List<ID>> calculateExpelled(List<ID> members, List<ID> expelList) {
         List<ID> newMembers = new ArrayList<>();
         List<ID> removeList = new ArrayList<>();
         for (ID item : members) {

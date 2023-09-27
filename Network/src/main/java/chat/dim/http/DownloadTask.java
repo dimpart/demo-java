@@ -79,23 +79,29 @@ public class DownloadTask extends DownloadRequest implements Runnable {
 
         int code = connection.getResponseCode();
         if (code == HttpURLConnection.HTTP_OK) {
+            int contentLength = connection.getContentLength();
             try (InputStream inputStream = connection.getInputStream()) {
                 File file = new File(tmpPath);
                 try (FileOutputStream outputStream = new FileOutputStream(file)) {
                     byte[] buffer = new byte[1024];
+                    int readLength = 0;
                     int len;
                     while ((len = inputStream.read(buffer)) != -1) {
                         outputStream.write(buffer, 0, len);
+                        readLength += len;
                     }
                     outputStream.flush();
                     // OK
                     error = null;
-                    // move file
-                    if (file.length() == 0) {
-                        Log.error("failed to download file: " + url);
-                    } else {
+                    // check read length
+                    if (contentLength <= 0 || contentLength == readLength) {
+                        Log.info("[FTP] downloaded " + readLength + "(" + file.length()
+                                + "), content-length: " + contentLength + ", URL: " + url);
                         boolean ok = file.renameTo(new File(filePath));
-                        Log.debug("move temporary file: " + tmpPath + " => " + filePath + ", " + ok);
+                        Log.info("move temporary file: " + tmpPath + " => " + filePath + ", " + ok);
+                    } else {
+                        Log.error("[FTP] download length error: " + readLength + "(" + file.length()
+                                + "), content-length: " + contentLength + ", URL: " + url);
                     }
                 }
             }

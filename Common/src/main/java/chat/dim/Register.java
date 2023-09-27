@@ -30,7 +30,6 @@
  */
 package chat.dim;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -100,9 +99,9 @@ public class Register {
         //  Step 5: save private key, meta & visa in local storage
         //          don't forget to upload them onto the DIM station
         //
-        database.saveMeta(meta, identifier);
         database.savePrivateKey(idKey, PrivateKeyDBI.META, identifier);
         database.savePrivateKey(msgKey, PrivateKeyDBI.VISA, identifier);
+        database.saveMeta(meta, identifier);
         database.saveDocument(visa);
         // OK
         return identifier;
@@ -121,6 +120,7 @@ public class Register {
         return createGroup(founder, title, "Group-" + r);
     }
     public ID createGroup(ID founder, String title, String seed) {
+        assert seed.length() > 0 : "group's meta seed should not be empty";
         //
         //  Step 1: get private key of founder
         //
@@ -136,7 +136,7 @@ public class Register {
         //
         //  Step 4: generate bulletin with ID and sign with founder's private key
         //
-        Bulletin doc = createBulletin(identifier, title, privateKey);
+        Bulletin doc = createBulletin(identifier, title, privateKey, founder);
         //
         //  Step 5: save meta & bulletin in local storage
         //          don't forget to upload then onto the DIM station
@@ -172,11 +172,13 @@ public class Register {
         assert sig != null : "failed to sign visa: " + identifier;
         return doc;
     }
-    private static Bulletin createBulletin(ID identifier, String title, SignKey privateKey) {
+    private static Bulletin createBulletin(ID identifier, String title, SignKey privateKey, ID founder) {
         assert identifier.isGroup() : "group ID error: " + identifier;
         Bulletin doc = new BaseBulletin(identifier);
         // App ID
         doc.setProperty("app_id", "chat.dim.tarsier");
+        // group founder
+        doc.setProperty("founder", founder.toString());
         // group name
         doc.setName(title);
         // sign it

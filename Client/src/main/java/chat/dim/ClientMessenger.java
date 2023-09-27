@@ -31,16 +31,17 @@
 package chat.dim;
 
 import java.util.List;
-import java.util.Map;
 
+import chat.dim.crypto.SymmetricKey;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
+import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
+import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.Envelope;
-import chat.dim.protocol.ForwardContent;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
@@ -52,6 +53,7 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
+import chat.dim.protocol.group.QueryCommand;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 import chat.dim.utils.QueryFrequencyChecker;
@@ -68,6 +70,23 @@ public class ClientMessenger extends CommonMessenger {
     @Override
     public ClientSession getSession() {
         return (ClientSession) super.getSession();
+    }
+
+    @Override
+    public byte[] serializeContent(Content content, SymmetricKey password, InstantMessage iMsg) {
+        if (content instanceof Command) {
+            content = Compatible.fixCommand((Command) content);
+        }
+        return super.serializeContent(content, password, iMsg);
+    }
+
+    @Override
+    public Content deserializeContent(byte[] data, SymmetricKey password, SecureMessage sMsg) {
+        Content content = super.deserializeContent(data, password, sMsg);
+        if (content instanceof Command) {
+            content = Compatible.fixCommand((Command) content);
+        }
+        return content;
     }
 
     /**
@@ -124,15 +143,32 @@ public class ClientMessenger extends CommonMessenger {
         ID me = user.getIdentifier();
         Meta meta = user.getMeta();
         DocumentCommand command = DocumentCommand.response(me, meta, visa);
-        // send to all contacts
+        QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
+        //
+        //  send to all contacts
+        //
         List<ID> contacts = facebook.getContacts(me);
-        if (contacts != null) {
-            for (ID item : contacts) {
-                sendVisa(me, item, command, updated);
+        if (contacts == null) {
+            Log.warning("contacts not found: " + me);
+        } else for (ID item : contacts) {
+            if (checker.isDocumentResponseExpired(item, 0, updated)) {
+                Log.info("sending visa to " + item);
+                sendContent(me, item, command, 1);
+            } else {
+                // not expired yet
+                Log.debug("visa response not expired yet: " + item);
             }
         }
-        // broadcast to 'everyone@everywhere'
-        sendVisa(me, ID.EVERYONE, command, updated);
+        //
+        //  broadcast to 'everyone@everywhere'
+        //
+        if (checker.isDocumentResponseExpired(ID.EVERYONE, 0, updated)) {
+            Log.info("sending visa to " + ID.EVERYONE);
+            sendContent(me, ID.EVERYONE, command, 1);
+        } else {
+            // not expired yet
+            Log.debug("visa response not expired yet: " + ID.EVERYONE);
+        }
     }
 
     /**
@@ -165,19 +201,8 @@ public class ClientMessenger extends CommonMessenger {
         sendContent(sender, Station.ANY, content, 1);
     }
 
-    private void sendVisa(ID sender, ID receiver, DocumentCommand content, boolean force) {
-        QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
-        if (!checker.isDocumentResponseExpired(receiver, 0, force)) {
-            // response not expired yet
-            Log.debug("document response not expired yet: " + receiver);
-            return;
-        }
-        Log.info("push visa to: " + receiver);
-        sendContent(sender, receiver, content, 1);
-    }
-
     @Override
-    protected boolean queryMeta(ID identifier) {
+    public boolean queryMeta(ID identifier) {
         QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
         if (!checker.isMetaQueryExpired(identifier, 0)) {
             // query not expired yet
@@ -191,7 +216,7 @@ public class ClientMessenger extends CommonMessenger {
     }
 
     @Override
-    protected boolean queryDocument(ID identifier) {
+    public boolean queryDocument(ID identifier) {
         QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
         if (!checker.isDocumentQueryExpired(identifier, 0)) {
             // query not expired yet
@@ -205,130 +230,213 @@ public class ClientMessenger extends CommonMessenger {
     }
 
     @Override
-    protected boolean queryMembers(ID identifier) {
+    public boolean queryMembers(ID identifier) {
+        assert identifier.isGroup() : "group ID error: " + identifier;
+        CommonFacebook facebook = getFacebook();
+        // 0. check group document
+        Document bulletin = facebook.getDocument(identifier, "*");
+        if (bulletin == null) {
+            Log.warning("group document not exists: " + identifier);
+            queryDocument(identifier);
+            return false;
+        }
+        User user = facebook.getCurrentUser();
+        if (user == null) {
+            assert false : "failed to get current user";
+            return false;
+        }
+        ID me = user.getIdentifier();
+
         QueryFrequencyChecker checker = QueryFrequencyChecker.getInstance();
         if (!checker.isMembersQueryExpired(identifier, 0)) {
             // query not expired yet
             Log.debug("members query not expired yet: " + identifier);
             return false;
         }
-        assert identifier.isGroup() : "group ID error: " + identifier;
-        Content content = GroupCommand.query(identifier);
+        // build query command for group members
+        QueryCommand command = GroupCommand.query(identifier);
+        boolean ok;
         // 1. check group bots
-        List<ID> bots = getFacebook().getAssistants(identifier);
-        if (bots != null && bots.size() > 0) {
-            // querying members from bots
-            Log.info("querying members from bots: " + bots + ", group: " + identifier);
-            for (ID receiver : bots) {
-                sendContent(null, receiver, content, 1);
-            }
+        ok = queryFromAssistants(me, command);
+        if (ok) {
             return true;
         }
-        // 2.. check group owner
-        ID owner = getFacebook().getOwner(identifier);
-        if (owner != null) {
-            // querying members from owner
-            Log.info("querying members from owner: " + owner + ", group: " + identifier);
-            sendContent(null, owner, content, 1);
+        // 2. check administrators
+        ok = queryFromAdministrators(me, command);
+        if (ok) {
             return true;
         }
-        Log.warning("group not ready: " + identifier);
+        // 3. check group owner
+        ok = queryFromOwner(me, command);
+        if (ok) {
+            return true;
+        }
+        // failed
+        Log.error("group not ready: " + identifier);
         return false;
     }
 
-    @Override
-    public ReliableMessage sendInstantMessage(InstantMessage iMsg, int priority) {
-        ID receiver = iMsg.getReceiver();
-        // NOTICE: because group assistant (bot) cannot be a member of the group, so
-        //         if you want to send a group command to any assistant, you must
-        //         set the bot ID as 'receiver' and set the group ID in content;
-        //         this means you must send it to the bot directly.
-        if (receiver.isGroup()) {
-            // so this is a group message (not split yet)
-            return sendGroupMessage(iMsg, priority);
-        }
-        // this message is sending to a user/member/bot directly
-        return super.sendInstantMessage(iMsg, priority);
-    }
-
-    protected ReliableMessage sendGroupMessage(InstantMessage iMsg, int priority) {
-        assert iMsg.get("group") == null : "should not happen";
-        ID group = iMsg.getReceiver();
-        assert group.isGroup() : "group ID error: " + group;
-        CommonFacebook facebook = getFacebook();
-
-        // 0. check group bots
-        List<ID> bots = facebook.getAssistants(group);
+    protected boolean queryFromAssistants(ID sender, QueryCommand command) {
+        ID group = command.getGroup();
+        assert group != null : "group command error: " + command;
+        List<ID> bots = getFacebook().getAssistants(group);
         if (bots == null || bots.isEmpty()) {
-            // no 'assistants' found in group's bulletin document?
-            // split group messages and send to all members one by one
-            int ok = splitGroupMessage(group, iMsg, priority);
-            assert ok > 0 : "failed to split messages for group: " + group;
-            // TODO:
-            return null;
-        }
-
-        // group bots designated, let group bot to split the message, so
-        // here must expose the group ID; this will cause the client to
-        // use a "user-to-group" encrypt key to encrypt the message content,
-        // this key will be encrypted by each member's public key, so
-        // all members will received a message split by the group bot,
-        // but the group bots cannot decrypt it.
-        iMsg.setString("group", group);
-
-        // 1. pack messages
-        SecureMessage sMsg = encryptMessage(iMsg);
-        if (sMsg == null) {
-            assert false : "failed to encrypt message for group: " + group;
-            return null;
-        }
-        ReliableMessage rMsg = signMessage(sMsg);
-        if (rMsg == null) {
-            assert false : "failed to sign message: " + iMsg.getSender() + " => " + group;
-            return null;
-        }
-
-        // 2. forward the group message to any bot
-        ID prime = bots.get(0);
-        Content content = ForwardContent.create(rMsg);
-        Pair<InstantMessage, ReliableMessage> pair = sendContent(null, prime, content, priority);
-        return pair.second;
-    }
-
-    /**
-     *  split group messages and send to all members one by one
-     */
-    private int splitGroupMessage(ID group, InstantMessage iMsg, int priority) {
-        CommonFacebook facebook = getFacebook();
-        // get members
-        List<ID> allMembers = facebook.getMembers(group);
-        if (allMembers == null/* || allMembers.isEmpty()*/) {
-            assert false : "group empty: " + group;
-            return -1;
+            Log.warning("assistants not designated for group: " + group);
+            return false;
         }
         int success = 0;
-        // split messages
-        InstantMessage item;
-        ReliableMessage res;
-        for (ID member : allMembers) {
-            Log.info("split group message for member: " + member + ", group: " + group);
-            Map<String, Object> info = iMsg.copyMap(false);
-            // replace 'receiver' with member ID
-            info.put("receiver", member.toString());
-            item = InstantMessage.parse(info);
-            if (item == null) {
-                assert false : "failed to repack message: " + member;
+        Pair<InstantMessage, ReliableMessage> pair;
+        // querying members from bots
+        for (ID receiver : bots) {
+            if (sender.equals(receiver)) {
+                Log.warning("ignore cycled querying: " + sender + ", group: " + group);
                 continue;
             }
-            res = super.sendInstantMessage(item, priority);
-            if (res == null) {
-                assert false : "failed to send message: " + member;
-                continue;
+            pair = sendContent(sender, receiver, command, 1);
+            if (pair != null && pair.second != null) {
+                success += 1;
             }
-            success += 1;
         }
-        // done!
-        return success;
+        Log.info("querying members from bots: " + bots + ", group: " + group);
+        return success > 0;
     }
+
+    protected boolean queryFromAdministrators(ID sender, QueryCommand command) {
+        ID group = command.getGroup();
+        assert group != null : "group command error: " + command;
+        List<ID> admins = getFacebook().getDatabase().getAdministrators(group);
+        if (admins == null || admins.isEmpty()) {
+            Log.warning("administrators not found for group: " + group);
+            return false;
+        }
+        int success = 0;
+        Pair<InstantMessage, ReliableMessage> pair;
+        // querying members from admins
+        for (ID receiver : admins) {
+            if (sender.equals(receiver)) {
+                Log.warning("ignore cycled querying: " + sender + ", group: " + group);
+                continue;
+            }
+            pair = sendContent(sender, receiver, command, 1);
+            if (pair != null && pair.second != null) {
+                success += 1;
+            }
+        }
+        Log.info("querying members from admins: " + admins + ", group: " + group);
+        return success > 0;
+    }
+
+    protected boolean queryFromOwner(ID sender, QueryCommand command) {
+        ID group = command.getGroup();
+        assert group != null : "group command error: " + command;
+        ID owner = getFacebook().getOwner(group);
+        if (owner == null) {
+            Log.warning("owner not found for group: " + group);
+            return false;
+        } else if (owner.equals(sender)) {
+            Log.error("you are the owner of group: " + group);
+            return false;
+        }
+        Pair<InstantMessage, ReliableMessage> pair;
+        // querying members from owner
+        pair = sendContent(sender, owner, command, 1);
+        Log.info("querying members from owner: " + owner + ", group: " + group);
+        return pair != null && pair.second != null;
+    }
+
+//    @Override
+//    public ReliableMessage sendInstantMessage(InstantMessage iMsg, int priority) {
+//        ID receiver = iMsg.getReceiver();
+//        // NOTICE: because group assistant (bot) cannot be a member of the group, so
+//        //         if you want to send a group command to any assistant, you must
+//        //         set the bot ID as 'receiver' and set the group ID in content;
+//        //         this means you must send it to the bot directly.
+//        if (receiver.isGroup()) {
+//            // so this is a group message (not split yet)
+//            return sendGroupMessage(iMsg, priority);
+//        }
+//        // this message is sending to a user/member/bot directly
+//        return super.sendInstantMessage(iMsg, priority);
+//    }
+//
+//    protected ReliableMessage sendGroupMessage(InstantMessage iMsg, int priority) {
+//        assert iMsg.get("group") == null : "should not happen";
+//        ID group = iMsg.getReceiver();
+//        assert group.isGroup() : "group ID error: " + group;
+//        CommonFacebook facebook = getFacebook();
+//
+//        // 0. check group bots
+//        List<ID> bots = facebook.getAssistants(group);
+//        if (bots == null || bots.isEmpty()) {
+//            // no 'assistants' found in group's bulletin document?
+//            // split group messages and send to all members one by one
+//            int ok = splitGroupMessage(group, iMsg, priority);
+//            assert ok > 0 : "failed to split messages for group: " + group;
+//            // TODO:
+//            return null;
+//        }
+//
+//        // group bots designated, let group bot to split the message, so
+//        // here must expose the group ID; this will cause the client to
+//        // use a "user-to-group" encrypt key to encrypt the message content,
+//        // this key will be encrypted by each member's public key, so
+//        // all members will received a message split by the group bot,
+//        // but the group bots cannot decrypt it.
+//        iMsg.setString("group", group);
+//
+//        // 1. pack messages
+//        SecureMessage sMsg = encryptMessage(iMsg);
+//        if (sMsg == null) {
+//            assert false : "failed to encrypt message for group: " + group;
+//            return null;
+//        }
+//        ReliableMessage rMsg = signMessage(sMsg);
+//        if (rMsg == null) {
+//            assert false : "failed to sign message: " + iMsg.getSender() + " => " + group;
+//            return null;
+//        }
+//
+//        // 2. forward the group message to any bot
+//        ID prime = bots.get(0);
+//        Content content = ForwardContent.create(rMsg);
+//        Pair<InstantMessage, ReliableMessage> pair = sendContent(null, prime, content, priority);
+//        return pair.second;
+//    }
+//
+//    /**
+//     *  split group messages and send to all members one by one
+//     */
+//    private int splitGroupMessage(ID group, InstantMessage iMsg, int priority) {
+//        CommonFacebook facebook = getFacebook();
+//        // get members
+//        List<ID> allMembers = facebook.getMembers(group);
+//        if (allMembers == null/* || allMembers.isEmpty()*/) {
+//            assert false : "group empty: " + group;
+//            return -1;
+//        }
+//        int success = 0;
+//        // split messages
+//        InstantMessage item;
+//        ReliableMessage res;
+//        for (ID member : allMembers) {
+//            Log.info("split group message for member: " + member + ", group: " + group);
+//            Map<String, Object> info = iMsg.copyMap(false);
+//            // replace 'receiver' with member ID
+//            info.put("receiver", member.toString());
+//            item = InstantMessage.parse(info);
+//            if (item == null) {
+//                assert false : "failed to repack message: " + member;
+//                continue;
+//            }
+//            res = super.sendInstantMessage(item, priority);
+//            if (res == null) {
+//                assert false : "failed to send message: " + member;
+//                continue;
+//            }
+//            success += 1;
+//        }
+//        // done!
+//        return success;
+//    }
 
 }

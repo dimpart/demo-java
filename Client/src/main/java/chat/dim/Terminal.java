@@ -157,17 +157,13 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         station.setDataSource(facebook);
         return station;
     }
-    protected ClientSession createSession(Station station) {
+    protected abstract ClientSession createSession(Station station);/*/ {
         ClientSession session = new ClientSession(station, database);
         session.start(this);
         return session;
-    }
-    protected Packer createPacker(CommonFacebook facebook, ClientMessenger messenger) {
-        return new ClientMessagePacker(facebook, messenger);
-    }
-    protected Processor createProcessor(CommonFacebook facebook, ClientMessenger messenger) {
-        return new ClientMessageProcessor(facebook, messenger);
-    }
+    }/*/
+    protected abstract Packer createPacker(CommonFacebook facebook, ClientMessenger messenger);
+    protected abstract Processor createProcessor(CommonFacebook facebook, ClientMessenger messenger);
     protected abstract ClientMessenger createMessenger(ClientSession session, CommonFacebook facebook);
 
     public boolean login(ID current) {

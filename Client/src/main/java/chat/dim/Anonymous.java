@@ -64,6 +64,7 @@ public final class Anonymous {
         } else if (EntityType.isGroup(type)) {
             return "Group";
         }
+        assert false : "should not happen";
         return "Unknown";
     }
 

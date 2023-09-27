@@ -38,11 +38,8 @@ import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
-import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.Document;
-import chat.dim.protocol.EntityType;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.ForwardContent;
 import chat.dim.protocol.GroupCommand;
@@ -55,8 +52,8 @@ import chat.dim.protocol.group.JoinCommand;
 import chat.dim.protocol.group.QuitCommand;
 import chat.dim.protocol.group.ResetCommand;
 import chat.dim.protocol.group.ResignCommand;
-import chat.dim.type.Copier;
 import chat.dim.type.Pair;
+import chat.dim.type.Triplet;
 
 public class GroupCommandProcessor extends HistoryCommandProcessor {
 
@@ -64,12 +61,28 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
         super(facebook, messenger);
     }
 
+    private GroupCommandHelper helper;
+
+    protected GroupCommandHelper getHelper() {
+        GroupCommandHelper delegate = helper;
+        if (delegate == null) {
+            helper = delegate = createGroupCommandHelper();
+        }
+        return delegate;
+    }
+    protected GroupCommandHelper createGroupCommandHelper() {
+        // override for customized helper
+        return new GroupCommandHelper(getFacebook(), getMessenger());
+    }
+
+    @Override
     protected CommonFacebook getFacebook() {
         Facebook facebook = super.getFacebook();
         assert facebook instanceof CommonFacebook : "facebook error: " + facebook;
         return (CommonFacebook) facebook;
     }
 
+    @Override
     protected CommonMessenger getMessenger() {
         Messenger messenger = super.getMessenger();
         assert messenger instanceof CommonMessenger : "messenger error: " + messenger;
@@ -77,47 +90,38 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
     }
 
     protected ID getOwner(ID group) {
-        return getFacebook().getOwner(group);
-    }
-    protected List<ID> getMembers(ID group) {
-        return getFacebook().getMembers(group);
+        return getHelper().getOwner(group);
     }
     protected List<ID> getAssistants(ID group) {
-        return getFacebook().getAssistants(group);
-    }
-    protected List<ID> getAdministrators(ID group) {
-        AccountDBI db = getFacebook().getDatabase();
-        return db.getAdministrators(group);
+        return getHelper().getAssistants(group);
     }
 
-    protected boolean saveMembers(List<ID> members, ID group) {
-        AccountDBI db = getFacebook().getDatabase();
-        return db.saveMembers(members, group);
+    protected List<ID> getAdministrators(ID group) {
+        return getHelper().getAdministrators(group);
     }
     protected boolean saveAdministrators(List<ID> members, ID group) {
-        AccountDBI db = getFacebook().getDatabase();
-        return db.saveAdministrators(members, group);
+        return getHelper().saveAdministrators(members, group);
     }
 
-    protected static List<ID> getMembers(GroupCommand content) {
-        // get from 'members'
-        List<ID> members = content.getMembers();
-        if (members == null) {
-            members = new ArrayList<>();
-            // get from 'member'
-            ID member = content.getMember();
-            if (member != null) {
-                members.add(member);
-            }
-        }
-        return members;
+    protected List<ID> getMembers(ID group) {
+        return getHelper().getMembers(group);
+    }
+    protected boolean saveMembers(List<ID> members, ID group) {
+        return getHelper().saveMembers(members, group);
+    }
+
+    protected Pair<ResetCommand, ReliableMessage> getResetCommandMessage(ID group) {
+        return getHelper().getResetCommandMessage(group);
+    }
+    protected boolean saveResetCommandMessage(ID group, ResetCommand content, ReliableMessage rMsg) {
+        return getHelper().saveResetCommandMessage(group, content, rMsg);
     }
 
     @Override
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof GroupCommand : "group command error: " + content;
         GroupCommand command = (GroupCommand) content;
-        return respondReceipt("Command not support.", rMsg, command.getGroup(), newMap(
+        return respondReceipt("Command not support.", rMsg.getEnvelope(), command, newMap(
                 "template", "Group command (name: ${command}) not support yet!",
                 "replacements", newMap(
                         "command", command.getCmd()
@@ -125,51 +129,84 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
         ));
     }
 
-    protected boolean isCommandExpired(GroupCommand content) {
-        CommonFacebook facebook = getFacebook();
+    protected Pair<ID, List<Content>> checkCommandExpired(GroupCommand content, ReliableMessage rMsg) {
         ID group = content.getGroup();
-        if (content instanceof ResignCommand) {
-            // administrator command, check with document time
-            Document bulletin = facebook.getDocument(group, "*");
-            if (bulletin == null) {
-                return false;
-            }
-            return AccountDBI.isExpired(bulletin.getTime(), content.getTime());
+        assert group != null : "group command error: " + content;
+        List<Content> errors;
+        boolean expired = getHelper().isCommandExpired(content);
+        if (expired) {
+            errors = respondReceipt("Command expired.", rMsg.getEnvelope(), content, newMap(
+                    "template", "Group command expired: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
+            group = null;
+        } else {
+            errors = null;
         }
-        // membership command, check with reset command
-        AccountDBI db = facebook.getDatabase();
-        Pair<ResetCommand, ReliableMessage> pair = db.getResetCommandMessage(group);
-        if (pair == null || pair.first == null/* || pair.second == null*/) {
-            return false;
+        return new Pair<>(group, errors);
+    }
+
+    protected Pair<List<ID>, List<Content>> checkCommandMembers(GroupCommand content, ReliableMessage rMsg) {
+        ID group = content.getGroup();
+        assert group != null : "group command error: " + content;
+        List<ID> members = GroupCommandHelper.getMembers(content);
+        List<Content> errors;
+        if (/*members == null || */members.isEmpty()) {
+            errors = respondReceipt("Command error.", rMsg.getEnvelope(), content, newMap(
+                    "template", "Group members empty: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
+            members = null;
+        } else {
+            errors = null;
         }
-        return AccountDBI.isExpired(pair.first.getTime(), content.getTime());
+        return new Pair<>(members, errors);
+    }
+
+    protected Triplet<ID, List<ID>, List<Content>> checkGroupMembers(GroupCommand content, ReliableMessage rMsg) {
+        ID group = content.getGroup();
+        assert group != null : "group command error: " + content;
+        ID owner = getOwner(group);
+        List<ID> members = getMembers(group);
+        List<Content> errors;
+        if (owner == null || members == null || members.isEmpty()) {
+            // TODO: query group members?
+            errors = respondReceipt("Group empty.", rMsg.getEnvelope(), content, newMap(
+                    "template", "Group empty: ${ID}",
+                    "replacements", newMap(
+                            "ID", group.toString()
+                    )
+            ));
+        } else {
+            errors = null;
+        }
+        return new Triplet<>(owner, members, errors);
     }
 
     /**
      *  attach 'invite', 'join', 'quit' commands to 'reset' command message for owner/admins to review
      */
     @SuppressWarnings("unchecked")
-    protected boolean addApplication(GroupCommand content, ReliableMessage rMsg) {
+    protected boolean attachApplication(GroupCommand content, ReliableMessage rMsg) {
         assert content instanceof InviteCommand ||
                 content instanceof JoinCommand ||
                 content instanceof QuitCommand ||
                 content instanceof ResignCommand : "group command error: " + content;
         // TODO: attach 'resign' command to document?
-        CommonFacebook facebook = getFacebook();
-        AccountDBI db = facebook.getDatabase();
         ID group = content.getGroup();
-        Pair<ResetCommand, ReliableMessage> pair = db.getResetCommandMessage(group);
+        assert group != null : "group command error: " + content;
+        Pair<ResetCommand, ReliableMessage> pair = getResetCommandMessage(group);
         if (pair == null || pair.first == null || pair.second == null) {
-            User user = facebook.getCurrentUser();
-            assert user != null : "failed to get current user";
-            ID me = user.getIdentifier();
-            // TODO: check whether current user is the owner or an administrator
-            //       if True, create a new 'reset' command with current members
-            assert EntityType.BOT.equals(me.getType()) : "failed to get reset command for group: " + group;
+            assert false : "failed to get 'reset' command message for group: " + group;
             return false;
         }
         ResetCommand cmd = pair.first;
         ReliableMessage msg = pair.second;
+
         Object applications = msg.get("applications");
         List<Map<?, ?>> array;
         if (applications instanceof List) {
@@ -179,19 +216,20 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
             msg.put("applications", array);
         }
         array.add(rMsg.toMap());
-        return db.saveResetCommandMessage(group, cmd, msg);
+        return saveResetCommandMessage(group, cmd, msg);
     }
 
     /**
      *  send a reset command with newest members to the receiver
      */
     protected boolean sendResetCommand(ID group, List<ID> members, ID receiver) {
-        CommonFacebook facebook = getFacebook();
-        User user = facebook.getCurrentUser();
-        assert user != null : "failed to get current user";
+        User user = getFacebook().getCurrentUser();
+        if (user == null) {
+            assert false : "failed to get current user";
+            return false;
+        }
         ID me = user.getIdentifier();
-        AccountDBI db = facebook.getDatabase();
-        Pair<ResetCommand, ReliableMessage> pair = db.getResetCommandMessage(group);
+        Pair<ResetCommand, ReliableMessage> pair = getResetCommandMessage(group);
         if (pair == null || pair.second == null) {
             // 'reset' command message not found in local storage
             // check permission for creating a new one
@@ -204,14 +242,16 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
                     return false;
                 }
             }
-            assert !EntityType.BOT.equals(me.getType()) : "a bot should not be admin: " + me;
+            //assert !EntityType.BOT.equals(me.getType()) : "a bot should not be admin: " + me;
             // this is the group owner (or administrator), so
             // it has permission to reset group members here.
-            pair = createResetCommand(me, group, members);
-            if (!db.saveResetCommandMessage(group, pair.first, pair.second)) {
-                // failed to save 'reset' command message
+            pair = createResetCommand(group, members);
+            if (pair.second == null) {
+                assert false : "failed to create 'reset' command for group: " + group;
                 return false;
             }
+            // because the owner/administrator can create 'reset' command,
+            // so no need to save it here.
         }
         // OK, forward the 'reset' command message
         Content content = ForwardContent.create(pair.second);
@@ -222,46 +262,26 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
     /**
      *  create 'reset' command message for anyone in the group
      */
-    protected Pair<ResetCommand, ReliableMessage> createResetCommand(ID sender, ID group, List<ID> members) {
-        Envelope head = Envelope.create(sender, ID.ANYONE, null);
+    protected Pair<ResetCommand, ReliableMessage> createResetCommand(ID group, List<ID> members) {
+        User user = getFacebook().getCurrentUser();
+        assert user != null : "failed to get current user";
+        ID me = user.getIdentifier();
+        // create broadcast 'reset' group message
+        Envelope head = Envelope.create(me, ID.ANYONE, null);
         ResetCommand body = GroupCommand.reset(group, members);
         InstantMessage iMsg = InstantMessage.create(head, body);
         // encrypt & sign
         Messenger messenger = getMessenger();
+        ReliableMessage rMsg;
         SecureMessage sMsg = messenger.encryptMessage(iMsg);
-        assert sMsg != null : "failed to encrypt message: " + sender + " => " + group;
-        ReliableMessage rMsg = messenger.signMessage(sMsg);
-        assert rMsg != null : "failed to sign message: " + sender + " => " + group;
+        if (sMsg == null) {
+            assert false : "failed to encrypt message: " + me + " => " + group;
+            rMsg = null;
+        } else {
+            rMsg = messenger.signMessage(sMsg);
+            assert rMsg != null : "failed to sign message: " + me + " => " + group;
+        }
         return new Pair<>(body, rMsg);
     }
 
-    /**
-     *  save 'reset' command message with 'applications
-     */
-    @SuppressWarnings("unchecked")
-    protected boolean updateResetCommandMessage(ID group, ResetCommand content, ReliableMessage rMsg) {
-        AccountDBI db = getFacebook().getDatabase();
-        // 1. get applications
-        List<Map<?, ?>> applications = null;
-        Pair<ResetCommand, ReliableMessage> pair = db.getResetCommandMessage(group);
-        if (pair != null && pair.second != null) {
-            applications = (List<Map<?, ?>>) pair.second.get("applications");
-        }
-        if (applications == null) {
-            applications = (List<Map<?, ?>>) rMsg.get("applications");
-        } else {
-            List<Map<?, ?>> invitations = (List<Map<?, ?>>) rMsg.get("applications");
-            if (invitations != null) {
-                applications = Copier.copyList(applications);
-                // merge applications
-                applications.addAll(invitations);
-            }
-        }
-        // 2. update applications
-        if (applications != null) {
-            rMsg.put("applications", applications);
-        }
-        // 3. save reset command message
-        return db.saveResetCommandMessage(group, content, rMsg);
-    }
 }

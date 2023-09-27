@@ -63,9 +63,10 @@ public class ClientFacebook extends CommonFacebook {
     //
     public static AddressNameServer ans = null;
 
-    private static final ID.Factory identifierFactory;
-
-    static {
+    static void prepare() {
+        if (loaded) {
+            return;
+        }
 
         // load plugins
         Register.prepare();
@@ -94,5 +95,11 @@ public class ClientFacebook extends CommonFacebook {
                 return identifierFactory.parseID(identifier);
             }
         });
+
+        loaded = true;
     }
+    private static boolean loaded = false;
+
+    private static ID.Factory identifierFactory;
+
 }

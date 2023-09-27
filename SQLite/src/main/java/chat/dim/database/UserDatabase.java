@@ -33,6 +33,7 @@ package chat.dim.database;
 import java.util.ArrayList;
 import java.util.List;
 
+import chat.dim.dbi.ContactDBI;
 import chat.dim.dbi.UserDBI;
 import chat.dim.mem.CacheHolder;
 import chat.dim.mem.CacheManager;
@@ -43,7 +44,7 @@ import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.sqlite.account.ContactTable;
 import chat.dim.sqlite.account.UserTable;
 
-public class UserDatabase implements UserDBI {
+public class UserDatabase implements UserDBI, ContactDBI {
 
     private final UserTable userTable;
     private final ContactTable contactTable;

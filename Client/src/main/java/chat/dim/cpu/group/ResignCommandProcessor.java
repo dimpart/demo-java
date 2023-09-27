@@ -40,7 +40,6 @@ import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
 import chat.dim.crypto.SignKey;
 import chat.dim.mkm.User;
-import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
@@ -49,6 +48,9 @@ import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.ResignCommand;
 import chat.dim.type.Copier;
+import chat.dim.type.Pair;
+import chat.dim.type.Triplet;
+import chat.dim.utils.Log;
 
 /**
  *  Resign Group Admin Command Processor
@@ -69,73 +71,74 @@ public class ResignCommandProcessor extends GroupCommandProcessor {
         ResignCommand command = (ResignCommand) content;
 
         // 0. check command
-        if (isCommandExpired(command)) {
+        Pair<ID, List<Content>> pair = checkCommandExpired(command, rMsg);
+        ID group = pair.first;
+        if (group == null) {
             // ignore expired command
-            return null;
+            return pair.second;
         }
-        ID group = command.getGroup();
 
         // 1. check group
-        ID owner = getOwner(group);
-        List<ID> members = getMembers(group);
-        if (owner == null || members == null || members.size() == 0) {
-            // TODO: query group members?
-            return respondReceipt("Group empty.", rMsg, group, newMap(
-                    "template", "Group empty: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+        Triplet<ID, List<ID>, List<Content>> trip = checkGroupMembers(command, rMsg);
+        ID owner = trip.first;
+        List<ID> members = trip.second;
+        if (owner == null || members == null || members.isEmpty()) {
+            return trip.third;
         }
 
-        // 2. check permission
         ID sender = rMsg.getSender();
-        if (owner.equals(sender)) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
+        List<ID> admins = getAdministrators(group);
+        if (admins == null) {
+            admins = new ArrayList<>();
+        }
+        boolean isOwner = owner.equals(sender);
+        boolean isAdmin = admins.contains(sender);
+
+        // 2. check permission
+        if (isOwner) {
+            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Owner cannot resign from group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
                     )
             ));
         }
-        List<ID> admins = getAdministrators(group);
 
         // 3. do resign
-        if (admins == null || admins.size() == 0) {
-            admins = new ArrayList<>();
-        } else {
-            admins = Copier.copyList(admins);
-        }
-        boolean isAdmin = admins.contains(sender);
         if (isAdmin) {
+            admins = Copier.copyList(admins);
             // admin do exist, remove it and update database
             admins.remove(sender);
-            boolean ok = saveAdministrators(admins, group);
-            assert ok : "failed to save administrators for group: " + group;
+            if (saveAdministrators(admins, group)) {
+                List<String> removeList = new ArrayList<>();
+                removeList.add(sender.toString());
+                command.put("removed", removeList);
+            } else {
+                assert false : "failed to save administrators for group: " + group;
+            }
         }
 
-        // 4. update bulletin property: 'administrators'
         User user = getFacebook().getCurrentUser();
-        assert user != null : "failed to get current user";
+        if (user == null) {
+            assert false : "failed to get current user";
+            return null;
+        }
         ID me = user.getIdentifier();
+
+        // 4. update bulletin property: 'administrators'
         if (owner.equals(me)) {
             // maybe the bulletin in the owner's storage not contains this administrator,
             // but if it can still receive a resign command here, then
             // the owner should update the bulletin and send it out again.
             boolean ok = refreshAdministrators(group, owner, admins);
             assert ok : "failed to refresh admins for group: " + group;
+        } else if (attachApplication(command, rMsg)) {
+            // add 'resign' application for querying by other members,
+            // if thw owner wakeup, it will broadcast a new bulletin document
+            // with the newest administrators, and this application will be erased.
+            Log.info("added 'resign' application for group: " + group);
         } else {
-            // add 'resign' application for waiting owner to update
-            boolean ok = addApplication(command, rMsg);
-            assert ok : "failed to add 'resign' application for group: " + group;
-        }
-        if (!isAdmin) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
-                    "template", "Not an administrator of group: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+            assert false : "failed to add 'resign' application for group: " + group;
         }
 
         // no need to response this group command
@@ -144,18 +147,32 @@ public class ResignCommandProcessor extends GroupCommandProcessor {
 
     private boolean refreshAdministrators(ID group, ID owner, List<ID> admins) {
         CommonFacebook facebook = getFacebook();
+        CommonMessenger messenger = getMessenger();
         // 1. update bulletin
         Document bulletin = updateAdministrators(group, owner, admins);
-        if (!facebook.saveDocument(bulletin)) {
+        if (bulletin == null) {
+            assert false : "failed to update administrators for group: " + group;
+            return false;
+        } else if (facebook.saveDocument(bulletin)) {
+            Log.info("save document for group: " + group);
+        } else {
+            assert false : "failed to save document for group: " + group;
             return false;
         }
         Meta meta = facebook.getMeta(group);
         Content content = DocumentCommand.response(group, meta, bulletin);
-        // 2. send to assistants
-        CommonMessenger messenger = getMessenger();
-        List<ID> bots = facebook.getAssistants(group);
+        // 2. check assistants
+        List<ID> bots = getAssistants(group);
+        if (bots == null || bots.isEmpty()) {
+            // TODO: broadcast to all members
+            return true;
+        }
+        // 3. broadcast to all group assistants
         for (ID receiver : bots) {
-            assert !owner.equals(receiver) : "group bot should not be owner: " + owner;
+            if (owner.equals(receiver)) {
+                assert false : "group bot should not be owner: " + owner + ", group: " + group;
+                continue;
+            }
             messenger.sendContent(owner, receiver, content, 1);
         }
         return true;
@@ -163,20 +180,15 @@ public class ResignCommandProcessor extends GroupCommandProcessor {
 
     private Document updateAdministrators(ID group, ID owner, List<ID> admins) {
         CommonFacebook facebook = getFacebook();
-        // update document property
+        // get document & sign key
         Document bulletin = facebook.getDocument(group, "*");
-        if (bulletin == null) {
-            assert false : "failed to get document for group: " + group;
-            return null;
-        }
-        assert bulletin instanceof Bulletin : "group document error: " + bulletin;
-        bulletin.setProperty("administrators", ID.revert(admins));
-        // sign document
         SignKey sKey = facebook.getPrivateKeyForVisaSignature(owner);
-        if (sKey == null) {
-            assert false : "failed to get sign key for group owner: " + owner + ", group: " + group;
+        if (bulletin == null || sKey == null) {
+            assert false : "failed to get document & sign key for group: " + group + ", owner: " + owner;
             return null;
         }
+        // assert bulletin instanceof Bulletin : "group document error: " + bulletin;
+        bulletin.setProperty("administrators", ID.revert(admins));
         byte[] signature = bulletin.sign(sKey);
         assert signature != null : "failed to sign bulletin for group: " + group;
         return bulletin;

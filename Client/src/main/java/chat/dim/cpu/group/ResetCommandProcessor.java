@@ -41,6 +41,7 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.ResetCommand;
 import chat.dim.type.Pair;
+import chat.dim.type.Triplet;
 import chat.dim.utils.Log;
 
 /**
@@ -67,40 +68,39 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         ResetCommand command = (ResetCommand) content;
 
         // 0. check command
-        if (isCommandExpired(command)) {
+        Pair<ID, List<Content>> pair = checkCommandExpired(command, rMsg);
+        ID group = pair.first;
+        if (group == null) {
             // ignore expired command
-            return null;
+            return pair.second;
         }
-        ID group = command.getGroup();
-        List<ID> newMembers = getMembers(command);
-        if (newMembers.size() == 0) {
-            return respondReceipt("Command error.", rMsg, group, newMap(
-                    "template", "New member list is empty: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+        Pair<List<ID>, List<Content>> pair1 = checkCommandMembers(command, rMsg);
+        List<ID> newMembers = pair1.first;
+        if (newMembers == null || newMembers.size() == 0) {
+            // command error
+            return pair1.second;
         }
 
         // 1. check group
-        ID owner = getOwner(group);
-        List<ID> members = getMembers(group);
-        if (owner == null/* || members == null || members.size() == 0*/) {
-            // TODO: query group bulletin document?
-            return respondReceipt("Group empty.", rMsg, group, newMap(
-                    "template", "Group empty: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+        Triplet<ID, List<ID>, List<Content>> trip = checkGroupMembers(command, rMsg);
+        ID owner = trip.first;
+        List<ID> members = trip.second;
+        if (owner == null || members == null || members.isEmpty()) {
+            return trip.third;
         }
 
-        // 2. check permission
         ID sender = rMsg.getSender();
         List<ID> admins = getAdministrators(group);
-        boolean isAdmin = owner.equals(sender) || (admins != null && admins.contains(sender));
-        if (!isAdmin) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
+        if (admins == null) {
+            admins = new ArrayList<>();
+        }
+        boolean isOwner = owner.equals(sender);
+        boolean isAdmin = admins.contains(sender);
+
+        // 2. check permission
+        boolean canReset = isOwner || isAdmin;
+        if (!canReset) {
+            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Not allowed to reset members of group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
@@ -109,7 +109,7 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         }
         // 2.1. check owner
         if (!newMembers.get(0).equals(owner)) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
+            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Owner must be the first member of group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
@@ -125,7 +125,7 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
             }
         }
         if (expelAdmin) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
+            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Not allowed to expel administrator of group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()
@@ -133,18 +133,17 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
             ));
         }
 
-        // 3. try to save 'reset' command
-        if (updateResetCommandMessage(group, command, rMsg)) {
-            Log.info("updated 'reset' command for group: " + group);
+        // 3. do reset
+        Pair<List<ID>, List<ID>> memPair = calculateReset(members, newMembers);
+        List<ID> addList = memPair.first;
+        List<ID> removeList = memPair.second;
+        if (addList.isEmpty() && removeList.isEmpty()) {
+            Log.warning("nothing changed");
+        } else if (saveMembers(newMembers, group)) {
+            Log.info("new members saved in group: " + group);
         } else {
-            // newer 'reset' command exists, drop this command
-            return null;
+            assert false : "failed to save members in group: " + group;
         }
-
-        // 4. do reset
-        Pair<List<ID>, List<ID>> pair = resetMembers(group, members, newMembers);
-        List<ID> addList = pair.first;
-        List<ID> removeList = pair.second;
         if (addList.size() > 0) {
             command.put("added", ID.revert(addList));
         }
@@ -156,7 +155,7 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         return null;
     }
 
-    private Pair<List<ID>, List<ID>> resetMembers(ID group, List<ID> oldMembers, List<ID> newMembers) {
+    protected Pair<List<ID>, List<ID>> calculateReset(List<ID> oldMembers, List<ID> newMembers) {
         List<ID> addList = new ArrayList<>();
         List<ID> removeList = new ArrayList<>();
         // build invited-list
@@ -173,13 +172,7 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
             }
             removeList.add(item);
         }
-        if (addList.size() > 0 || removeList.size() > 0) {
-            if (!saveMembers(newMembers, group)) {
-                assert false : "failed to save members in group: " + group;
-                addList.clear();
-                removeList.clear();
-            }
-        }
         return new Pair<>(addList, removeList);
     }
+
 }

@@ -35,9 +35,9 @@ import java.util.List;
 import java.util.Map;
 
 import chat.dim.crypto.EncryptKey;
+import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
-import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
@@ -84,11 +84,11 @@ public abstract class CommonPacker extends MessagePacker {
     protected List<ID> getMembers(ID group) {
         Facebook facebook = getFacebook();
         CommonMessenger messenger = (CommonMessenger) getMessenger();
-        Meta meta = facebook.getMeta(group);
-        if (meta == null/* || meta.getKey() == null*/) {
-            // group not ready, try to query meta for it
-            if (messenger.queryMeta(group)) {
-                Log.info("querying meta for group: " + group);
+        Document doc = facebook.getDocument(group, "*");
+        if (doc == null) {
+            // group not ready, try to query document for it
+            if (messenger.queryDocument(group)) {
+                Log.info("querying document for group: " + group);
             }
             return null;
         }
@@ -132,26 +132,37 @@ public abstract class CommonPacker extends MessagePacker {
         return false;
     }
 
-    protected boolean checkReceiver(ReliableMessage rMsg) {
-        ID receiver = rMsg.getReceiver();
-        if (receiver.isBroadcast()) {
-            // broadcast message
-            return true;
-        } else if (receiver.isUser()) {
-            // the facebook will select a user from local users to match this receiver,
-            // if no user matched (private key not found), this message will be ignored.
+    protected boolean checkReceiver(ReliableMessage sMsg) {
+        ID receiver = sMsg.getReceiver();
+        // check group
+        ID group = ID.parse(sMsg.get("group"));
+        if (group == null && receiver.isGroup()) {
+            /// Transform:
+            ///     (B) => (J)
+            ///     (D) => (G)
+            group = receiver;
+        }
+        if (group == null || group.isBroadcast()) {
+            /// A, C - personal message (or hidden group message)
+            //      the packer will call the facebook to select a user from local
+            //      for this receiver, if no user matched (private key not found),
+            //      this message will be ignored;
+            /// E, F, G - broadcast group message
+            //      broadcast message is not encrypted, so it can be read by anyone.
             return true;
         }
-        // check for received group message
-        List<ID> members = getMembers(receiver);
+        /// H, J, K - group message
+        //      check for received group message
+        List<ID> members = getMembers(group);
         if (members != null && members.size() > 0) {
+            // group is ready
             return true;
         }
         // group not ready, suspend message for waiting members
         Map<String, String> error = new HashMap<>();
         error.put("message", "group not ready");
-        error.put("group", receiver.toString());
-        suspendMessage(rMsg, error);  // rMsg.put("error", error);
+        error.put("group", group.toString());
+        suspendMessage(sMsg, error);  // rMsg.put("error", error);
         return false;
     }
 

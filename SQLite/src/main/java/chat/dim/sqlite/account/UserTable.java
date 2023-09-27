@@ -144,13 +144,4 @@ public class UserTable extends DataTableHandler<ID> implements UserDBI {
         return update(T_USER, values, null) > 0;
     }
 
-    @Override
-    public List<ID> getContacts(ID user) {
-        throw new AssertionError("call ContactTable");
-    }
-
-    @Override
-    public boolean saveContacts(List<ID> contacts, ID user) {
-        throw new AssertionError("call ContactTable");
-    }
 }

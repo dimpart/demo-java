@@ -44,7 +44,4 @@ public interface UserDBI {
 
     boolean saveLocalUsers(List<ID> users);
 
-    List<ID> getContacts(ID user);
-
-    boolean saveContacts(List<ID> contacts, ID user);
 }

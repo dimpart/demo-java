@@ -40,6 +40,8 @@ import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.QueryCommand;
+import chat.dim.type.Pair;
+import chat.dim.type.Triplet;
 
 /**
  *  Query Group Command Processor
@@ -58,27 +60,32 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof QueryCommand : "query command error: " + content;
         GroupCommand command = (GroupCommand) content;
-        ID group = command.getGroup();
 
-        // 1. check group
-        ID owner = getOwner(group);
-        List<ID> members = getMembers(group);
-        if (owner == null || members == null || members.size() == 0) {
-            // TODO: query group members?
-            return respondReceipt("Group empty.", rMsg, group, newMap(
-                    "template", "Group empty: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+        // 0. check command
+        Pair<ID, List<Content>> pair = checkCommandExpired(command, rMsg);
+        ID group = pair.first;
+        if (group == null) {
+            // ignore expired command
+            return pair.second;
         }
 
-        // 1. check permission
+        // 1. check group
+        Triplet<ID, List<ID>, List<Content>> trip = checkGroupMembers(command, rMsg);
+        ID owner = trip.first;
+        List<ID> members = trip.second;
+        if (owner == null || members == null || members.isEmpty()) {
+            return trip.third;
+        }
+
         ID sender = rMsg.getSender();
         List<ID> bots = getAssistants(group);
-        boolean canQuery = members.contains(sender) || (bots != null && bots.contains(sender));
+        boolean isMember = members.contains(sender);
+        boolean isBot = bots != null && bots.contains(sender);
+
+        // 2. check permission
+        boolean canQuery = isMember || isBot;
         if (!canQuery) {
-            return respondReceipt("Permission denied.", rMsg, group, newMap(
+            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Not allowed to query members of group: ${ID}",
                     "replacements", newMap(
                             "ID", group.toString()

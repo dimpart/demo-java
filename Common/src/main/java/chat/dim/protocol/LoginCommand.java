@@ -108,10 +108,14 @@ public class LoginCommand extends BaseCommand {
     }
     public void setStation(Station station) {
         Map<String, Object> info = new HashMap<>();
-        info.put("ID", station.getIdentifier().toString());
+        ID sid = station.getIdentifier();
+        if (!sid.isBroadcast()) {
+            info.put("ID", sid.toString());
+        }
         info.put("host", station.getHost());
         info.put("port", station.getPort());
-        put("station", info);
+        //put("station", info);
+        setStation(info);
     }
 
     // service provider
@@ -119,13 +123,16 @@ public class LoginCommand extends BaseCommand {
     public Map<String, Object> getProvider() {
         return (Map<String, Object>) get("provider");
     }
-    @SuppressWarnings("rawtypes")
-    public void setProvider(Map provider) {
+    public void setProvider(Map<?, ?> provider) {
         put("provider", provider);
     }
-    public void setProvider(ServiceProvider provider) {
+    public void setProvider(ID provider) {
         Map<String, Object> info = new HashMap<>();
-        info.put("ID", provider.getIdentifier().toString());
-        put("provider", info);
+        info.put("ID", provider.toString());
+        //put("provider", info);
+        setProvider(info);
+    }
+    public void setProvider(ServiceProvider provider) {
+        setProvider(provider.getIdentifier());
     }
 }

@@ -30,7 +30,6 @@
  */
 package chat.dim;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.cpu.ClientContentProcessorCreator;
@@ -42,9 +41,7 @@ import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.TextContent;
-import chat.dim.utils.Log;
 
 public class ClientMessageProcessor extends MessageProcessor {
 
@@ -58,27 +55,11 @@ public class ClientMessageProcessor extends MessageProcessor {
     }
 
     @Override
-    public List<SecureMessage> processSecureMessage(SecureMessage sMsg, ReliableMessage rMsg) {
-        try {
-            return super.processSecureMessage(sMsg, rMsg);
-        } catch (NullPointerException e) {
-            String errMsg = e.getMessage();
-            if (errMsg != null && errMsg.startsWith("receiver error")) {
-                // not mine? ignore it
-                Log.warning("ignore message for: " + rMsg.getReceiver());
-                return new ArrayList<>();
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    @Override
     public List<Content> processContent(Content content, ReliableMessage rMsg) {
         List<Content> responses = super.processContent(content, rMsg);
         if (responses == null || responses.size() == 0) {
             // respond nothing
-            return new ArrayList<>();
+            return responses;
         } else if (responses.get(0) instanceof HandshakeCommand) {
             // urgent command
             return responses;
@@ -86,7 +67,10 @@ public class ClientMessageProcessor extends MessageProcessor {
         ID sender = rMsg.getSender();
         ID receiver = rMsg.getReceiver();
         User user = getFacebook().selectLocalUser(receiver);
-        assert user != null : "receiver error: " + receiver;
+        if (user == null) {
+            assert false : "receiver error: " + receiver;
+            return null;
+        }
         receiver = user.getIdentifier();
         CommonMessenger messenger = getMessenger();
         // check responses
@@ -115,7 +99,7 @@ public class ClientMessageProcessor extends MessageProcessor {
             messenger.sendContent(receiver, sender, res, 1);
         }
         // DON'T respond to station directly
-        return new ArrayList<>();
+        return null;
     }
 
     @Override

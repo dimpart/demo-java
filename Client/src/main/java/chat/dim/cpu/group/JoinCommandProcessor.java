@@ -30,16 +30,20 @@
  */
 package chat.dim.cpu.group;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
+import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.JoinCommand;
+import chat.dim.type.Pair;
+import chat.dim.type.Triplet;
 
 /**
  *  Join Group Command Processor
@@ -60,37 +64,57 @@ public class JoinCommandProcessor extends GroupCommandProcessor {
         GroupCommand command = (GroupCommand) content;
 
         // 0. check command
-        if (isCommandExpired(command)) {
+        Pair<ID, List<Content>> pair = checkCommandExpired(command, rMsg);
+        ID group = pair.first;
+        if (group == null) {
             // ignore expired command
-            return null;
+            return pair.second;
         }
-        ID group = command.getGroup();
 
         // 1. check group
-        ID owner = getOwner(group);
-        List<ID> members = getMembers(group);
-        if (owner == null || members == null || members.size() == 0) {
-            // TODO: query group members?
-            return respondReceipt("Group empty.", rMsg, group, newMap(
-                    "template", "Group empty: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
+        Triplet<ID, List<ID>, List<Content>> trip = checkGroupMembers(command, rMsg);
+        ID owner = trip.first;
+        List<ID> members = trip.second;
+        if (owner == null || members == null || members.isEmpty()) {
+            return trip.third;
         }
 
-        // 2. check membership
         ID sender = rMsg.getSender();
-        if (members.contains(sender)) {
-            // maybe the sender is already a member,
+        List<ID> admins = getAdministrators(group);
+        if (admins == null) {
+            admins = new ArrayList<>();
+        }
+        boolean isOwner = owner.equals(sender);
+        boolean isAdmin = admins.contains(sender);
+        boolean isMember = members.contains(sender);
+        boolean canReset = isOwner || isAdmin;
+
+        User user = getFacebook().getCurrentUser();
+        if (user == null) {
+            assert false : "failed to get current user";
+            return null;
+        }
+        ID me = user.getIdentifier();
+
+        // 2. check membership
+        if (isMember) {
+            // maybe the command sender is already become a member,
             // but if it can still receive a 'join' command here,
-            // we should respond the sender with the newest membership again.
-            boolean ok = sendResetCommand(group, members, sender);
-            assert ok : "failed to send 'reset' command for group: " + group + " => " + sender;
-        } else {
-            // add 'join' application for waiting review
-            boolean ok = addApplication(command, rMsg);
+            // and I am the owner, here we should respond the sender
+            // with the newest membership again.
+            if (!canReset && owner.equals(me)) {
+                // the sender is an ordinary member, and I am the owner, so
+                // send a 'reset' command to update members in the sender's memory
+                boolean ok = sendResetCommand(group, members, sender);
+                assert ok : "failed to send 'reset' for group: " + group + " => " + sender;
+            }
+        } else if (owner.equals(me) || admins.contains(me)) {
+            // I am the owner, or an administrator, so
+            // attach it as a 'join' application and wait for review.
+            boolean ok = attachApplication(command, rMsg);
             assert ok : "failed to add 'join' application for group: " + group;
+        //} else {
+        //    // I am not the administrator, just ignore it
         }
 
         // no need to response this group command

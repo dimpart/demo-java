@@ -108,7 +108,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
      * @param identifier - entity ID
      * @return false on duplicated
      */
-    protected abstract boolean queryMeta(ID identifier);
+    public abstract boolean queryMeta(ID identifier);
 
     /**
      *  Request for meta & visa document with entity ID
@@ -116,7 +116,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
      * @param identifier - entity ID
      * @return false on duplicated
      */
-    protected abstract boolean queryDocument(ID identifier);
+    public abstract boolean queryDocument(ID identifier);
 
     /**
      *  Request for group members with group ID
@@ -124,7 +124,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
      * @param identifier - group ID
      * @return false on duplicated
      */
-    protected abstract boolean queryMembers(ID identifier);
+    public abstract boolean queryMembers(ID identifier);
 
     @Override
     public byte[] serializeKey(SymmetricKey password, InstantMessage iMsg) {
@@ -210,7 +210,10 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         }
         // 1. serialize message
         byte[] data = serializeMessage(rMsg);
-        assert data != null : "failed to serialize message: " + rMsg;
+        if (data == null) {
+            assert false : "failed to serialize message: " + rMsg;
+            return false;
+        }
         // 2. call gate keeper to send the message data package
         //    put message package into the waiting queue of current session
         return session.queueMessagePackage(rMsg, data, priority);

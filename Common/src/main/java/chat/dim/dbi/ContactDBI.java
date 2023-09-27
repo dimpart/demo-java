@@ -30,20 +30,17 @@
  */
 package chat.dim.dbi;
 
-import java.util.Date;
+import java.util.List;
 
-public interface AccountDBI extends PrivateKeyDBI,
-                                    MetaDBI, DocumentDBI,
-                                    UserDBI, ContactDBI, GroupDBI,
-                                    ResetGroupDBI {
+import chat.dim.protocol.ID;
 
-    /**
-     *  Check time expired
-     */
-    static boolean isExpired(Date oldTime, Date newTime) {
-        if (oldTime == null || newTime == null) {
-            return false;
-        }
-        return newTime.before(oldTime);
-    }
+/**
+ *  Account DBI
+ *  ~~~~~~~~~~~
+ */
+public interface ContactDBI {
+
+    List<ID> getContacts(ID user);
+
+    boolean saveContacts(List<ID> contacts, ID user);
 }
