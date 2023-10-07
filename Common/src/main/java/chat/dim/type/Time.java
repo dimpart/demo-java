@@ -52,12 +52,10 @@ public final class Time extends Date {
             return null;
         } else if (time instanceof Time) {
             return (Time) time;
-        } else if (time instanceof Date) {
-            return new Time(((Date) time).getTime());
         }
-        assert time instanceof Number : "time error: " + time;
-        float value = ((Number) time).floatValue();
-        return new Time((long) (value * 1000));
+        Date date = Converter.getDateTime(time, null);
+        //assert date != null : "should not happen";
+        return new Time(date.getTime());
     }
 
     public static Date now() {

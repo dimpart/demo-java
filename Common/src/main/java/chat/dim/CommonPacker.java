@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import chat.dim.compat.Compatible;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
@@ -243,7 +244,17 @@ public abstract class CommonPacker extends MessagePacker {
         //    // only support JsON format now
         //    return null;
         }
-        return super.deserializeMessage(data);
+        ReliableMessage rMsg = super.deserializeMessage(data);
+        if (rMsg != null) {
+            Compatible.fixMetaAttachment(rMsg);
+        }
+        return rMsg;
+    }
+
+    @Override
+    public byte[] serializeMessage(ReliableMessage rMsg) {
+        Compatible.fixMetaAttachment(rMsg);
+        return super.serializeMessage(rMsg);
     }
 
     /*/

@@ -34,6 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import chat.dim.compat.CompatibleBTCAddress;
+import chat.dim.compat.CompatibleMetaFactory;
+import chat.dim.compat.EntityIDFactory;
 import chat.dim.core.FactoryManager;
 import chat.dim.crypto.AsymmetricKey;
 import chat.dim.crypto.EncryptKey;
@@ -44,8 +47,11 @@ import chat.dim.dbi.PrivateKeyDBI;
 import chat.dim.format.Base64;
 import chat.dim.format.DataCoder;
 import chat.dim.format.PortableNetworkFile;
+import chat.dim.mkm.AddressFactory;
 import chat.dim.mkm.BaseBulletin;
 import chat.dim.mkm.BaseVisa;
+import chat.dim.mkm.ETHAddress;
+import chat.dim.protocol.Address;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.BlockCommand;
 import chat.dim.protocol.Bulletin;
@@ -187,6 +193,50 @@ public class Register {
         return doc;
     }
 
+    /*
+     *  ID factory
+     */
+    static void registerIDFactory() {
+
+        ID.setFactory(new EntityIDFactory());
+    }
+
+    /*
+     *  Address factory
+     */
+    static void registerAddressFactory() {
+
+        Address.setFactory(new AddressFactory() {
+            @Override
+            public Address createAddress(String address) {
+                if (address == null || address.length() == 0) {
+                    throw new NullPointerException("address empty");
+                } else if (Address.ANYWHERE.equalsIgnoreCase(address)) {
+                    return Address.ANYWHERE;
+                } else if (Address.EVERYWHERE.equalsIgnoreCase(address)) {
+                    return Address.EVERYWHERE;
+                }
+                int len = address.length();
+                if (len == 42) {
+                    return ETHAddress.parse(address);
+                } else if (26 <= len && len <= 35) {
+                    return CompatibleBTCAddress.parse(address);
+                }
+                throw new AssertionError("invalid address: " + address);
+            }
+        });
+    }
+
+    /*
+     *  Meta factories
+     */
+    static void registerMetaFactories() {
+
+        Meta.setFactory(MetaType.MKM, new CompatibleMetaFactory(MetaType.MKM));
+        Meta.setFactory(MetaType.BTC, new CompatibleMetaFactory(MetaType.BTC));
+        Meta.setFactory(MetaType.ExBTC, new CompatibleMetaFactory(MetaType.ExBTC));
+    }
+
     public static void prepare() {
         if (loaded) {
             return;
@@ -194,6 +244,9 @@ public class Register {
 
         // load plugins
         chat.dim.Plugins.registerPlugins();
+        registerIDFactory();
+        registerAddressFactory();
+        registerMetaFactories();
 
         // load message/content factories
         registerAllFactories();

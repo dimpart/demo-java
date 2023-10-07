@@ -37,7 +37,6 @@ import java.util.Map;
 
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
-import chat.dim.protocol.ReliableMessage;
 
 public abstract class ClientMessagePacker extends CommonPacker {
 
@@ -50,21 +49,6 @@ public abstract class ClientMessagePacker extends CommonPacker {
         Facebook facebook = super.getFacebook();
         assert facebook instanceof ClientFacebook : "facebook error: " + facebook;
         return (ClientFacebook) facebook;
-    }
-
-    @Override
-    public byte[] serializeMessage(ReliableMessage rMsg) {
-        Compatible.fixMetaAttachment(rMsg);
-        return super.serializeMessage(rMsg);
-    }
-
-    @Override
-    public ReliableMessage deserializeMessage(byte[] data) {
-        ReliableMessage rMsg = super.deserializeMessage(data);
-        if (rMsg != null) {
-            Compatible.fixMetaAttachment(rMsg);
-        }
-        return rMsg;
     }
 
     @Override

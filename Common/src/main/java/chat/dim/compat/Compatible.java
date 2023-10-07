@@ -28,7 +28,7 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim;
+package chat.dim.compat;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +39,7 @@ import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 
 // TODO: remove after all server/client upgraded
-interface Compatible {
+public interface Compatible {
 
     @SuppressWarnings("unchecked")
     static void fixMetaAttachment(ReliableMessage rMsg) {

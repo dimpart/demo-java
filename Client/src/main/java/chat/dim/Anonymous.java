@@ -32,6 +32,7 @@ package chat.dim;
 
 import java.util.Locale;
 
+import chat.dim.compat.CompatibleBTCAddress;
 import chat.dim.format.Base58;
 import chat.dim.format.Hex;
 import chat.dim.mkm.BTCAddress;
@@ -80,7 +81,7 @@ public final class Anonymous {
         if (address.isBroadcast()) {
             return 0;
         }
-        if (address instanceof BTCAddress) {
+        if (address instanceof BTCAddress || address instanceof CompatibleBTCAddress) {
             return btcNumber(address.toString());
         }
         if (address instanceof ETHAddress) {

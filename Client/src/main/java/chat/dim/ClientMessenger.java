@@ -32,12 +32,10 @@ package chat.dim;
 
 import java.util.List;
 
-import chat.dim.crypto.SymmetricKey;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
-import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
@@ -51,7 +49,6 @@ import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaCommand;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.ReportCommand;
-import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
 import chat.dim.protocol.group.QueryCommand;
 import chat.dim.type.Pair;
@@ -70,23 +67,6 @@ public class ClientMessenger extends CommonMessenger {
     @Override
     public ClientSession getSession() {
         return (ClientSession) super.getSession();
-    }
-
-    @Override
-    public byte[] serializeContent(Content content, SymmetricKey password, InstantMessage iMsg) {
-        if (content instanceof Command) {
-            content = Compatible.fixCommand((Command) content);
-        }
-        return super.serializeContent(content, password, iMsg);
-    }
-
-    @Override
-    public Content deserializeContent(byte[] data, SymmetricKey password, SecureMessage sMsg) {
-        Content content = super.deserializeContent(data, password, sMsg);
-        if (content instanceof Command) {
-            content = Compatible.fixCommand((Command) content);
-        }
-        return content;
     }
 
     /**

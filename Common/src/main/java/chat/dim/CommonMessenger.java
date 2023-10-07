@@ -30,10 +30,12 @@
  */
 package chat.dim;
 
+import chat.dim.compat.Compatible;
 import chat.dim.crypto.SymmetricKey;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Entity;
 import chat.dim.mkm.User;
+import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.ID;
@@ -150,6 +152,23 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
             password.put("digest", digest);
         }
         return data;
+    }
+
+    @Override
+    public byte[] serializeContent(Content content, SymmetricKey password, InstantMessage iMsg) {
+        if (content instanceof Command) {
+            content = Compatible.fixCommand((Command) content);
+        }
+        return super.serializeContent(content, password, iMsg);
+    }
+
+    @Override
+    public Content deserializeContent(byte[] data, SymmetricKey password, SecureMessage sMsg) {
+        Content content = super.deserializeContent(data, password, sMsg);
+        if (content instanceof Command) {
+            content = Compatible.fixCommand((Command) content);
+        }
+        return content;
     }
 
     //
