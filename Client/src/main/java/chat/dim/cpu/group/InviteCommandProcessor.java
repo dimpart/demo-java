@@ -44,6 +44,7 @@ import chat.dim.protocol.group.InviteCommand;
 import chat.dim.type.Copier;
 import chat.dim.type.Pair;
 import chat.dim.type.Triplet;
+import chat.dim.utils.Log;
 
 /**
  *  Invite Group Command Processor
@@ -94,7 +95,6 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
         boolean isOwner = owner.equals(sender);
         boolean isAdmin = admins.contains(sender);
         boolean isMember = members.contains(sender);
-        boolean canReset = isOwner || isAdmin;
 
         // 2. check permission
         if (!isMember) {
@@ -105,6 +105,7 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
                     )
             ));
         }
+        boolean canReset = isOwner || isAdmin;
 
         User user = getFacebook().getCurrentUser();
         if (user == null) {
@@ -121,29 +122,32 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
             // maybe those users are already become members,
             // but if it can still receive an 'invite' command here,
             // we should respond the sender with the newest membership again.
-            if (!canReset && owner.equals(user.getIdentifier())) {
-                // invited by ordinary member, and I am the owner, so
-                // send a 'reset' command to update members in the sender's memory
-                boolean ok = sendResetCommand(group, newMembers, sender);
+            if (!canReset && owner.equals(me)) {
+                // the sender cannot reset the group, means it's an ordinary member now,
+                // and if I am the owner, then send the group history commands
+                // to update the sender's memory.
+                boolean ok = sendGroupHistories(group, sender);
                 assert ok : "failed to send 'reset' command for group: " + group + " => " + sender;
             }
-        } else if (canReset) {
-            // invited by the owen/administrator,
-            // so just save the new members directly.
-            if (saveMembers(newMembers, group)) {
-                // invited by owner or admin, so
-                // append the new members directly.
-                command.put("added", ID.revert(addedList));
-            } else {
-                assert false : "failed to save members for group: " + group;
-            }
-        } else if (owner.equals(me) || admins.contains(me)) {
-            // invited by ordinary member, and I am the owner/administrator,
-            // attach it as an 'invite' application and wait for review.
-            boolean ok = attachApplication(command, rMsg);
-            assert ok : "failed to add 'invite' application for group: " + group;
-        //} else {
-        //    // I am not the administrator, just ignore it
+        } else if (!saveGroupHistory(group, command, rMsg)) {
+            // here try to append the 'invite' command to local storage as group history
+            // it should not failed unless the command is expired
+            Log.error("failed to save 'invite' command for group: " + group);
+        } else if (!canReset) {
+            // the sender cannot reset the group, means it's invited by ordinary member,
+            // and the 'invite' command was saved, now waiting for review.
+            Log.info("received an 'invite' command, waiting for review");
+        } else if (saveMembers(newMembers, group)) {
+            // FIXME: this sender has permission to reset the group,
+            //        means it must be the owner or an administrator,
+            //        usually it should send a 'reset' command instead;
+            //        if we received the 'invite' command here, maybe it was confused,
+            //        anyway, we just append the new members directly.
+            Log.warning("invited by administrator: " + sender + ", group: " + group);
+            command.put("added", ID.revert(addedList));
+        } else {
+            // DB error?
+            assert false : "failed to save members for group: " + group;
         }
 
         // no need to response this group command

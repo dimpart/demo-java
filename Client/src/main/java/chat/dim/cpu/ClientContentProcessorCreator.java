@@ -84,6 +84,7 @@ public class ClientContentProcessorCreator extends ContentProcessorCreator {
             case GroupCommand.INVITE:
                 return new InviteCommandProcessor(getFacebook(), getMessenger());
             case GroupCommand.EXPEL:
+                // Deprecated (use 'reset' instead)
                 return new ExpelCommandProcessor(getFacebook(), getMessenger());
             case GroupCommand.JOIN:
                 return new JoinCommandProcessor(getFacebook(), getMessenger());

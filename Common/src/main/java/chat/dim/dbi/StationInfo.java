@@ -59,6 +59,10 @@ public class StationInfo {
         this.chosen = chosen;
     }
 
+    //
+    //  Conveniences
+    //
+
     public static List<StationInfo> convert(List<Map<String, Object>> array) {
         List<StationInfo> stations = new ArrayList<>();
         ID identifier;

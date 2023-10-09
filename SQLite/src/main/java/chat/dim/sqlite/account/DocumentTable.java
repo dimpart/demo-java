@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import chat.dim.dbi.DocumentDBI;
+import chat.dim.format.TransportableData;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
 import chat.dim.sql.SQLConditions;
@@ -82,7 +83,14 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
                 if (type == null || type.length() == 0) {
                     type = "*";
                 }
-                Document doc = Document.create(type, identifier, data, signature);
+                Document doc;
+                if (data == null || signature == null) {
+                    doc = Document.create(type, identifier);
+                } else {
+                    TransportableData ted = TransportableData.parse(signature);
+                    assert ted != null : "signature error: " + signature;
+                    doc = Document.create(type, identifier, data, ted);
+                }
                 if (type.equals("*")) {
                     if (identifier.isGroup()) {
                         type = Document.BULLETIN;

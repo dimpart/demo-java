@@ -94,7 +94,7 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
         }
 
         // 3. send the reset command with newest members
-        boolean ok = sendResetCommand(group, members, sender);
+        boolean ok = sendGroupHistories(group, sender);
         assert ok : "failed to send 'reset' command for group: " + group + " => " + sender;
 
         // no need to response this group command

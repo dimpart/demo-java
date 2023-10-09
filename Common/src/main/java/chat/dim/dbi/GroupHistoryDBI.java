@@ -30,18 +30,73 @@
  */
 package chat.dim.dbi;
 
+import java.util.List;
+
+import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.ResetCommand;
 import chat.dim.type.Pair;
 
-/**
- *  Account DBI
- *  ~~~~~~~~~~~
- */
-public interface ResetGroupDBI {
+public interface GroupHistoryDBI {
 
-    Pair<ResetCommand, ReliableMessage> getResetCommandMessage(ID identifier);
+    /**
+     *  Save group commands
+     *      1. invite
+     *      2. expel (deprecated)
+     *      3. join
+     *      4. quit
+     *      5. reset
+     *      6. resign
+     *
+     * @param content - group command
+     * @param rMsg    - group command message
+     * @param group   - group ID
+     * @return false on failed
+     */
+    boolean saveGroupHistory(GroupCommand content, ReliableMessage rMsg, ID group);
 
-    boolean saveResetCommandMessage(ID identifier, ResetCommand content, ReliableMessage rMsg);
+    /**
+     *  Load group commands
+     *      1. invite
+     *      2. expel (deprecated)
+     *      3. join
+     *      4. quit
+     *      5. reset
+     *      6. resign
+     *
+     * @param group - group ID
+     * @return history list
+     */
+    List<Pair<GroupCommand, ReliableMessage>> getGroupHistories(ID group);
+
+    /**
+     *  Load last 'reset' group command
+     *
+     * @param group - group ID
+     * @return reset command message
+     */
+    Pair<ResetCommand, ReliableMessage> getResetCommandMessage(ID group);
+
+    /**
+     *  Clean group commands for members:
+     *      1. invite
+     *      2. expel (deprecated)
+     *      3. join
+     *      4. quit
+     *      5. reset
+     *
+     * @param group - group ID
+     * @return false on failed
+     */
+    boolean clearGroupMemberHistories(ID group);
+
+    /**
+     *  Clean group commands for administrators
+     *      1. resign
+     *
+     * @param group - group ID
+     * @return false on failed
+     */
+    boolean clearGroupAdminHistories(ID group);
 }

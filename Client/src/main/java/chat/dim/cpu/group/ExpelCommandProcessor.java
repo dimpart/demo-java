@@ -30,26 +30,19 @@
  */
 package chat.dim.cpu.group;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.GroupCommand;
-import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.ExpelCommand;
-import chat.dim.type.Pair;
-import chat.dim.type.Triplet;
 
 /**
  *  Expel Group Command Processor
  *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- *
- *      1. remove group member(s)
- *      2. only group owner or administrator can expel member
+ *  Deprecated (use 'reset' instead)
  */
 public class ExpelCommandProcessor extends GroupCommandProcessor {
 
@@ -60,96 +53,11 @@ public class ExpelCommandProcessor extends GroupCommandProcessor {
     @Override
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof ExpelCommand : "expel command error: " + content;
-        GroupCommand command = (GroupCommand) content;
 
-        // 0. check command
-        Pair<ID, List<Content>> pair = checkCommandExpired(command, rMsg);
-        ID group = pair.first;
-        if (group == null) {
-            // ignore expired command
-            return pair.second;
-        }
-        Pair<List<ID>, List<Content>> pair1 = checkCommandMembers(command, rMsg);
-        List<ID> expelList = pair1.first;
-        if (expelList == null || expelList.isEmpty()) {
-            // command error
-            return pair1.second;
-        }
-
-        // 1. check group
-        Triplet<ID, List<ID>, List<Content>> trip = checkGroupMembers(command, rMsg);
-        ID owner = trip.first;
-        List<ID> members = trip.second;
-        if (owner == null || members == null || members.isEmpty()) {
-            return trip.third;
-        }
-
-        ID sender = rMsg.getSender();
-        List<ID> admins = getAdministrators(group);
-        if (admins == null) {
-            admins = new ArrayList<>();
-        }
-        boolean isOwner = owner.equals(sender);
-        boolean isAdmin = admins.contains(sender);
-
-        // 2. check permission
-        boolean canExpel = isOwner || isAdmin;
-        if (!canExpel) {
-            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
-                    "template", "Not allowed to expel member from group: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
-        }
-        // 2.1. check owner
-        if (expelList.contains(owner)) {
-            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
-                    "template", "Not allowed to expel owner of group: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
-        }
-        // 2.2. check admins
-        boolean expelAdmin = false;
-        for (ID item : admins) {
-            if (expelList.contains(item)) {
-                expelAdmin = true;
-                break;
-            }
-        }
-        if (expelAdmin) {
-            return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
-                    "template", "Not allowed to expel administrator of group: ${ID}",
-                    "replacements", newMap(
-                            "ID", group.toString()
-                    )
-            ));
-        }
-
-        // 3. do expel
-        Pair<List<ID>, List<ID>> memPair = calculateExpelled(members, expelList);
-        List<ID> newMembers = memPair.first;
-        List<ID> removeList = memPair.second;
-        if (removeList.size() > 0 && saveMembers(newMembers, group)) {
-            command.put("removed", ID.revert(removeList));
-        }
+        assert false : "'expel' group command is deprecated, use 'reset' instead.";
 
         // no need to response this group command
         return null;
     }
 
-    protected Pair<List<ID>, List<ID>> calculateExpelled(List<ID> members, List<ID> expelList) {
-        List<ID> newMembers = new ArrayList<>();
-        List<ID> removeList = new ArrayList<>();
-        for (ID item : members) {
-            if (expelList.contains(item)) {
-                removeList.add(item);
-            } else {
-                newMembers.add(item);
-            }
-        }
-        return new Pair<>(newMembers, removeList);
-    }
 }

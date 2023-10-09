@@ -137,18 +137,23 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         Pair<List<ID>, List<ID>> memPair = calculateReset(members, newMembers);
         List<ID> addList = memPair.first;
         List<ID> removeList = memPair.second;
-        if (addList.isEmpty() && removeList.isEmpty()) {
+        if (!saveGroupHistory(group, command, rMsg)) {
+            // here try to save the 'reset' command to local storage as group history
+            // it should not failed unless the command is expired
+            Log.error("failed to save 'reset' command for group: " + group);
+        } else if (addList.isEmpty() && removeList.isEmpty()) {
             Log.warning("nothing changed");
         } else if (saveMembers(newMembers, group)) {
             Log.info("new members saved in group: " + group);
+            if (addList.size() > 0) {
+                command.put("added", ID.revert(addList));
+            }
+            if (removeList.size() > 0) {
+                command.put("removed", ID.revert(removeList));
+            }
         } else {
+            // DB error?
             assert false : "failed to save members in group: " + group;
-        }
-        if (addList.size() > 0) {
-            command.put("added", ID.revert(addList));
-        }
-        if (removeList.size() > 0) {
-            command.put("removed", ID.revert(removeList));
         }
 
         // no need to response this group command

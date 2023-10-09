@@ -196,7 +196,7 @@ public class Register {
     /*
      *  ID factory
      */
-    static void registerIDFactory() {
+    static void registerEntityIDFactory() {
 
         ID.setFactory(new EntityIDFactory());
     }
@@ -204,7 +204,7 @@ public class Register {
     /*
      *  Address factory
      */
-    static void registerAddressFactory() {
+    static void registerCompatibleAddressFactory() {
 
         Address.setFactory(new AddressFactory() {
             @Override
@@ -216,13 +216,17 @@ public class Register {
                 } else if (Address.EVERYWHERE.equalsIgnoreCase(address)) {
                     return Address.EVERYWHERE;
                 }
+                Address res;
                 int len = address.length();
                 if (len == 42) {
-                    return ETHAddress.parse(address);
+                    res = ETHAddress.parse(address);
                 } else if (26 <= len && len <= 35) {
-                    return CompatibleBTCAddress.parse(address);
+                    res = CompatibleBTCAddress.parse(address);
+                } else {
+                    throw new AssertionError("invalid address: " + address);
                 }
-                throw new AssertionError("invalid address: " + address);
+                assert res != null : "invalid address: " + address;
+                return res;
             }
         });
     }
@@ -230,7 +234,7 @@ public class Register {
     /*
      *  Meta factories
      */
-    static void registerMetaFactories() {
+    static void registerCompatibleMetaFactories() {
 
         Meta.setFactory(MetaType.MKM, new CompatibleMetaFactory(MetaType.MKM));
         Meta.setFactory(MetaType.BTC, new CompatibleMetaFactory(MetaType.BTC));
@@ -244,9 +248,9 @@ public class Register {
 
         // load plugins
         chat.dim.Plugins.registerPlugins();
-        registerIDFactory();
-        registerAddressFactory();
-        registerMetaFactories();
+        registerEntityIDFactory();
+        registerCompatibleAddressFactory();
+        registerCompatibleMetaFactories();
 
         // load message/content factories
         registerAllFactories();

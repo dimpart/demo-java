@@ -33,18 +33,11 @@ package chat.dim.cpu.group;
 import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.CommonFacebook;
-import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
-import chat.dim.crypto.SignKey;
-import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.Document;
-import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.ID;
-import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.ResignCommand;
 import chat.dim.type.Copier;
@@ -105,92 +98,30 @@ public class ResignCommandProcessor extends GroupCommandProcessor {
         }
 
         // 3. do resign
-        if (isAdmin) {
-            admins = Copier.copyList(admins);
+        if (!isAdmin) {
+            // the sender is not an administrator now, shall we notify the sender that
+            // the administrators list was updated?
+            Log.error("not an admin " + sender + " in group: " + group);
+        } else if (!saveGroupHistory(group, command, rMsg)) {
+            // here try to append the 'resign' command to local storage as group history
+            // it should not failed unless the command is expired
+            Log.error("failed to save 'resign' command for group: " + group);
+        } else {
             // admin do exist, remove it and update database
+            admins = Copier.copyList(admins);
             admins.remove(sender);
             if (saveAdministrators(admins, group)) {
                 List<String> removeList = new ArrayList<>();
                 removeList.add(sender.toString());
                 command.put("removed", removeList);
             } else {
+                // DB error?
                 assert false : "failed to save administrators for group: " + group;
             }
-        }
-
-        User user = getFacebook().getCurrentUser();
-        if (user == null) {
-            assert false : "failed to get current user";
-            return null;
-        }
-        ID me = user.getIdentifier();
-
-        // 4. update bulletin property: 'administrators'
-        if (owner.equals(me)) {
-            // maybe the bulletin in the owner's storage not contains this administrator,
-            // but if it can still receive a resign command here, then
-            // the owner should update the bulletin and send it out again.
-            boolean ok = refreshAdministrators(group, owner, admins);
-            assert ok : "failed to refresh admins for group: " + group;
-        } else if (attachApplication(command, rMsg)) {
-            // add 'resign' application for querying by other members,
-            // if thw owner wakeup, it will broadcast a new bulletin document
-            // with the newest administrators, and this application will be erased.
-            Log.info("added 'resign' application for group: " + group);
-        } else {
-            assert false : "failed to add 'resign' application for group: " + group;
         }
 
         // no need to response this group command
         return null;
     }
 
-    private boolean refreshAdministrators(ID group, ID owner, List<ID> admins) {
-        CommonFacebook facebook = getFacebook();
-        CommonMessenger messenger = getMessenger();
-        // 1. update bulletin
-        Document bulletin = updateAdministrators(group, owner, admins);
-        if (bulletin == null) {
-            assert false : "failed to update administrators for group: " + group;
-            return false;
-        } else if (facebook.saveDocument(bulletin)) {
-            Log.info("save document for group: " + group);
-        } else {
-            assert false : "failed to save document for group: " + group;
-            return false;
-        }
-        Meta meta = facebook.getMeta(group);
-        Content content = DocumentCommand.response(group, meta, bulletin);
-        // 2. check assistants
-        List<ID> bots = getAssistants(group);
-        if (bots == null || bots.isEmpty()) {
-            // TODO: broadcast to all members
-            return true;
-        }
-        // 3. broadcast to all group assistants
-        for (ID receiver : bots) {
-            if (owner.equals(receiver)) {
-                assert false : "group bot should not be owner: " + owner + ", group: " + group;
-                continue;
-            }
-            messenger.sendContent(owner, receiver, content, 1);
-        }
-        return true;
-    }
-
-    private Document updateAdministrators(ID group, ID owner, List<ID> admins) {
-        CommonFacebook facebook = getFacebook();
-        // get document & sign key
-        Document bulletin = facebook.getDocument(group, "*");
-        SignKey sKey = facebook.getPrivateKeyForVisaSignature(owner);
-        if (bulletin == null || sKey == null) {
-            assert false : "failed to get document & sign key for group: " + group + ", owner: " + owner;
-            return null;
-        }
-        // assert bulletin instanceof Bulletin : "group document error: " + bulletin;
-        bulletin.setProperty("administrators", ID.revert(admins));
-        byte[] signature = bulletin.sign(sKey);
-        assert signature != null : "failed to sign bulletin for group: " + group;
-        return bulletin;
-    }
 }

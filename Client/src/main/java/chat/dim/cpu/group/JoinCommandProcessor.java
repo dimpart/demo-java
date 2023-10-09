@@ -44,6 +44,7 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.JoinCommand;
 import chat.dim.type.Pair;
 import chat.dim.type.Triplet;
+import chat.dim.utils.Log;
 
 /**
  *  Join Group Command Processor
@@ -100,21 +101,21 @@ public class JoinCommandProcessor extends GroupCommandProcessor {
         if (isMember) {
             // maybe the command sender is already become a member,
             // but if it can still receive a 'join' command here,
-            // and I am the owner, here we should respond the sender
-            // with the newest membership again.
+            // we should notify the sender that the member list was updated.
             if (!canReset && owner.equals(me)) {
-                // the sender is an ordinary member, and I am the owner, so
-                // send a 'reset' command to update members in the sender's memory
-                boolean ok = sendResetCommand(group, members, sender);
+                // the sender cannot reset the group, means it's an ordinary member now,
+                // and if I am the owner, then send the group history commands
+                // to update the sender's memory.
+                boolean ok = sendGroupHistories(group, sender);
                 assert ok : "failed to send 'reset' for group: " + group + " => " + sender;
             }
-        } else if (owner.equals(me) || admins.contains(me)) {
-            // I am the owner, or an administrator, so
-            // attach it as a 'join' application and wait for review.
-            boolean ok = attachApplication(command, rMsg);
-            assert ok : "failed to add 'join' application for group: " + group;
-        //} else {
-        //    // I am not the administrator, just ignore it
+        } else if (!saveGroupHistory(group, command, rMsg)) {
+            // here try to append the 'join' command to local storage as group history
+            // it should not failed unless the command is expired
+            Log.error("failed to save 'join' command for group: " + group);
+        } else {
+            // the 'join' command was saved, now waiting for review.
+            Log.info("received a 'join' command, waiting for review");
         }
 
         // no need to response this group command

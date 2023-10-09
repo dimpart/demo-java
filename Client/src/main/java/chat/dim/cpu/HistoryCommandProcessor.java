@@ -32,6 +32,8 @@ package chat.dim.cpu;
 
 import java.util.List;
 
+import chat.dim.CommonFacebook;
+import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.protocol.Content;
@@ -40,8 +42,36 @@ import chat.dim.protocol.ReliableMessage;
 
 public class HistoryCommandProcessor extends BaseCommandProcessor {
 
+    protected final GroupCommandHelper helper;
+    protected final GroupHistoryBuilder builder;
+
     public HistoryCommandProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
+        helper = createGroupCommandHelper();
+        builder = createGroupHistoryBuilder();
+    }
+
+    // override for customized helper
+    protected GroupCommandHelper createGroupCommandHelper() {
+        return new GroupCommandHelper(getFacebook(), getMessenger());
+    }
+    // override for customized builder
+    protected GroupHistoryBuilder createGroupHistoryBuilder() {
+        return new GroupHistoryBuilder(helper);
+    }
+
+    @Override
+    protected CommonFacebook getFacebook() {
+        Facebook facebook = super.getFacebook();
+        assert facebook instanceof CommonFacebook : "facebook error: " + facebook;
+        return (CommonFacebook) facebook;
+    }
+
+    @Override
+    protected CommonMessenger getMessenger() {
+        Messenger messenger = super.getMessenger();
+        assert messenger instanceof CommonMessenger : "messenger error: " + messenger;
+        return (CommonMessenger) messenger;
     }
 
     @Override
@@ -55,4 +85,5 @@ public class HistoryCommandProcessor extends BaseCommandProcessor {
                 )
         ));
     }
+
 }

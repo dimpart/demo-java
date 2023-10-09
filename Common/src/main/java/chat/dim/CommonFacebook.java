@@ -40,6 +40,7 @@ import chat.dim.mkm.User;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
+import chat.dim.utils.Log;
 
 /**
  *  Common Facebook with Database
@@ -116,8 +117,22 @@ public class CommonFacebook extends Facebook {
     @Override
     public boolean saveDocument(Document doc) {
         if (!doc.isValid()) {
-            assert false : "document not valid: " + doc.getIdentifier();
-            return false;
+            ID identifier = doc.getIdentifier();
+            if (identifier == null) {
+                assert false : "document error: " + doc;
+                return false;
+            }
+            Meta meta = getMeta(identifier);
+            if (meta == null) {
+                Log.error("meta not found: " + identifier);
+                return false;
+            } else if (doc.verify(meta.getPublicKey())) {
+                Log.debug("document verified: " + identifier);
+            } else {
+                Log.error("failed to verify document: " + identifier);
+                assert false : "document not valid: " + identifier;
+                return false;
+            }
         }
         return database.saveDocument(doc);
     }

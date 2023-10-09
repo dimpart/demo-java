@@ -30,8 +30,11 @@
  */
 package chat.dim;
 
+import java.util.List;
+
 import chat.dim.dbi.AccountDBI;
 import chat.dim.protocol.Address;
+import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
@@ -58,6 +61,49 @@ public class ClientFacebook extends CommonFacebook {
         return Anonymous.getName(identifier);
     }
 
+    @Override
+    public boolean saveDocument(Document doc) {
+        boolean ok = super.saveDocument(doc);
+        if (ok && doc instanceof Bulletin) {
+            ID group = doc.getIdentifier();
+            assert group.isGroup() : "group ID error: " + group;
+            List<ID> admins = getAdministrators((Bulletin) doc);
+            if (admins != null && admins.size() > 0) {
+                ok = saveAdministrators(admins, group);
+            }
+        }
+        return ok;
+    }
+
+    private static List<ID> getAdministrators(Bulletin doc) {
+        Object array = doc.getProperty("administrators");
+        if (array instanceof List) {
+            return ID.convert((List<?>) array);
+        }
+        // admins not found
+        return null;
+    }
+
+    public boolean saveMembers(List<ID> members, ID group) {
+        return getDatabase().saveMembers(members, group);
+    }
+    public boolean saveAssistants(List<ID> bots, ID group) {
+        return getDatabase().saveAssistants(bots, group);
+    }
+    public boolean saveAdministrators(List<ID> admins, ID group) {
+        return getDatabase().saveAdministrators(admins, group);
+    }
+    public List<ID> getAdministrators(ID group) {
+        List<ID> admins = getDatabase().getAdministrators(group);
+        if (admins == null || admins.isEmpty()) {
+            Document doc = getDocument(group, "*");
+            if (doc instanceof Bulletin) {
+                admins = getAdministrators((Bulletin) doc);
+            }
+        }
+        return admins;
+    }
+
     //
     //  Address Name Service
     //
@@ -75,24 +121,24 @@ public class ClientFacebook extends CommonFacebook {
         ID.setFactory(new ID.Factory() {
 
             @Override
-            public ID generateID(Meta meta, int type, String terminal) {
-                return identifierFactory.generateID(meta, type, terminal);
+            public ID generateIdentifier(Meta meta, int type, String terminal) {
+                return identifierFactory.generateIdentifier(meta, type, terminal);
             }
 
             @Override
-            public ID createID(String name, Address address, String terminal) {
-                return identifierFactory.createID(name, address, terminal);
+            public ID createIdentifier(String name, Address address, String terminal) {
+                return identifierFactory.createIdentifier(name, address, terminal);
             }
 
             @Override
-            public ID parseID(String identifier) {
+            public ID parseIdentifier(String identifier) {
                 // try ANS record
                 ID id = ans.identifier(identifier);
                 if (id != null) {
                     return id;
                 }
                 // parse by original factory
-                return identifierFactory.parseID(identifier);
+                return identifierFactory.parseIdentifier(identifier);
             }
         });
 

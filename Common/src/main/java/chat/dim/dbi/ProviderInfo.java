@@ -54,6 +54,10 @@ public class ProviderInfo {
         this.chosen = chosen;
     }
 
+    //
+    //  Conveniences
+    //
+
     public static List<ProviderInfo> convert(List<Map<String, Object>> array) {
         List<ProviderInfo> providers = new ArrayList<>();
         ID identifier;

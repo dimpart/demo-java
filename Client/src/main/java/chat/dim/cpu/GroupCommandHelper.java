@@ -42,13 +42,16 @@ import chat.dim.dbi.AccountDBI;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.ResetCommand;
 import chat.dim.protocol.group.ResignCommand;
 import chat.dim.type.Pair;
+import chat.dim.utils.Log;
 
 public class GroupCommandHelper extends TwinsHelper {
-    protected GroupCommandHelper(Facebook facebook, Messenger messenger) {
+
+    public GroupCommandHelper(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
     }
 
@@ -64,6 +67,22 @@ public class GroupCommandHelper extends TwinsHelper {
         return (CommonMessenger) messenger;
     }
 
+    /**
+     *  Get group meta
+     *  if not found, query it from any station
+     */
+    public Meta getMeta(ID group) {
+        Meta meta = getFacebook().getMeta(group);
+        if (meta == null) {
+            getMessenger().queryMeta(group);
+        }
+        return meta;
+    }
+
+    /**
+     *  Get group document
+     *  if not found, query it from any station
+     */
     public Document getDocument(ID group) {
         Document doc = getFacebook().getDocument(group, "*");
         if (doc == null) {
@@ -72,6 +91,10 @@ public class GroupCommandHelper extends TwinsHelper {
         return doc;
     }
 
+    /**
+     *  Get group owner
+     *  when bulletin document exists
+     */
     public ID getOwner(ID group) {
         Document doc = getDocument(group);
         if (doc == null) {
@@ -81,6 +104,10 @@ public class GroupCommandHelper extends TwinsHelper {
         return getFacebook().getOwner(group);
     }
 
+    /**
+     *  Get group bots
+     *  when bulletin document exists
+     */
     public List<ID> getAssistants(ID group) {
         Document doc = getDocument(group);
         if (doc == null) {
@@ -90,9 +117,10 @@ public class GroupCommandHelper extends TwinsHelper {
         return getFacebook().getAssistants(group);
     }
 
-    //
-    //  administrators
-    //
+    /**
+     *  Get administrators
+     *  when bulletin document exists
+     */
     public List<ID> getAdministrators(ID group) {
         Document doc = getDocument(group);
         if (doc == null) {
@@ -107,16 +135,21 @@ public class GroupCommandHelper extends TwinsHelper {
         return db.saveAdministrators(admins, group);
     }
 
-    //
-    //  members
-    //
+    /**
+     *  Get members when owner exists,
+     *  if not found, query from bots/admins/owner
+     */
     public List<ID> getMembers(ID group) {
         ID owner = getOwner(group);
         if (owner == null) {
             // the owner must exist before members
             return null;
         }
-        return getFacebook().getMembers(group);
+        List<ID> members = getFacebook().getMembers(group);
+        if (members == null || members.isEmpty()) {
+            getMessenger().queryMembers(group);
+        }
+        return members;
     }
     public boolean saveMembers(List<ID> members, ID group) {
         AccountDBI db = getFacebook().getDatabase();
@@ -124,16 +157,36 @@ public class GroupCommandHelper extends TwinsHelper {
     }
 
     //
-    //  reset command message
+    //  Group History Command
     //
+    public boolean saveGroupHistory(GroupCommand content, ReliableMessage rMsg, ID group) {
+        assert group.equals(content.getGroup()) : "group ID error: " + group + ", " + content;
+        if (isCommandExpired(content)) {
+            Log.warning("drop expired command: " + content.getCmd() + ", " + rMsg.getSender() + " => " + group);
+            return false;
+        }
+        AccountDBI db = getFacebook().getDatabase();
+        if (content instanceof ResetCommand) {
+            Log.warning("cleaning group history for 'reset' command: " + rMsg.getSender() + " => " + group);
+            return db.clearGroupMemberHistories(group);
+        }
+        return db.saveGroupHistory(content, rMsg, group);
+    }
+    public List<Pair<GroupCommand, ReliableMessage>> getGroupHistories(ID group) {
+        AccountDBI db = getFacebook().getDatabase();
+        return db.getGroupHistories(group);
+    }
     public Pair<ResetCommand, ReliableMessage> getResetCommandMessage(ID group) {
         AccountDBI db = getFacebook().getDatabase();
         return db.getResetCommandMessage(group);
     }
-    public boolean saveResetCommandMessage(ID group, ResetCommand content, ReliableMessage rMsg) {
-        assert group.equals(content.getGroup()) : "group ID error: " + group + ", " + content;
+    boolean clearGroupMemberHistories(ID group) {
         AccountDBI db = getFacebook().getDatabase();
-        return db.saveResetCommandMessage(group, content, rMsg);
+        return db.clearGroupMemberHistories(group);
+    }
+    boolean clearGroupAdminHistories(ID group) {
+        AccountDBI db = getFacebook().getDatabase();
+        return db.clearGroupAdminHistories(group);
     }
 
     //

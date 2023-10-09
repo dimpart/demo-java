@@ -44,6 +44,7 @@ import chat.dim.protocol.group.QuitCommand;
 import chat.dim.type.Copier;
 import chat.dim.type.Pair;
 import chat.dim.type.Triplet;
+import chat.dim.utils.Log;
 
 /**
  *  Quit Group Command Processor
@@ -107,7 +108,15 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
         }
 
         // 3. do quit
-        if (isMember) {
+        if (!isMember) {
+            // the sender is not a member now, shall we notify the sender that
+            // the member list was updated?
+            Log.error("not a member: " + sender + " in group: " + group);
+        } else if (!saveGroupHistory(group, command, rMsg)) {
+            // here try to append the 'quit' command to local storage as group history
+            // it should not failed unless the command is expired
+            Log.error("failed to save 'quit' command for group: " + group);
+        } else {
             // member do exist, remove it and update database
             members = Copier.copyList(members);
             members.remove(sender);
@@ -116,6 +125,7 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
                 removeList.add(sender.toString());
                 command.put("removed", removeList);
             } else {
+                // DB error?
                 assert false : "failed to save members for group: " + group;
             }
         }
