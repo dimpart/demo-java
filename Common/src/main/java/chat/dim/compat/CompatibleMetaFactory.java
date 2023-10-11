@@ -37,8 +37,8 @@ import chat.dim.crypto.SignKey;
 import chat.dim.crypto.VerifyKey;
 import chat.dim.format.TransportableData;
 import chat.dim.format.UTF8;
+import chat.dim.mkm.AccountFactoryManager;
 import chat.dim.mkm.ETHMeta;
-import chat.dim.mkm.FactoryManager;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaType;
 
@@ -88,7 +88,7 @@ public final class CompatibleMetaFactory implements Meta.Factory {
     @Override
     public Meta parseMeta(Map<String, Object> meta) {
         Meta out;
-        FactoryManager man = FactoryManager.getInstance();
+        AccountFactoryManager man = AccountFactoryManager.getInstance();
         int type = man.generalFactory.getMetaType(meta, 0);
         if (MetaType.MKM.equals(type)) {
             // MKM

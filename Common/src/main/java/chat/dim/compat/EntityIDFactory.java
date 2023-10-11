@@ -30,11 +30,11 @@
  */
 package chat.dim.compat;
 
-import chat.dim.mkm.IDFactory;
+import chat.dim.mkm.GeneralIdentifierFactory;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
 
-public final class EntityIDFactory extends IDFactory {
+public final class EntityIDFactory extends GeneralIdentifierFactory {
 
     @Override
     protected ID newID(String identifier, String name, Address address, String terminal) {

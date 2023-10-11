@@ -37,7 +37,7 @@ import java.util.Random;
 import chat.dim.compat.CompatibleBTCAddress;
 import chat.dim.compat.CompatibleMetaFactory;
 import chat.dim.compat.EntityIDFactory;
-import chat.dim.core.FactoryManager;
+import chat.dim.core.CoreFactoryManager;
 import chat.dim.crypto.AsymmetricKey;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.crypto.PrivateKey;
@@ -47,7 +47,7 @@ import chat.dim.dbi.PrivateKeyDBI;
 import chat.dim.format.Base64;
 import chat.dim.format.DataCoder;
 import chat.dim.format.PortableNetworkFile;
-import chat.dim.mkm.AddressFactory;
+import chat.dim.mkm.BaseAddressFactory;
 import chat.dim.mkm.BaseBulletin;
 import chat.dim.mkm.BaseVisa;
 import chat.dim.mkm.ETHAddress;
@@ -206,7 +206,7 @@ public class Register {
      */
     static void registerCompatibleAddressFactory() {
 
-        Address.setFactory(new AddressFactory() {
+        Address.setFactory(new BaseAddressFactory() {
             @Override
             public Address createAddress(String address) {
                 if (address == null || address.length() == 0) {
@@ -285,7 +285,7 @@ public class Register {
         //
         //  Register core factories
         //
-        FactoryManager man = FactoryManager.getInstance();
+        CoreFactoryManager man = CoreFactoryManager.getInstance();
         man.registerAllFactories();
 
         // Handshake
