@@ -32,6 +32,7 @@ package chat.dim.cpu;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.core.ContentProcessor;
 import chat.dim.cpu.group.ExpelCommandProcessor;
 import chat.dim.cpu.group.InviteCommandProcessor;
 import chat.dim.cpu.group.JoinCommandProcessor;
@@ -46,7 +47,7 @@ import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
 
-public class ClientContentProcessorCreator extends ContentProcessorCreator {
+public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
 
     public ClientContentProcessorCreator(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);

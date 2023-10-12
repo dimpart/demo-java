@@ -32,8 +32,8 @@ package chat.dim;
 
 import java.util.List;
 
+import chat.dim.core.ContentProcessor;
 import chat.dim.cpu.ClientContentProcessorCreator;
-import chat.dim.cpu.ContentProcessor;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.EntityType;
