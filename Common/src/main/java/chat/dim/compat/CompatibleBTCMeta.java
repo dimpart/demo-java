@@ -72,12 +72,14 @@ public final class CompatibleBTCMeta extends BaseMeta {
     public Address generateAddress(int type) {
         assert MetaType.BTC.equals(getType()) || MetaType.ExBTC.equals(getType()) : "meta version error";
         //assert NetworkID.BTC_MAIN.equals(type) : "BTC address type error: " + type;
-        if (cachedAddress == null/* || cachedAddress.getType() != type*/) {
-            // generate and cache it
+        Address address = cachedAddress;
+        if (address == null || address.getType() != type) {
+            // TODO: compress public key?
             VerifyKey key = getPublicKey();
             byte[] data = key.getData();
-            cachedAddress = CompatibleBTCAddress.generate(data, (byte) type);
+            // generate and cache it
+            cachedAddress = address = CompatibleBTCAddress.generate(data, (byte) type);
         }
-        return cachedAddress;
+        return address;
     }
 }

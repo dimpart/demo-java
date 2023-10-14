@@ -99,8 +99,8 @@ public class ResignCommandProcessor extends GroupCommandProcessor {
 
         // 3. do resign
         if (!isAdmin) {
-            // the sender is not an administrator now, shall we notify the sender that
-            // the administrators list was updated?
+            // the sender is not an administrator now,
+            // shall we notify the sender that the administrators list was updated?
             Log.error("not an admin " + sender + " in group: " + group);
         } else if (!saveGroupHistory(group, command, rMsg)) {
             // here try to append the 'resign' command to local storage as group history

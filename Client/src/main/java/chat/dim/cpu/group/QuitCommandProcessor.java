@@ -109,8 +109,8 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
 
         // 3. do quit
         if (!isMember) {
-            // the sender is not a member now, shall we notify the sender that
-            // the member list was updated?
+            // the sender is not a member now,
+            // shall we notify the sender that the member list was updated?
             Log.error("not a member: " + sender + " in group: " + group);
         } else if (!saveGroupHistory(group, command, rMsg)) {
             // here try to append the 'quit' command to local storage as group history

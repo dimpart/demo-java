@@ -97,8 +97,9 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
         boolean expired = helper.isCommandExpired(content);
         if (expired) {
             errors = respondReceipt("Command expired.", rMsg.getEnvelope(), content, newMap(
-                    "template", "Group command expired: ${ID}",
+                    "template", "Group command expired: ${cmd}, group: ${ID}.",
                     "replacements", newMap(
+                            "cmd", content.getCmd(),
                             "ID", group.toString()
                     )
             ));
