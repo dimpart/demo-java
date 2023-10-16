@@ -36,18 +36,13 @@ import chat.dim.ClientMessenger;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.crypto.EncryptKey;
-import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
-import chat.dim.protocol.Bulletin;
-import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.FileContent;
 import chat.dim.protocol.ForwardContent;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
-import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
@@ -94,66 +89,6 @@ public abstract class GroupEmitter {
     protected EncryptKey getEncryptKey(ID sender, ID receiver) {
         ClientMessenger messenger = (ClientMessenger) delegate.getMessenger();
         return messenger.getCipherKey(sender, receiver, true);
-    }
-
-    /**
-     *  Broadcast group document
-     */
-    public boolean broadcastDocument(Bulletin doc) {
-        CommonFacebook facebook = delegate.getFacebook();
-        CommonMessenger messenger = delegate.getMessenger();
-        assert facebook != null && messenger != null : "facebook messenger not ready: " + facebook + ", " + messenger;
-
-        //
-        //  0. get current user
-        //
-        User user = facebook.getCurrentUser();
-        if (user == null) {
-            assert false : "failed to get current user";
-            return false;
-        }
-        ID me = user.getIdentifier();
-
-        //
-        //  1. create 'document' command, and send to current station
-        //
-        ID group = doc.getIdentifier();
-        Meta meta = facebook.getMeta(group);
-        Command command = DocumentCommand.response(group, meta, doc);
-        messenger.sendContent(me, Station.ANY, command, 1);
-
-        //
-        //  2. check group bots
-        //
-        List<ID> bots = delegate.getAssistants(group);
-        if (bots != null && bots.size() > 0) {
-            // group bots exist, let them to deliver to all other members
-            for (ID item : bots) {
-                if (me.equals(item)) {
-                    assert false : "should not be a bot here: " + me;
-                    continue;
-                }
-                messenger.sendContent(me, item, command, 1);
-            }
-            return true;
-        }
-
-        //
-        //  3. broadcast to all members
-        //
-        List<ID> members = delegate.getMembers(group);
-        if (members == null || members.isEmpty()) {
-            assert false : "failed to get group members: " + group;
-            return false;
-        }
-        for (ID item : members) {
-            if (me.equals(item)) {
-                Log.info("skip cycled message: " + item + ", " + group);
-                continue;
-            }
-            messenger.sendContent(me, item, command, 1);
-        }
-        return true;
     }
 
     /**

@@ -38,11 +38,9 @@ import chat.dim.CommonMessenger;
 import chat.dim.Register;
 import chat.dim.cpu.GroupCommandHelper;
 import chat.dim.cpu.GroupHistoryBuilder;
-import chat.dim.crypto.SignKey;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
-import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Document;
@@ -58,12 +56,11 @@ import chat.dim.protocol.group.ResetCommand;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
-public abstract class GroupManager {
+public class GroupManager {
 
     protected final GroupDelegate delegate;
 
     protected final GroupPacker packer;
-    protected final GroupEmitter emitter;
 
     protected final GroupCommandHelper helper;
     protected final GroupHistoryBuilder builder;
@@ -72,7 +69,6 @@ public abstract class GroupManager {
         super();
         delegate = dataSource;
         packer = createPacker();
-        emitter = createEmitter();
         helper = createHelper();
         builder = createBuilder();
     }
@@ -81,8 +77,6 @@ public abstract class GroupManager {
     protected GroupPacker createPacker() {
         return new GroupPacker(delegate);
     }
-
-    protected abstract GroupEmitter createEmitter();
 
     // override for customized helper
     protected GroupCommandHelper createHelper() {
@@ -171,65 +165,6 @@ public abstract class GroupManager {
         }
 
         return group;
-    }
-
-    /**
-     *  Update 'administrators' in bulletin document
-     *  (broadcast new document to all members and neighbor station)
-     *
-     * @param group     - group ID
-     * @param newAdmins - administrator list
-     * @return false on error
-     */
-    public boolean updateAdministrators(ID group, List<ID> newAdmins) {
-        assert group.isGroup() : "group ID error: " + group;
-
-        //
-        //  0. get current user
-        //
-        User user = getCurrentUser();
-        if (user == null) {
-            assert false : "failed to get current user";
-            return false;
-        }
-        ID me = user.getIdentifier();
-        SignKey sKey = delegate.getFacebook().getPrivateKeyForVisaSignature(me);
-        assert sKey != null : "failed to get sign key for current user: " + me;
-
-        //
-        //  1. check permission
-        //
-        boolean isOwner = delegate.isOwner(me, group);
-        if (!isOwner) {
-            assert false : "cannot update administrators for group: " + group + ", " + me;
-            return false;
-        }
-
-        //
-        //  2. update document
-        //
-        Document doc = delegate.getDocument(group, "*");
-        if (doc == null) {
-            // TODO: create new one?
-            assert false : "failed to get group document: " + group + ", owner: " + me;
-            return false;
-        }
-        doc.setProperty("administrators", ID.revert(newAdmins));
-        byte[] signature = doc.sign(sKey);
-        if (signature == null) {
-            assert false : "failed to sign document for group: " + group + ", owner: " + me;
-            return false;
-        } else if (!delegate.saveDocument(doc)) {
-            assert false : "failed to save document for group: " + group;
-            return false;
-        } else {
-            Log.info("group document updated: " + group);
-        }
-
-        //
-        //  3. broadcast bulletin document
-        //
-        return emitter.broadcastDocument((Bulletin) doc);
     }
 
     // DISCUSS: should we let the neighbor stations know the group info?
@@ -500,47 +435,6 @@ public abstract class GroupManager {
         }
 
         return true;
-    }
-
-    /**
-     *  Query group info
-     *
-     * @param group - group ID
-     * @return false on error
-     */
-    public boolean queryGroup(ID group) {
-        assert group.isGroup() : "group ID error: " + group;
-
-        //
-        //  0. get current user
-        //
-        User user = getCurrentUser();
-        if (user == null) {
-            assert false : "failed to get current user";
-            return false;
-        }
-        ID me = user.getIdentifier();
-
-        boolean isMember = delegate.isMember(me, group);
-        boolean isAssistant = delegate.isAssistant(me, group);
-
-        //
-        //  1. check permission
-        //
-        boolean canQuery = isMember || isAssistant;
-        if (!canQuery) {
-            assert false : "cannot query group: " + group + ", " + me;
-            return false;
-        }
-
-        //
-        //  2. do query
-        //
-        CommonMessenger messenger = delegate.getMessenger();
-        boolean ok1 = messenger.queryDocument(group);
-        boolean ok2 = messenger.queryMembers(group);
-
-        return ok1 || ok2;
     }
 
     private void sendCommand(Content content, ID receiver) {
