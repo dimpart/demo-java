@@ -1,6 +1,6 @@
 /* license: https://mit-license.org
  *
- *  DIMP : Decentralized Instant Messaging Protocol
+ *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
  *                                Written in 2022 by Moky <albert.moky@gmail.com>
  *
@@ -32,6 +32,7 @@ package chat.dim;
 
 import java.util.List;
 
+import chat.dim.crypto.SymmetricKey;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
@@ -67,6 +68,10 @@ public class ClientMessenger extends CommonMessenger {
     @Override
     public ClientSession getSession() {
         return (ClientSession) super.getSession();
+    }
+
+    public SymmetricKey getCipherKey(ID sender, ID receiver, boolean generate) {
+        return getCipherKeyDelegate().getCipherKey(sender, receiver, generate);
     }
 
     /**
