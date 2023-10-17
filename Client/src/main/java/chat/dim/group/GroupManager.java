@@ -36,8 +36,6 @@ import java.util.List;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.Register;
-import chat.dim.cpu.GroupCommandHelper;
-import chat.dim.cpu.GroupHistoryBuilder;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
@@ -62,7 +60,7 @@ public class GroupManager {
 
     protected final GroupPacker packer;
 
-    protected final GroupCommandHelper helper;
+    protected final GroupHelper helper;
     protected final GroupHistoryBuilder builder;
 
     public GroupManager(GroupDelegate dataSource) {
@@ -79,8 +77,8 @@ public class GroupManager {
     }
 
     // override for customized helper
-    protected GroupCommandHelper createHelper() {
-        return new GroupCommandHelper(delegate.getFacebook(), delegate.getMessenger());
+    protected GroupHelper createHelper() {
+        return new GroupHelper(delegate.getFacebook(), delegate.getMessenger());
     }
 
     // override for customized builder

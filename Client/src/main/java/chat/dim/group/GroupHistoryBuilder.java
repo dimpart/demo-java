@@ -28,7 +28,7 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.cpu;
+package chat.dim.group;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,9 +55,9 @@ import chat.dim.utils.Log;
 
 public class GroupHistoryBuilder {
 
-    protected final GroupCommandHelper helper;
+    protected final GroupHelper helper;
 
-    public GroupHistoryBuilder(GroupCommandHelper helper) {
+    public GroupHistoryBuilder(GroupHelper helper) {
         this.helper = helper;
     }
 

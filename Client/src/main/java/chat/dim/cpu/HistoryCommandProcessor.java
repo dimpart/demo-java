@@ -36,27 +36,29 @@ import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.group.GroupHelper;
+import chat.dim.group.GroupHistoryBuilder;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.HistoryCommand;
 import chat.dim.protocol.ReliableMessage;
 
 public class HistoryCommandProcessor extends BaseCommandProcessor {
 
-    protected final GroupCommandHelper helper;
+    protected final GroupHelper helper;
     protected final GroupHistoryBuilder builder;
 
     public HistoryCommandProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
-        helper = createGroupCommandHelper();
-        builder = createGroupHistoryBuilder();
+        helper = createHelper();
+        builder = createBuilder();
     }
 
     // override for customized helper
-    protected GroupCommandHelper createGroupCommandHelper() {
-        return new GroupCommandHelper(getFacebook(), getMessenger());
+    protected GroupHelper createHelper() {
+        return new GroupHelper(getFacebook(), getMessenger());
     }
     // override for customized builder
-    protected GroupHistoryBuilder createGroupHistoryBuilder() {
+    protected GroupHistoryBuilder createBuilder() {
         return new GroupHistoryBuilder(helper);
     }
 

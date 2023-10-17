@@ -48,19 +48,6 @@ public class ClientFacebook extends CommonFacebook {
         super(db);
     }
 
-    public String getName(ID identifier) {
-        // get name from document
-        Document doc = getDocument(identifier, "*");
-        if (doc != null) {
-            String name = doc.getName();
-            if (name != null && name.length() > 0) {
-                return name;
-            }
-        }
-        // get name from ID
-        return Anonymous.getName(identifier);
-    }
-
     @Override
     public boolean saveDocument(Document doc) {
         boolean ok = super.saveDocument(doc);

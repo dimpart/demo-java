@@ -28,15 +28,17 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.cpu;
+package chat.dim.group;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import chat.dim.Barrack;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.Transceiver;
 import chat.dim.core.TwinsHelper;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.protocol.Document;
@@ -49,20 +51,20 @@ import chat.dim.protocol.group.ResignCommand;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
-public class GroupCommandHelper extends TwinsHelper {
+public class GroupHelper extends TwinsHelper {
 
-    public GroupCommandHelper(Facebook facebook, Messenger messenger) {
+    public GroupHelper(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
     }
 
     protected CommonFacebook getFacebook() {
-        Facebook facebook = super.getFacebook();
+        Barrack facebook = super.getFacebook();
         assert facebook instanceof CommonFacebook : "facebook error: " + facebook;
         return (CommonFacebook) facebook;
     }
 
     protected CommonMessenger getMessenger() {
-        Messenger messenger = super.getMessenger();
+        Transceiver messenger = super.getMessenger();
         assert messenger instanceof CommonMessenger : "messenger error: " + messenger;
         return (CommonMessenger) messenger;
     }

@@ -28,14 +28,13 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim;
+package chat.dim.utils;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import chat.dim.protocol.ID;
-import chat.dim.utils.ConfigParser;
 
 /**
  *  Config info from ini file

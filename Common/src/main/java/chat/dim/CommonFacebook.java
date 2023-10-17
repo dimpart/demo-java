@@ -105,6 +105,19 @@ public class CommonFacebook extends Facebook {
         current = user;
     }
 
+    public String getName(ID identifier) {
+        // get name from document
+        Document doc = getDocument(identifier, "*");
+        if (doc != null) {
+            String name = doc.getName();
+            if (name != null && name.length() > 0) {
+                return name;
+            }
+        }
+        // get name from ID
+        return Anonymous.getName(identifier);
+    }
+
     @Override
     public boolean saveMeta(Meta meta, ID identifier) {
         if (!meta.isValid() || !meta.matchIdentifier(identifier)) {
