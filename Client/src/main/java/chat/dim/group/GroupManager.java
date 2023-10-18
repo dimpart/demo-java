@@ -175,7 +175,7 @@ public class GroupManager {
     //          and its potential risk is that anyone not in the group can also
     //          know the group info (only the group ID, name, and admins, ...)
     //      (B) but, if we don't let the station knows it,
-    //          then we must shared the group info with our members themself;
+    //          then we must shared the group info with our members themselves;
     //          and if none of them is online, you cannot get the newest info
     //          immediately until someone online again.
 

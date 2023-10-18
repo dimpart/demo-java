@@ -54,7 +54,7 @@ public abstract class GroupEmitter {
     //
     //      if members.length < POLYLOGUE_LIMIT,
     //          means it is a small polylogue group, let the members to split
-    //          and send group messages by themself, this can keep the group
+    //          and send group messages by themselves, this can keep the group
     //          more secretive because no one else can know the group ID even;
     //      else,
     //          set 'assistants' in the bulletin document to tell all members
@@ -71,6 +71,7 @@ public abstract class GroupEmitter {
     //          you should expose group ID in the instant message level, then
     //          encrypt message by one symmetric key for this group, after that,
     //          split and send to all members directly.
+    //
     public static int SECRET_GROUP_LIMIT = 16;
 
     protected final GroupDelegate delegate;
@@ -108,14 +109,10 @@ public abstract class GroupEmitter {
         assert facebook != null : "facebook not ready";
 
         // get 'sender' => 'group'
-        ID group = content.getGroup();
-        if (group == null) {
-            assert false : "not a group message: " + content;
-            return null;
-        }
         User user = facebook.getCurrentUser();
-        if (user == null) {
-            assert false : "failed to get current user";
+        ID group = content.getGroup();
+        if (user == null || group == null) {
+            assert false : "params error: " + user + " => " + group;
             return null;
         }
         ID sender = user.getIdentifier();
@@ -140,9 +137,10 @@ public abstract class GroupEmitter {
         //
         if (content instanceof FileContent) {
             FileContent file = (FileContent) content;
+            ID sender = iMsg.getSender();
             // call emitter to encrypt & upload file data before send out
-            SymmetricKey password = getEncryptKey(iMsg.getSender(), group);
-            boolean ok = uploadFileData(file, password, iMsg);
+            SymmetricKey password = getEncryptKey(sender, group);
+            boolean ok = uploadFileData(file, password, sender);
             assert ok : "failed to upload file data: " + file;
         }
 
@@ -186,9 +184,9 @@ public abstract class GroupEmitter {
      *
      * @param content  - file content
      * @param password - symmetric key to encrypt/decrypt file data
-     * @param iMsg     - outgoing message
+     * @param sender   - from where
      */
-    protected abstract boolean uploadFileData(FileContent content, SymmetricKey password, InstantMessage iMsg);
+    protected abstract boolean uploadFileData(FileContent content, SymmetricKey password, ID sender);
 
     /**
      *  Encrypt & sign message, then forward to the bot
@@ -217,14 +215,18 @@ public abstract class GroupEmitter {
         long sn = iMsg.getContent().getSerialNumber();
         iMsg.put("sn", sn);
 
-        // pack message
+        //
+        //  1. pack message
+        //
         ReliableMessage rMsg = packer.encryptAndSignMessage(iMsg);
         if (rMsg == null) {
             assert false : "failed to encrypt & sign message: " + iMsg.getSender() + " => " + group;
             return null;
         }
 
-        // forward the group message to any bot
+        //
+        //  2. forward the group message to any bot
+        //
         Content content = ForwardContent.create(rMsg);
         Pair<InstantMessage, ReliableMessage> pair = messenger.sendContent(null, bot, content, priority);
         if (pair == null || pair.second == null) {
@@ -255,14 +257,18 @@ public abstract class GroupEmitter {
 
         ID sender = iMsg.getSender();
 
-        // pack message
+        //
+        //  1. pack message
+        //
         ReliableMessage rMsg = packer.encryptAndSignMessage(iMsg);
         if (rMsg == null) {
             assert false : "failed to encrypt & sign message: " + sender + " => " + group;
             return null;
         }
 
-        // split messages
+        //
+        //  2. split messages
+        //
         List<ReliableMessage> messages = packer.splitMessage(rMsg, allMembers);
         ID receiver;
         boolean ok;
@@ -298,7 +304,9 @@ public abstract class GroupEmitter {
         ID sender = iMsg.getSender();
         int success = 0;
 
-        // split messages
+        //
+        //  1. split messages
+        //
         List<InstantMessage> messages = packer.splitMessage(iMsg, allMembers);
         ID receiver;
         ReliableMessage rMsg;
@@ -308,7 +316,9 @@ public abstract class GroupEmitter {
                 assert false : "cycled message: " + sender + " => " + receiver + ", " + group;
                 continue;
             }
-            // send message
+            //
+            //  2. send message
+            //
             rMsg = messenger.sendInstantMessage(item, priority);
             if (rMsg == null) {
                 Log.error("failed to send message: " + receiver + " in group " + group);

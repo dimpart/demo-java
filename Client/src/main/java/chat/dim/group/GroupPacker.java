@@ -95,8 +95,9 @@ public class GroupPacker {
             if (sender.equals(receiver)) {
                 Log.info("skip cycled message: " + receiver + ", " + iMsg.getGroup());
                 continue;
+            } else {
+                Log.info("split group message for member: " + receiver);
             }
-            Log.info("split group message for member: " + receiver);
             info = iMsg.copyMap(false);
             // replace 'receiver' with member ID
             info.put("receiver", receiver.toString());
@@ -129,8 +130,9 @@ public class GroupPacker {
             if (sender.equals(receiver)) {
                 Log.info("skip cycled message: " + receiver + ", " + rMsg.getGroup());
                 continue;
+            } else {
+                Log.info("split group message for member: " + receiver);
             }
-            Log.info("split group message for member: " + receiver);
             info = rMsg.copyMap(false);
             // replace 'receiver' with member ID
             info.put("receiver", receiver.toString());
@@ -142,7 +144,7 @@ public class GroupPacker {
             }
             item = ReliableMessage.parse(info);
             if (item == null) {
-                assert false : "message error: " + info;
+                assert false : "failed to repack message: " + info;
                 continue;
             }
             messages.add(item);

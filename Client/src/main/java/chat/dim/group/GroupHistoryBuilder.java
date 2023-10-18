@@ -92,7 +92,9 @@ public class GroupHistoryBuilder {
         ResetCommand reset;
         ReliableMessage rMsg;
 
-        // 0. build 'document' command
+        //
+        //  0. build 'document' command
+        //
         Pair<Document, ReliableMessage> docPair = buildDocumentCommand(group);
         doc = docPair.first;
         rMsg = docPair.second;
@@ -103,7 +105,9 @@ public class GroupHistoryBuilder {
             messages.add(rMsg);
         }
 
-        // 1. append 'reset' command
+        //
+        //  1. append 'reset' command
+        //
         Pair<ResetCommand, ReliableMessage> resPair = helper.getResetCommandMessage(group);
         reset = resPair.first;
         rMsg = resPair.second;
@@ -114,7 +118,9 @@ public class GroupHistoryBuilder {
             messages.add(rMsg);
         }
 
-        // 2. append other group commands
+        //
+        //  2. append other group commands
+        //
         List<Pair<GroupCommand, ReliableMessage>> history = helper.getGroupHistories(group);
         for (Pair<GroupCommand, ReliableMessage> item : history) {
             if (item.first instanceof ResetCommand) {
