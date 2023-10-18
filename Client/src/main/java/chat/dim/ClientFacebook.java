@@ -52,43 +52,21 @@ public class ClientFacebook extends CommonFacebook {
     public boolean saveDocument(Document doc) {
         boolean ok = super.saveDocument(doc);
         if (ok && doc instanceof Bulletin) {
-            ID group = doc.getIdentifier();
-            assert group.isGroup() : "group ID error: " + group;
-            List<ID> admins = getAdministrators((Bulletin) doc);
-            if (admins != null && admins.size() > 0) {
+            // check administrators
+            Object array = doc.getProperty("administrators");
+            if (array instanceof List) {
+                ID group = doc.getIdentifier();
+                assert group.isGroup() : "group ID error: " + group;
+                List<ID> admins = ID.convert((List<?>) array);
                 ok = saveAdministrators(admins, group);
             }
         }
         return ok;
     }
 
-    private static List<ID> getAdministrators(Bulletin doc) {
-        Object array = doc.getProperty("administrators");
-        if (array instanceof List) {
-            return ID.convert((List<?>) array);
-        }
-        // admins not found
-        return null;
-    }
-
-    public boolean saveMembers(List<ID> members, ID group) {
-        return getDatabase().saveMembers(members, group);
-    }
-    public boolean saveAssistants(List<ID> bots, ID group) {
-        return getDatabase().saveAssistants(bots, group);
-    }
-    public boolean saveAdministrators(List<ID> admins, ID group) {
-        return getDatabase().saveAdministrators(admins, group);
-    }
-    public List<ID> getAdministrators(ID group) {
-        List<ID> admins = getDatabase().getAdministrators(group);
-        if (admins == null || admins.isEmpty()) {
-            Document doc = getDocument(group, "*");
-            if (doc instanceof Bulletin) {
-                admins = getAdministrators((Bulletin) doc);
-            }
-        }
-        return admins;
+    private boolean saveAdministrators(List<ID> newAdmins, ID group) {
+        AccountDBI db = getDatabase();
+        return db.saveAdministrators(newAdmins, group);
     }
 
     //

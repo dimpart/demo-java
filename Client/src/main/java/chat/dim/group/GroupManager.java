@@ -78,20 +78,23 @@ public class GroupManager {
 
     // override for customized helper
     protected GroupHelper createHelper() {
-        return new GroupHelper(delegate.getFacebook(), delegate.getMessenger());
+        return new GroupHelper(delegate);
     }
 
     // override for customized builder
     protected GroupHistoryBuilder createBuilder() {
-        return new GroupHistoryBuilder(helper);
+        return new GroupHistoryBuilder(delegate);
     }
 
-    public AccountDBI getDatabase() {
+    protected CommonFacebook getFacebook() {
+        return delegate.getFacebook();
+    }
+    protected CommonMessenger getMessenger() {
+        return delegate.getMessenger();
+    }
+
+    protected AccountDBI getDatabase() {
         return delegate.getFacebook().getDatabase();
-    }
-
-    public User getCurrentUser() {
-        return delegate.getFacebook().getCurrentUser();
     }
 
     /**
@@ -107,7 +110,7 @@ public class GroupManager {
         //
         //  0. get current user
         //
-        User user = getCurrentUser();
+        User user = getFacebook().getCurrentUser();
         if (user == null) {
             assert false : "failed to get current user";
             return null;
@@ -190,7 +193,7 @@ public class GroupManager {
         //
         //  0. get current user
         //
-        User user = getCurrentUser();
+        User user = getFacebook().getCurrentUser();
         if (user == null) {
             assert false : "failed to get current user";
             return false;
@@ -218,12 +221,14 @@ public class GroupManager {
         //
         boolean isOwner = me.equals(first);
         boolean isAdmin = delegate.isAdministrator(me, group);
+        boolean isBot = delegate.isAssistant(me, group);
         boolean canReset = isOwner || isAdmin;
         if (!canReset) {
             assert false : "cannot reset members of group: " + group;
             return false;
         }
         // only the owner or admin can reset group members
+        assert !isBot : "group bot cannot reset members: " + group + ", " + me;
 
         //
         //  2. build 'reset' command
@@ -283,7 +288,7 @@ public class GroupManager {
         //
         //  0. get current user
         //
-        User user = getCurrentUser();
+        User user = getFacebook().getCurrentUser();
         if (user == null) {
             assert false : "failed to get current user";
             return false;
@@ -366,7 +371,7 @@ public class GroupManager {
         //
         //  0. get current user
         //
-        User user = getCurrentUser();
+        User user = getFacebook().getCurrentUser();
         if (user == null) {
             assert false : "failed to get current user";
             return false;
@@ -381,6 +386,7 @@ public class GroupManager {
 
         boolean isOwner = delegate.isOwner(me, group);
         boolean isAdmin = delegate.isAdministrator(me, group);
+        boolean isBot = delegate.isAssistant(me, group);
         boolean isMember = members.contains(me);
 
         //
@@ -393,6 +399,7 @@ public class GroupManager {
             assert false : "administrator cannot quit from group: " + group;
             return false;
         }
+        assert !isBot : "group bot cannot quit: " + group + ", " + me;
 
         //
         //  2. update local storage
@@ -442,14 +449,15 @@ public class GroupManager {
     }
 
     private void sendCommand(Content content, List<ID> members) {
-        CommonFacebook facebook = delegate.getFacebook();
-        CommonMessenger messenger = delegate.getMessenger();
-        User user = facebook.getCurrentUser();
+        // 1. get sender
+        User user = getFacebook().getCurrentUser();
         if (user == null) {
             assert false : "failed to get current user";
             return;
         }
         ID me = user.getIdentifier();
+        // 2. send to all receivers
+        CommonMessenger messenger = getMessenger();
         for (ID receiver : members) {
             if (me.equals(receiver)) {
                 Log.info("skip cycled message: " + me + " => " + receiver);

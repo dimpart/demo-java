@@ -55,18 +55,25 @@ import chat.dim.utils.Log;
 
 public class GroupHistoryBuilder {
 
+    protected final GroupDelegate delegate;
     protected final GroupHelper helper;
 
-    public GroupHistoryBuilder(GroupHelper helper) {
-        this.helper = helper;
+    public GroupHistoryBuilder(GroupDelegate dataSource) {
+        super();
+        delegate = dataSource;
+        helper = createHelper();
+    }
+
+    // override for customized helper
+    protected GroupHelper createHelper() {
+        return new GroupHelper(delegate);
     }
 
     protected CommonFacebook getFacebook() {
-        return helper.getFacebook();
+        return delegate.getFacebook();
     }
-
     protected CommonMessenger getMessenger() {
-        return helper.getMessenger();
+        return delegate.getMessenger();
     }
 
     /**
@@ -142,14 +149,14 @@ public class GroupHistoryBuilder {
      */
     public Pair<Document, ReliableMessage> buildDocumentCommand(ID group) {
         User user = getFacebook().getCurrentUser();
-        Document doc = helper.getDocument(group);
+        Document doc = delegate.getDocument(group, "*");
         if (user == null || doc == null) {
             assert user != null : "failed to get current user";
             Log.error("document not found for group: " + group);
             return null;
         }
         ID me = user.getIdentifier();
-        Meta meta = helper.getMeta(group);
+        Meta meta = delegate.getMeta(group);
         Command command = DocumentCommand.response(group, meta, doc);
         ReliableMessage rMsg = packBroadcastMessage(me, command);
         return new Pair<>(doc, rMsg);
@@ -160,7 +167,7 @@ public class GroupHistoryBuilder {
      */
     public Pair<ResetCommand, ReliableMessage> buildResetCommand(ID group, List<ID> members) {
         User user = getFacebook().getCurrentUser();
-        ID owner = helper.getOwner(group);
+        ID owner = delegate.getOwner(group);
         if (user == null || owner == null) {
             assert user != null : "failed to get current user";
             Log.error("owner not found for group: " + group);
@@ -168,7 +175,7 @@ public class GroupHistoryBuilder {
         }
         ID me = user.getIdentifier();
         if (!owner.equals(me)) {
-            List<ID> admins = helper.getAdministrators(group);
+            List<ID> admins = delegate.getAdministrators(group);
             if (admins == null || !admins.contains(me)) {
                 Log.warning("not permit to build 'reset' command for group: " + group + ", " + me);
                 return null;
@@ -177,7 +184,7 @@ public class GroupHistoryBuilder {
 
         // check members
         if (members == null) {
-            members = helper.getMembers(group);
+            members = delegate.getMembers(group);
             if (members == null) {
                 Log.error("failed to get members for group: " + group);
                 return null;

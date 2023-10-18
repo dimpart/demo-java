@@ -33,129 +33,27 @@ package chat.dim.group;
 import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.Barrack;
-import chat.dim.CommonFacebook;
-import chat.dim.CommonMessenger;
-import chat.dim.Facebook;
-import chat.dim.Messenger;
-import chat.dim.Transceiver;
-import chat.dim.core.TwinsHelper;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
-import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.ResetCommand;
 import chat.dim.protocol.group.ResignCommand;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
-public class GroupHelper extends TwinsHelper {
+public class GroupHelper {
 
-    public GroupHelper(Facebook facebook, Messenger messenger) {
-        super(facebook, messenger);
-    }
+    protected final GroupDelegate delegate;
 
-    protected CommonFacebook getFacebook() {
-        Barrack facebook = super.getFacebook();
-        assert facebook instanceof CommonFacebook : "facebook error: " + facebook;
-        return (CommonFacebook) facebook;
+    public GroupHelper(GroupDelegate dataSource) {
+        super();
+        delegate = dataSource;
     }
 
-    protected CommonMessenger getMessenger() {
-        Transceiver messenger = super.getMessenger();
-        assert messenger instanceof CommonMessenger : "messenger error: " + messenger;
-        return (CommonMessenger) messenger;
-    }
-
-    /**
-     *  Get group meta
-     *  if not found, query it from any station
-     */
-    public Meta getMeta(ID group) {
-        Meta meta = getFacebook().getMeta(group);
-        if (meta == null) {
-            getMessenger().queryMeta(group);
-        }
-        return meta;
-    }
-
-    /**
-     *  Get group document
-     *  if not found, query it from any station
-     */
-    public Document getDocument(ID group) {
-        Document doc = getFacebook().getDocument(group, "*");
-        if (doc == null) {
-            getMessenger().queryDocument(group);
-        }
-        return doc;
-    }
-
-    /**
-     *  Get group owner
-     *  when bulletin document exists
-     */
-    public ID getOwner(ID group) {
-        Document doc = getDocument(group);
-        if (doc == null) {
-            // the owner(founder) should be set in the bulletin document of group
-            return null;
-        }
-        return getFacebook().getOwner(group);
-    }
-
-    /**
-     *  Get group bots
-     *  when bulletin document exists
-     */
-    public List<ID> getAssistants(ID group) {
-        Document doc = getDocument(group);
-        if (doc == null) {
-            // the group assistants should be set in the bulletin document
-            return null;
-        }
-        return getFacebook().getAssistants(group);
-    }
-
-    /**
-     *  Get administrators
-     *  when bulletin document exists
-     */
-    public List<ID> getAdministrators(ID group) {
-        Document doc = getDocument(group);
-        if (doc == null) {
-            // the administrators should be set in the bulletin document
-            return null;
-        }
-        AccountDBI db = getFacebook().getDatabase();
-        return db.getAdministrators(group);
-    }
-    public boolean saveAdministrators(List<ID> admins, ID group) {
-        AccountDBI db = getFacebook().getDatabase();
-        return db.saveAdministrators(admins, group);
-    }
-
-    /**
-     *  Get members when owner exists,
-     *  if not found, query from bots/admins/owner
-     */
-    public List<ID> getMembers(ID group) {
-        ID owner = getOwner(group);
-        if (owner == null) {
-            // the owner must exist before members
-            return null;
-        }
-        List<ID> members = getFacebook().getMembers(group);
-        if (members == null || members.isEmpty()) {
-            getMessenger().queryMembers(group);
-        }
-        return members;
-    }
-    public boolean saveMembers(List<ID> members, ID group) {
-        AccountDBI db = getFacebook().getDatabase();
-        return db.saveMembers(members, group);
+    protected AccountDBI getDatabase() {
+        return delegate.getDatabase();
     }
 
     //
@@ -167,7 +65,7 @@ public class GroupHelper extends TwinsHelper {
             Log.warning("drop expired command: " + content.getCmd() + ", " + rMsg.getSender() + " => " + group);
             return false;
         }
-        AccountDBI db = getFacebook().getDatabase();
+        AccountDBI db = getDatabase();
         if (content instanceof ResetCommand) {
             Log.warning("cleaning group history for 'reset' command: " + rMsg.getSender() + " => " + group);
             return db.clearGroupMemberHistories(group);
@@ -175,19 +73,19 @@ public class GroupHelper extends TwinsHelper {
         return db.saveGroupHistory(content, rMsg, group);
     }
     public List<Pair<GroupCommand, ReliableMessage>> getGroupHistories(ID group) {
-        AccountDBI db = getFacebook().getDatabase();
+        AccountDBI db = getDatabase();
         return db.getGroupHistories(group);
     }
     public Pair<ResetCommand, ReliableMessage> getResetCommandMessage(ID group) {
-        AccountDBI db = getFacebook().getDatabase();
+        AccountDBI db = getDatabase();
         return db.getResetCommandMessage(group);
     }
     boolean clearGroupMemberHistories(ID group) {
-        AccountDBI db = getFacebook().getDatabase();
+        AccountDBI db = getDatabase();
         return db.clearGroupMemberHistories(group);
     }
     boolean clearGroupAdminHistories(ID group) {
-        AccountDBI db = getFacebook().getDatabase();
+        AccountDBI db = getDatabase();
         return db.clearGroupAdminHistories(group);
     }
 
@@ -203,7 +101,7 @@ public class GroupHelper extends TwinsHelper {
         }
         if (content instanceof ResignCommand) {
             // administrator command, check with document time
-            Document bulletin = getDocument(group);
+            Document bulletin = delegate.getDocument(group, "*");
             if (bulletin == null) {
                 assert false : "group document not exists: " + group;
                 return true;
@@ -220,7 +118,7 @@ public class GroupHelper extends TwinsHelper {
         return AccountDBI.isExpired(cmd.getTime(), content.getTime());
     }
 
-    public static List<ID> getMembers(GroupCommand content) {
+    public static List<ID> getCommandMembers(GroupCommand content) {
         // get from 'members'
         List<ID> members = content.getMembers();
         if (members == null) {

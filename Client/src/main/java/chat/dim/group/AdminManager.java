@@ -54,6 +54,13 @@ public class AdminManager {
         delegate = dataSource;
     }
 
+    protected CommonFacebook getFacebook() {
+        return delegate.getFacebook();
+    }
+    protected CommonMessenger getMessenger() {
+        return delegate.getMessenger();
+    }
+
     /**
      *  Update 'administrators' in bulletin document
      *  (broadcast new document to all members and neighbor station)
@@ -64,7 +71,7 @@ public class AdminManager {
      */
     public boolean updateAdministrators(ID group, List<ID> newAdmins) {
         assert group.isGroup() : "group ID error: " + group;
-        CommonFacebook facebook = delegate.getFacebook();
+        CommonFacebook facebook = getFacebook();
         assert facebook != null : "facebook not ready";
 
         //
@@ -119,8 +126,8 @@ public class AdminManager {
      *  Broadcast group document
      */
     protected boolean broadcastDocument(Bulletin doc) {
-        CommonFacebook facebook = delegate.getFacebook();
-        CommonMessenger messenger = delegate.getMessenger();
+        CommonFacebook facebook = getFacebook();
+        CommonMessenger messenger = getMessenger();
         assert facebook != null && messenger != null : "facebook messenger not ready: " + facebook + ", " + messenger;
 
         //

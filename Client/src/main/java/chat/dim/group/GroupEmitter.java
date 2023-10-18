@@ -32,10 +32,11 @@ package chat.dim.group;
 
 import java.util.List;
 
+import chat.dim.CipherKeyDelegate;
 import chat.dim.ClientMessenger;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
-import chat.dim.crypto.EncryptKey;
+import chat.dim.crypto.SymmetricKey;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Envelope;
@@ -86,16 +87,24 @@ public abstract class GroupEmitter {
         return new GroupPacker(delegate);
     }
 
-    protected EncryptKey getEncryptKey(ID sender, ID receiver) {
-        ClientMessenger messenger = (ClientMessenger) delegate.getMessenger();
-        return messenger.getCipherKey(sender, receiver, true);
+    protected CommonFacebook getFacebook() {
+        return delegate.getFacebook();
+    }
+    protected CommonMessenger getMessenger() {
+        return delegate.getMessenger();
+    }
+
+    protected SymmetricKey getEncryptKey(ID sender, ID receiver) {
+        ClientMessenger messenger = (ClientMessenger) getMessenger();
+        CipherKeyDelegate keyCache = messenger.getCipherKeyDelegate();
+        return keyCache.getCipherKey(sender, receiver, true);
     }
 
     /**
      *  Send group message content
      */
     public Pair<InstantMessage, ReliableMessage> sendContent(Content content, int priority) {
-        CommonFacebook facebook = delegate.getFacebook();
+        CommonFacebook facebook = getFacebook();
         assert facebook != null : "facebook not ready";
 
         // get 'sender' => 'group'
@@ -132,7 +141,7 @@ public abstract class GroupEmitter {
         if (content instanceof FileContent) {
             FileContent file = (FileContent) content;
             // call emitter to encrypt & upload file data before send out
-            EncryptKey password = getEncryptKey(iMsg.getSender(), group);
+            SymmetricKey password = getEncryptKey(iMsg.getSender(), group);
             boolean ok = uploadFileData(file, password, iMsg);
             assert ok : "failed to upload file data: " + file;
         }
@@ -179,7 +188,7 @@ public abstract class GroupEmitter {
      * @param password - symmetric key to encrypt/decrypt file data
      * @param iMsg     - outgoing message
      */
-    protected abstract boolean uploadFileData(FileContent content, EncryptKey password, InstantMessage iMsg);
+    protected abstract boolean uploadFileData(FileContent content, SymmetricKey password, InstantMessage iMsg);
 
     /**
      *  Encrypt & sign message, then forward to the bot
@@ -190,7 +199,7 @@ public abstract class GroupEmitter {
         //         if you want to send a group command to any assistant, you must
         //         set the bot ID as 'receiver' and set the group ID in content;
         //         this means you must send it to the bot directly.
-        CommonMessenger messenger = delegate.getMessenger();
+        CommonMessenger messenger = getMessenger();
 
         // group bots designated, let group bot to split the message, so
         // here must expose the group ID; this will cause the client to
@@ -233,7 +242,7 @@ public abstract class GroupEmitter {
     private ReliableMessage disperseMessage(List<ID> allMembers, ID group, InstantMessage iMsg, int priority) {
         assert group.isGroup() : "group ID error: " + group;
         // assert !iMsg.containsKey("group") : "should not happen";
-        CommonMessenger messenger = delegate.getMessenger();
+        CommonMessenger messenger = getMessenger();
 
         // NOTICE: there are too many members in this group
         //         if we still hide the group ID, the cost will be very high.
@@ -277,7 +286,7 @@ public abstract class GroupEmitter {
     private int splitAndSendMessage(List<ID> allMembers, ID group, InstantMessage iMsg, int priority) {
         assert group.isGroup() : "group ID error: " + group;
         assert !iMsg.containsKey("group") : "should not happen";
-        CommonMessenger messenger = delegate.getMessenger();
+        CommonMessenger messenger = getMessenger();
 
         // NOTICE: this is a tiny group
         //         I suggest NOT to expose the group ID to maximize its privacy,

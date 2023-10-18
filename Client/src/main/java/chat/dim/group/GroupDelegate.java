@@ -32,11 +32,8 @@ package chat.dim.group;
 
 import java.util.List;
 
-import chat.dim.ClientFacebook;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
-import chat.dim.Facebook;
-import chat.dim.Messenger;
 import chat.dim.core.TwinsHelper;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.Group;
@@ -47,7 +44,7 @@ import chat.dim.protocol.Meta;
 
 public class GroupDelegate extends TwinsHelper implements Group.DataSource {
 
-    public GroupDelegate(Facebook facebook, Messenger messenger) {
+    public GroupDelegate(CommonFacebook facebook, CommonMessenger messenger) {
         super(facebook, messenger);
     }
 
@@ -61,9 +58,13 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
         return (CommonMessenger) super.getMessenger();
     }
 
+    public AccountDBI getDatabase() {
+        return getFacebook().getDatabase();
+    }
+
     public String buildGroupName(List<ID> members) {
         assert members.size() > 0 : "members should not be empty here";
-        ClientFacebook facebook = (ClientFacebook) getFacebook();
+        CommonFacebook facebook = getFacebook();
         StringBuilder text = new StringBuilder(facebook.getName(members.get(0)));
         String nickname;
         for (int i = 1; i < members.size(); ++i) {
@@ -87,6 +88,7 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     public Meta getMeta(ID identifier) {
         Meta meta = getFacebook().getMeta(identifier);
         if (meta == null) {
+            // if not found, query it from any station
             getMessenger().queryMeta(identifier);
         }
         return meta;
@@ -96,15 +98,14 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     public Document getDocument(ID identifier, String type) {
         Document doc = getFacebook().getDocument(identifier, type);
         if (doc == null) {
+            // if not found, query it from any station
             getMessenger().queryDocument(identifier);
         }
         return doc;
     }
 
     public boolean saveDocument(Document doc) {
-        assert doc.isValid() : "document invalid: " + doc.getIdentifier();
-        AccountDBI db = getFacebook().getDatabase();
-        return db.saveDocument(doc);
+        return getFacebook().saveDocument(doc);
     }
 
     //
@@ -116,6 +117,7 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
         assert group.isGroup() : "ID error: " + group;
         Document doc = getDocument(group, "*");
         if (doc == null) {
+            // the owner(founder) should be set in the bulletin document of group
             return null;
         }
         return getFacebook().getFounder(group);
@@ -126,6 +128,7 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
         assert group.isGroup() : "ID error: " + group;
         Document doc = getDocument(group, "*");
         if (doc == null) {
+            // the owner(founder) should be set in the bulletin document of group
             return null;
         }
         return getFacebook().getOwner(group);
@@ -136,19 +139,10 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
         assert group.isGroup() : "ID error: " + group;
         Document doc = getDocument(group, "*");
         if (doc == null) {
+            // the group assistants should be set in the bulletin document
             return null;
         }
-        List<ID> bots = getFacebook().getAssistants(group);
-        if (bots != null && bots.size() > 0) {
-            // got from database
-            return bots;
-        }
-        Object array = doc.getProperty("assistants");
-        if (array instanceof List) {
-            // got from bulletin
-            return ID.convert((List<?>) array);
-        }
-        return null;
+        return getFacebook().getAssistants(group);
     }
 
     @Override
@@ -156,18 +150,19 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
         assert group.isGroup() : "ID error: " + group;
         Document doc = getDocument(group, "*");
         if (doc == null) {
+            // group not ready
             return null;
         }
         List<ID> members = getFacebook().getMembers(group);
         if (members == null || members.size() < 2) {
-            // members not found, query the owner (or group bots)
+            // if not found, query from bots/admins/owner
             getMessenger().queryMembers(group);
         }
         return members;
     }
 
     public boolean saveMembers(List<ID> newMembers, ID group) {
-        AccountDBI db = getFacebook().getDatabase();
+        AccountDBI db = getDatabase();
         return db.saveMembers(newMembers, group);
     }
 
@@ -179,9 +174,10 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
         assert group.isGroup() : "ID error: " + group;
         Document doc = getDocument(group, "*");
         if (doc == null) {
+            // the administrators should be set in the bulletin document
             return null;
         }
-        AccountDBI db = getFacebook().getDatabase();
+        AccountDBI db = getDatabase();
         List<ID> admins = db.getAdministrators(group);
         if (admins != null && admins.size() > 0) {
             // got from database
@@ -193,6 +189,11 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
             return ID.convert((List<?>) array);
         }
         return null;
+    }
+
+    public boolean saveAdministrators(List<ID> newAdmins, ID group) {
+        AccountDBI db = getDatabase();
+        return db.saveAdministrators(newAdmins, group);
     }
 
     //

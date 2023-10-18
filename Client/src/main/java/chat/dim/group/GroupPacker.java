@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import chat.dim.CommonMessenger;
+import chat.dim.Messenger;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.ID;
@@ -53,6 +53,10 @@ public class GroupPacker {
         delegate = dataSource;
     }
 
+    protected Messenger getMessenger() {
+        return delegate.getMessenger();
+    }
+
     /**
      *  Pack as broadcast message
      */
@@ -64,7 +68,7 @@ public class GroupPacker {
     }
 
     public ReliableMessage encryptAndSignMessage(InstantMessage iMsg) {
-        CommonMessenger messenger = delegate.getMessenger();
+        Messenger messenger = getMessenger();
         // encrypt for receiver
         SecureMessage sMsg = messenger.encryptMessage(iMsg);
         if (sMsg == null) {

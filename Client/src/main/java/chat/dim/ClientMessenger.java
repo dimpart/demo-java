@@ -32,7 +32,6 @@ package chat.dim;
 
 import java.util.List;
 
-import chat.dim.crypto.SymmetricKey;
 import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
@@ -70,8 +69,9 @@ public class ClientMessenger extends CommonMessenger {
         return (ClientSession) super.getSession();
     }
 
-    public SymmetricKey getCipherKey(ID sender, ID receiver, boolean generate) {
-        return getCipherKeyDelegate().getCipherKey(sender, receiver, generate);
+    @Override
+    public CipherKeyDelegate getCipherKeyDelegate() {
+        return super.getCipherKeyDelegate();
     }
 
     /**

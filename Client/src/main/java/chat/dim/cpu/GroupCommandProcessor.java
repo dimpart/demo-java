@@ -52,24 +52,24 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
     }
 
     protected ID getOwner(ID group) {
-        return helper.getOwner(group);
+        return delegate.getOwner(group);
     }
     protected List<ID> getAssistants(ID group) {
-        return helper.getAssistants(group);
+        return delegate.getAssistants(group);
     }
 
     protected List<ID> getAdministrators(ID group) {
-        return helper.getAdministrators(group);
+        return delegate.getAdministrators(group);
     }
     protected boolean saveAdministrators(List<ID> members, ID group) {
-        return helper.saveAdministrators(members, group);
+        return delegate.saveAdministrators(members, group);
     }
 
     protected List<ID> getMembers(ID group) {
-        return helper.getMembers(group);
+        return delegate.getMembers(group);
     }
     protected boolean saveMembers(List<ID> members, ID group) {
-        return helper.saveMembers(members, group);
+        return delegate.saveMembers(members, group);
     }
 
     protected boolean saveGroupHistory(ID group, GroupCommand content, ReliableMessage rMsg) {
@@ -119,7 +119,7 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
             return null;
         }
         List<Content> errors;
-        List<ID> members = GroupHelper.getMembers(content);
+        List<ID> members = GroupHelper.getCommandMembers(content);
         if (/*members == null || */members.isEmpty()) {
             errors = respondReceipt("Command error.", rMsg.getEnvelope(), content, newMap(
                     "template", "Group members empty: ${ID}",
