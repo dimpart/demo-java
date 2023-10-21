@@ -147,14 +147,14 @@ public class GroupManager {
         Command content;
         if (doc != null) {
             content = DocumentCommand.response(group, meta, doc);
-            sendCommand(content, Station.ANY);          // to neighbor(s)
         } else if (meta != null) {
             content = MetaCommand.response(group, meta);
-            sendCommand(content, Station.ANY);          // to neighbor(s)
         } else {
             assert false : " failed to get group info: " + group;
             return null;
         }
+        boolean ok = sendCommand(content, Station.ANY); // to neighbor(s)
+        assert ok : "failed to upload meta/document to neighbor station";
 
         //
         //  4. create & broadcast 'reset' group command with new members
@@ -264,7 +264,7 @@ public class GroupManager {
         if (bots != null && bots.size() > 0) {
             // let the group bots know the newest member ID list,
             // so they can split group message correctly for us.
-            sendCommand(forward, bots);                 // to all assistants
+            return sendCommand(forward, bots);          // to all assistants
         } else {
             // group bots not exist,
             // send the command to all members
@@ -342,8 +342,7 @@ public class GroupManager {
         if (bots != null && bots.size() > 0) {
             // let the group bots know the newest member ID list,
             // so they can split group message correctly for us.
-            sendCommand(forward, bots);                 // to all assistants
-            return true;
+            return sendCommand(forward, bots);          // to all assistants
         }
 
         // forward 'invite' to old members
@@ -379,10 +378,7 @@ public class GroupManager {
         ID me = user.getIdentifier();
 
         List<ID> members = delegate.getMembers(group);
-        if (members == null || members.isEmpty()) {
-            assert false : "failed to get members for group: " + group;
-            return false;
-        }
+        assert members != null && members.size() > 0 : "failed to get members for group: " + group;
 
         boolean isOwner = delegate.isOwner(me, group);
         boolean isAdmin = delegate.isAdministrator(me, group);
@@ -411,7 +407,7 @@ public class GroupManager {
             boolean ok = delegate.saveMembers(members, group);
             assert ok : "failed to save members for group: " + group;
         } else {
-            Log.error("member not in group: " + group + ", " + me);
+            Log.warning("member not in group: " + group + ", " + me);
         }
 
         //
@@ -432,28 +428,26 @@ public class GroupManager {
         if (bots != null && bots.size() > 0) {
             // let the group bots know the newest member ID list,
             // so they can split group message correctly for us.
-            sendCommand(forward, bots);                 // to group bots
+            return sendCommand(forward, bots);          // to group bots
         } else {
             // group bots not exist,
             // send the command to all members directly
-            sendCommand(forward, members);              // to all members
+            return sendCommand(forward, members);       // to all members
         }
-
-        return true;
     }
 
-    private void sendCommand(Content content, ID receiver) {
+    private boolean sendCommand(Content content, ID receiver) {
         List<ID> members = new ArrayList<>();
         members.add(receiver);
-        sendCommand(content, members);
+        return sendCommand(content, members);
     }
 
-    private void sendCommand(Content content, List<ID> members) {
+    private boolean sendCommand(Content content, List<ID> members) {
         // 1. get sender
         User user = getFacebook().getCurrentUser();
         if (user == null) {
             assert false : "failed to get current user";
-            return;
+            return false;
         }
         ID me = user.getIdentifier();
         // 2. send to all receivers
@@ -465,6 +459,7 @@ public class GroupManager {
             }
             messenger.sendContent(me, receiver, content, 1);
         }
+        return true;
     }
 
 }

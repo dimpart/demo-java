@@ -78,11 +78,11 @@ public class Register {
     /**
      *  Generate user account
      *
-     * @param nickname  - user name
-     * @param avatarUrl - photo URL
+     * @param nickname - user name
+     * @param avatar   - photo URL
      * @return user ID
      */
-    public ID createUser(String nickname, String avatarUrl) {
+    public ID createUser(String nickname, PortableNetworkFile avatar) {
         //
         //  Step 1: generate private key (with asymmetric algorithm)
         //
@@ -99,11 +99,10 @@ public class Register {
         //  Step 4: generate visa with ID and sign with private key
         //
         PrivateKey msgKey = PrivateKey.generate(AsymmetricKey.RSA);
-        Visa visa = createVisa(identifier, nickname, avatarUrl,
-                (EncryptKey) msgKey.getPublicKey(), idKey);
+        EncryptKey visaKey = (EncryptKey) msgKey.getPublicKey();
+        Visa visa = createVisa(identifier, visaKey, idKey, nickname, avatar);
         //
         //  Step 5: save private key, meta & visa in local storage
-        //          don't forget to upload them onto the DIM station
         //
         database.savePrivateKey(idKey, PrivateKeyDBI.META, identifier);
         database.savePrivateKey(msgKey, PrivateKeyDBI.VISA, identifier);
@@ -142,10 +141,9 @@ public class Register {
         //
         //  Step 4: generate bulletin with ID and sign with founder's private key
         //
-        Bulletin doc = createBulletin(identifier, title, privateKey, founder);
+        Bulletin doc = createBulletin(identifier, privateKey, title, founder);
         //
         //  Step 5: save meta & bulletin in local storage
-        //          don't forget to upload then onto the DIM station
         //
         database.saveMeta(meta, identifier);
         database.saveDocument(doc);
@@ -159,8 +157,8 @@ public class Register {
         return identifier;
     }
 
-    private static Visa createVisa(ID identifier, String nickname, String avatarUrl,
-                                   EncryptKey visaKey, SignKey idKey) {
+    protected Visa createVisa(ID identifier, EncryptKey visaKey, SignKey idKey,
+                              String nickname, PortableNetworkFile avatar) {
         assert identifier.isUser() : "user ID error: " + identifier;
         Visa doc = new BaseVisa(identifier);
         // App ID
@@ -168,8 +166,8 @@ public class Register {
         // nickname
         doc.setName(nickname);
         // avatar
-        if (avatarUrl != null) {
-            doc.setAvatar(PortableNetworkFile.parse(avatarUrl));
+        if (avatar != null) {
+            doc.setAvatar(avatar);
         }
         // public key
         doc.setPublicKey(visaKey);
@@ -178,7 +176,8 @@ public class Register {
         assert sig != null : "failed to sign visa: " + identifier;
         return doc;
     }
-    private static Bulletin createBulletin(ID identifier, String title, SignKey privateKey, ID founder) {
+    protected Bulletin createBulletin(ID identifier, SignKey privateKey,
+                                      String title, ID founder) {
         assert identifier.isGroup() : "group ID error: " + identifier;
         Bulletin doc = new BaseBulletin(identifier);
         // App ID
