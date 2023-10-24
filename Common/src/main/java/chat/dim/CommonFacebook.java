@@ -36,6 +36,7 @@ import java.util.List;
 import chat.dim.crypto.DecryptKey;
 import chat.dim.crypto.SignKey;
 import chat.dim.dbi.AccountDBI;
+import chat.dim.mkm.DocumentHelper;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
@@ -105,9 +106,22 @@ public class CommonFacebook extends Facebook {
         current = user;
     }
 
+    public Document getDocument(ID identifier, String type) {
+        List<Document> documents = getDocuments(identifier);
+        return DocumentHelper.lastDocument(documents, type);
+    }
+
     public String getName(ID identifier) {
+        String type;
+        if (identifier.isUser()) {
+            type = Document.VISA;
+        } else if (identifier.isGroup()) {
+            type = Document.BULLETIN;
+        } else {
+            type = "*";
+        }
         // get name from document
-        Document doc = getDocument(identifier, "*");
+        Document doc = getDocument(identifier, type);
         if (doc != null) {
             String name = doc.getName();
             if (name != null && name.length() > 0) {
@@ -124,17 +138,24 @@ public class CommonFacebook extends Facebook {
             assert false : "meta not valid: " + identifier;
             return false;
         }
+        // check old meta
+        Meta old = getMeta(identifier);
+        if (old != null) {
+            assert meta.equals(old) : "meta would not changed";
+            return true;
+        }
+        // meta not exists yet, save it
         return database.saveMeta(meta, identifier);
     }
 
     @Override
     public boolean saveDocument(Document doc) {
+        ID identifier = doc.getIdentifier();
+        if (identifier == null) {
+            assert false : "document error: " + doc;
+            return false;
+        }
         if (!doc.isValid()) {
-            ID identifier = doc.getIdentifier();
-            if (identifier == null) {
-                assert false : "document error: " + doc;
-                return false;
-            }
             Meta meta = getMeta(identifier);
             if (meta == null) {
                 Log.error("meta not found: " + identifier);
@@ -144,6 +165,19 @@ public class CommonFacebook extends Facebook {
             } else {
                 Log.error("failed to verify document: " + identifier);
                 assert false : "document not valid: " + identifier;
+                return false;
+            }
+        }
+        String type = doc.getType();
+        // check old documents with type
+        List<Document> documents = getDocuments(identifier);
+        Document old = DocumentHelper.lastDocument(documents, type);
+        if (old != null) {
+            if (DocumentHelper.isExpired(doc, old)) {
+                Log.warning("drop expired document: " + identifier);
+                return false;
+            } else if (!database.clearDocuments(identifier, type)) {
+                Log.error("failed to clear old documents: " + identifier + ", type: " + type);
                 return false;
             }
         }
@@ -166,14 +200,14 @@ public class CommonFacebook extends Facebook {
     }
 
     @Override
-    public Document getDocument(ID entity, String type) {
+    public List<Document> getDocuments(ID entity) {
         /*/
         if (entity.isBroadcast()) {
-            // broadcast ID has no document
+            // broadcast ID has no documents
             return null;
         }
         /*/
-        return database.getDocument(entity, type);
+        return database.getDocuments(entity);
     }
 
     //

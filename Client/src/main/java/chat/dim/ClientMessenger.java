@@ -36,8 +36,8 @@ import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
+import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.GroupCommand;
@@ -219,7 +219,7 @@ public class ClientMessenger extends CommonMessenger {
         assert identifier.isGroup() : "group ID error: " + identifier;
         CommonFacebook facebook = getFacebook();
         // 0. check group document
-        Document bulletin = facebook.getDocument(identifier, "*");
+        Bulletin bulletin = facebook.getBulletin(identifier);
         if (bulletin == null) {
             Log.warning("group document not exists: " + identifier);
             queryDocument(identifier);

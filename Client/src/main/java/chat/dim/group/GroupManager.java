@@ -39,9 +39,9 @@ import chat.dim.Register;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
+import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.ForwardContent;
 import chat.dim.protocol.GroupCommand;
@@ -143,7 +143,7 @@ public class GroupManager {
         //  DISCUSS: should we let the neighbor stations know the group info?
         //
         Meta meta = delegate.getMeta(group);
-        Document doc = delegate.getDocument(group, "*");
+        Bulletin doc = delegate.getBulletin(group);
         Command content;
         if (doc != null) {
             content = DocumentCommand.response(group, meta, doc);

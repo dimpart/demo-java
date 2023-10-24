@@ -35,8 +35,9 @@ import java.util.List;
 
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
-import chat.dim.dbi.AccountDBI;
+import chat.dim.mkm.DocumentHelper;
 import chat.dim.mkm.User;
+import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Document;
@@ -130,14 +131,14 @@ public class GroupHistoryBuilder {
                 continue;
             } else if (item.first instanceof ResignCommand) {
                 // 'resign' command, comparing it with document time
-                if (AccountDBI.isExpired(doc.getTime(), item.first.getTime())) {
+                if (DocumentHelper.isBefore(doc.getTime(), item.first.getTime())) {
                     Log.warning("expired '" + item.first.getCmd() + "' command in group: "
                             + group + ", sender: " + item.second.getSender());
                     continue;
                 }
             } else {
                 // 'invite', 'join', 'quit', comparing with 'reset' time
-                if (AccountDBI.isExpired(reset.getTime(), item.first.getTime())) {
+                if (DocumentHelper.isBefore(reset.getTime(), item.first.getTime())) {
                     Log.warning("expired '" + item.first.getCmd() + "' command in group: "
                             + group + ", sender: " + item.second.getSender());
                     continue;
@@ -155,7 +156,7 @@ public class GroupHistoryBuilder {
      */
     public Pair<Document, ReliableMessage> buildDocumentCommand(ID group) {
         User user = getFacebook().getCurrentUser();
-        Document doc = delegate.getDocument(group, "*");
+        Bulletin doc = delegate.getBulletin(group);
         if (user == null || doc == null) {
             assert user != null : "failed to get current user";
             Log.error("document not found for group: " + group);

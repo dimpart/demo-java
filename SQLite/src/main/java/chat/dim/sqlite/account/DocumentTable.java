@@ -30,9 +30,7 @@
  */
 package chat.dim.sqlite.account;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import chat.dim.dbi.DocumentDBI;
 import chat.dim.format.TransportableData;
@@ -109,17 +107,15 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
     private static final String T_DOCUMENT = "t_document";
 
     @Override
-    public Document getDocument(ID entity, String type) {
+    public List<Document> getDocuments(ID entity) {
         if (!prepare()) {
             // db error
             return null;
         }
         SQLConditions conditions = new SQLConditions();
         conditions.addCondition(null, "did", "=", entity.toString());
-        List<Document> results = select(T_DOCUMENT, SELECT_COLUMNS, conditions,
+        return select(T_DOCUMENT, SELECT_COLUMNS, conditions,
                 null, null, "id DESC", -1, 0);
-        // return first result only
-        return results == null || results.size() == 0 ? null : results.get(0);
     }
 
     @Override
@@ -132,24 +128,20 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
         String type = doc.getType();
         String data = doc.getString("data", "");
         String signature = doc.getString("signature", "");
-
-        Document old = getDocument(identifier, type);
-        if (old == null) {
-            // old record not found, insert it as new record
-            Object[] values = {identifier.toString(), type, data, signature};
-            return insert(T_DOCUMENT, INSERT_COLUMNS, values) > 0;
-        }
-        if (old.get("data").equals(data) && old.get("signature").equals(signature)) {
-            // same document
-            return true;
-        }
-        // old record exists, update it
-        SQLConditions conditions = new SQLConditions();
-        conditions.addCondition(null, "did", "=", identifier.toString());
-        Map<String, Object> values = new HashMap<>();
-        values.put("type", type);
-        values.put("data", data);
-        values.put("signature", signature);
-        return update(T_DOCUMENT, values, conditions) > 0;
+        Object[] values = {identifier.toString(), type, data, signature};
+        return insert(T_DOCUMENT, INSERT_COLUMNS, values) > 0;
     }
+
+    @Override
+    public boolean clearDocuments(ID entity, String type) {
+        if (!prepare()) {
+            // db error
+            return false;
+        }
+        SQLConditions conditions = new SQLConditions();
+        conditions.addCondition(null, "did", "=", entity.toString());
+        conditions.addCondition(SQLConditions.Relation.AND, "type", "=", type);
+        return delete(T_DOCUMENT, conditions) >= 0;
+    }
+
 }

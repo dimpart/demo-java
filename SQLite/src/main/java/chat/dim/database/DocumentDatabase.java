@@ -30,7 +30,7 @@
  */
 package chat.dim.database;
 
-import java.util.Date;
+import java.util.List;
 
 import chat.dim.dbi.DocumentDBI;
 import chat.dim.mem.CacheHolder;
@@ -46,7 +46,7 @@ public class DocumentDatabase implements DocumentDBI {
 
     private final DocumentTable documentTable;
 
-    private final CachePool<ID, Document> documentCache;
+    private final CachePool<ID, List<Document>> documentCache;
 
     public DocumentDatabase(DatabaseConnector sqliteConnector) {
         super();
@@ -61,37 +61,34 @@ public class DocumentDatabase implements DocumentDBI {
 
     @Override
     public boolean saveDocument(Document doc) {
+        // TODO: must check old records before calling this
         ID identifier = doc.getIdentifier();
-        String type = doc.getType();
-        // 0. check old record with time
-        Document old = getDocument(identifier, type);
-        if (old != null) {
-            Date oldTime = old.getTime();
-            Date newTime = doc.getTime();
-            if (newTime != null && oldTime != null &&
-                    newTime.getTime() < oldTime.getTime()) {
-                // document expired, drop it
-                return false;
-            }
-        }
-        // 1. update memory cache
-        documentCache.update(identifier, doc, 3600 * 1000, 0);
+        // 1. clear for reload
+        documentCache.erase(identifier, 0);
         // 2. update sqlite
         return documentTable.saveDocument(doc);
     }
 
     @Override
-    public Document getDocument(ID entity, String type) {
+    public boolean clearDocuments(ID entity, String type) {
+        // 1. clear for reload
+        documentCache.erase(entity, 0);
+        // 2. update sqlite
+        return documentTable.clearDocuments(entity, type);
+    }
+
+    @Override
+    public List<Document> getDocuments(ID entity) {
         long now = System.currentTimeMillis();
-        Document doc = null;
-        CacheHolder<Document> holder = null;
+        List<Document> documents = null;
+        CacheHolder<List<Document>> holder = null;
         // 1. check memory cache
-        CachePair<Document> pair = documentCache.fetch(entity, now);
+        CachePair<List<Document>> pair = documentCache.fetch(entity, now);
         if (pair != null) {
-            doc = pair.value;
+            documents = pair.value;
             holder = pair.holder;
         }
-        if (doc == null) {
+        if (documents == null) {
             // cache empty
             if (holder == null) {
                 // document not load yet, wait to load
@@ -105,11 +102,11 @@ public class DocumentDatabase implements DocumentDBI {
                 holder.renewal(128 * 1000, now);
             }
             // 2. check sqlite
-            doc = documentTable.getDocument(entity, type);
+            documents = documentTable.getDocuments(entity);
             // update memory cache
-            documentCache.update(entity, doc, 36000 * 1000, now);
+            documentCache.update(entity, documents, 36000 * 1000, now);
         }
         // OK, return cached value
-        return doc;
+        return documents;
     }
 }

@@ -34,7 +34,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.dbi.AccountDBI;
-import chat.dim.protocol.Document;
+import chat.dim.mkm.DocumentHelper;
+import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
@@ -101,12 +102,12 @@ public class GroupHelper {
         }
         if (content instanceof ResignCommand) {
             // administrator command, check with document time
-            Document bulletin = delegate.getDocument(group, "*");
-            if (bulletin == null) {
+            Bulletin doc = delegate.getBulletin(group);
+            if (doc == null) {
                 assert false : "group document not exists: " + group;
                 return true;
             }
-            return AccountDBI.isExpired(bulletin.getTime(), content.getTime());
+            return DocumentHelper.isBefore(doc.getTime(), content.getTime());
         }
         // membership command, check with reset command
         Pair<ResetCommand, ReliableMessage> pair = getResetCommandMessage(group);
@@ -115,7 +116,7 @@ public class GroupHelper {
         if (cmd == null/* || msg == null*/) {
             return false;
         }
-        return AccountDBI.isExpired(cmd.getTime(), content.getTime());
+        return DocumentHelper.isBefore(cmd.getTime(), content.getTime());
     }
 
     public static List<ID> getCommandMembers(GroupCommand content) {

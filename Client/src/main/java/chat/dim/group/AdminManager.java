@@ -39,7 +39,6 @@ import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Command;
-import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
@@ -98,7 +97,7 @@ public class AdminManager {
         //
         //  2. update document
         //
-        Document doc = delegate.getDocument(group, "*");
+        Bulletin doc = delegate.getBulletin(group);
         if (doc == null) {
             // TODO: create new one?
             assert false : "failed to get group document: " + group + ", owner: " + me;
@@ -125,7 +124,7 @@ public class AdminManager {
     /**
      *  Broadcast group document
      */
-    protected boolean broadcastDocument(Bulletin doc) {
+    public boolean broadcastDocument(Bulletin doc) {
         CommonFacebook facebook = getFacebook();
         CommonMessenger messenger = getMessenger();
         assert facebook != null && messenger != null : "facebook messenger not ready: " + facebook + ", " + messenger;

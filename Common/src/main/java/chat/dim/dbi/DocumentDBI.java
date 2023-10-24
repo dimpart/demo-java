@@ -30,6 +30,8 @@
  */
 package chat.dim.dbi;
 
+import java.util.List;
+
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
 
@@ -41,5 +43,7 @@ public interface DocumentDBI {
 
     boolean saveDocument(Document doc);
 
-    Document getDocument(ID entity, String type);
+    boolean clearDocuments(ID entity, String type);
+
+    List<Document> getDocuments(ID entity);
 }

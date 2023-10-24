@@ -36,7 +36,9 @@ import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.core.TwinsHelper;
 import chat.dim.dbi.AccountDBI;
+import chat.dim.mkm.DocumentHelper;
 import chat.dim.mkm.Group;
+import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
@@ -95,13 +97,18 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     }
 
     @Override
-    public Document getDocument(ID identifier, String type) {
-        Document doc = getFacebook().getDocument(identifier, type);
-        if (doc == null) {
+    public List<Document> getDocuments(ID identifier) {
+        List<Document> documents = getFacebook().getDocuments(identifier);
+        if (documents == null) {
             // if not found, query it from any station
             getMessenger().queryDocument(identifier);
         }
-        return doc;
+        return documents;
+    }
+
+    public Bulletin getBulletin(ID group) {
+        List<Document> documents = getDocuments(group);
+        return DocumentHelper.lastBulletin(documents);
     }
 
     public boolean saveDocument(Document doc) {
@@ -115,7 +122,7 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     @Override
     public ID getFounder(ID group) {
         assert group.isGroup() : "ID error: " + group;
-        Document doc = getDocument(group, "*");
+        Bulletin doc = getBulletin(group);
         if (doc == null) {
             // the owner(founder) should be set in the bulletin document of group
             return null;
@@ -126,7 +133,7 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     @Override
     public ID getOwner(ID group) {
         assert group.isGroup() : "ID error: " + group;
-        Document doc = getDocument(group, "*");
+        Bulletin doc = getBulletin(group);
         if (doc == null) {
             // the owner(founder) should be set in the bulletin document of group
             return null;
@@ -137,7 +144,7 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     @Override
     public List<ID> getAssistants(ID group) {
         assert group.isGroup() : "ID error: " + group;
-        Document doc = getDocument(group, "*");
+        Bulletin doc = getBulletin(group);
         if (doc == null) {
             // the group assistants should be set in the bulletin document
             return null;
@@ -148,7 +155,7 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     @Override
     public List<ID> getMembers(ID group) {
         assert group.isGroup() : "ID error: " + group;
-        Document doc = getDocument(group, "*");
+        Bulletin doc = getBulletin(group);
         if (doc == null) {
             // group not ready
             return null;
@@ -172,7 +179,7 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
 
     public List<ID> getAdministrators(ID group) {
         assert group.isGroup() : "ID error: " + group;
-        Document doc = getDocument(group, "*");
+        Bulletin doc = getBulletin(group);
         if (doc == null) {
             // the administrators should be set in the bulletin document
             return null;

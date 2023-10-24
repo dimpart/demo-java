@@ -30,19 +30,7 @@
  */
 package chat.dim.dbi;
 
-import java.util.Date;
-
 public interface AccountDBI extends PrivateKeyDBI, MetaDBI, DocumentDBI,
                                     UserDBI, ContactDBI,
                                     GroupDBI, GroupHistoryDBI {
-
-    /**
-     *  Check time expired
-     */
-    static boolean isExpired(Date oldTime, Date newTime) {
-        if (oldTime == null || newTime == null) {
-            return false;
-        }
-        return newTime.before(oldTime);
-    }
 }
