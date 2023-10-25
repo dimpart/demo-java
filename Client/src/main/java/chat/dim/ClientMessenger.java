@@ -69,11 +69,6 @@ public class ClientMessenger extends CommonMessenger {
         return (ClientSession) super.getSession();
     }
 
-    @Override
-    public CipherKeyDelegate getCipherKeyDelegate() {
-        return super.getCipherKeyDelegate();
-    }
-
     /**
      *  Send handshake command to current station
      *

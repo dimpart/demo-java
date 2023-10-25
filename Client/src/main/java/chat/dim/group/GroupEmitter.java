@@ -32,14 +32,9 @@ package chat.dim.group;
 
 import java.util.List;
 
-import chat.dim.CipherKeyDelegate;
-import chat.dim.ClientMessenger;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
-import chat.dim.crypto.SymmetricKey;
-import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.Envelope;
 import chat.dim.protocol.FileContent;
 import chat.dim.protocol.ForwardContent;
 import chat.dim.protocol.ID;
@@ -48,7 +43,7 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
-public abstract class GroupEmitter {
+public class GroupEmitter {
 
     // NOTICE: group assistants (bots) can help the members to redirect messages
     //
@@ -95,54 +90,19 @@ public abstract class GroupEmitter {
         return delegate.getMessenger();
     }
 
-    protected SymmetricKey getEncryptKey(ID sender, ID receiver) {
-        ClientMessenger messenger = (ClientMessenger) getMessenger();
-        CipherKeyDelegate keyCache = messenger.getCipherKeyDelegate();
-        return keyCache.getCipherKey(sender, receiver, true);
-    }
-
-    /**
-     *  Send group message content
-     */
-    public Pair<InstantMessage, ReliableMessage> sendContent(Content content, int priority) {
-        CommonFacebook facebook = getFacebook();
-        assert facebook != null : "facebook not ready";
-
-        // get 'sender' => 'group'
-        User user = facebook.getCurrentUser();
-        ID group = content.getGroup();
-        if (user == null || group == null) {
-            assert false : "params error: " + user + " => " + group;
-            return null;
-        }
-        ID sender = user.getIdentifier();
-
-        // pack and send
-        Envelope envelope = Envelope.create(sender, group, null);
-        InstantMessage iMsg = InstantMessage.create(envelope, content);
-        ReliableMessage rMsg = sendMessage(iMsg, priority);
-        return new Pair<>(iMsg, rMsg);
-    }
-
-    public ReliableMessage sendMessage(InstantMessage iMsg, int priority) {
+    public ReliableMessage sendInstantMessage(InstantMessage iMsg, int priority) {
         Content content = iMsg.getContent();
         ID group = content.getGroup();
         if (group == null) {
             assert false : "not a group message: " + iMsg;
             return null;
         }
+        assert iMsg.getReceiver().equals(group) : "group message error: " + iMsg;
 
-        //
-        //  0. check file message
-        //
-        if (content instanceof FileContent) {
-            FileContent file = (FileContent) content;
-            ID sender = iMsg.getSender();
-            // call emitter to encrypt & upload file data before send out
-            SymmetricKey password = getEncryptKey(sender, group);
-            boolean ok = uploadFileData(file, password, sender);
-            assert ok : "failed to upload file data: " + file;
-        }
+        // TODO: if it's a file message
+        //       please upload the file data first
+        //       before calling this
+        assert !(content instanceof FileContent) || !content.containsKey("data") : "content error: " + content;
 
         //
         //  1. check group bots
@@ -177,16 +137,6 @@ public abstract class GroupEmitter {
             return disperseMessage(allMembers, group, iMsg, priority);
         }
     }
-
-    /**
-     *  Send file data encrypted with password
-     *  (store download URL & decrypt key into file content after uploaded)
-     *
-     * @param content  - file content
-     * @param password - symmetric key to encrypt/decrypt file data
-     * @param sender   - from where
-     */
-    protected abstract boolean uploadFileData(FileContent content, SymmetricKey password, ID sender);
 
     /**
      *  Encrypt & sign message, then forward to the bot
