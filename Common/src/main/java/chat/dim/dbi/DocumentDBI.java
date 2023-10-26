@@ -43,7 +43,5 @@ public interface DocumentDBI {
 
     boolean saveDocument(Document doc);
 
-    boolean clearDocuments(ID entity, String type);
-
     List<Document> getDocuments(ID entity);
 }

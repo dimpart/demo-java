@@ -70,14 +70,6 @@ public class DocumentDatabase implements DocumentDBI {
     }
 
     @Override
-    public boolean clearDocuments(ID entity, String type) {
-        // 1. clear for reload
-        documentCache.erase(entity, 0);
-        // 2. update sqlite
-        return documentTable.clearDocuments(entity, type);
-    }
-
-    @Override
     public List<Document> getDocuments(ID entity) {
         long now = System.currentTimeMillis();
         List<Document> documents = null;

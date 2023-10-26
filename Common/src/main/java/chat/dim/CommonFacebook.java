@@ -156,6 +156,7 @@ public class CommonFacebook extends Facebook {
             return false;
         }
         if (!doc.isValid()) {
+            // try to verify
             Meta meta = getMeta(identifier);
             if (meta == null) {
                 Log.error("meta not found: " + identifier);
@@ -172,14 +173,9 @@ public class CommonFacebook extends Facebook {
         // check old documents with type
         List<Document> documents = getDocuments(identifier);
         Document old = DocumentHelper.lastDocument(documents, type);
-        if (old != null) {
-            if (DocumentHelper.isExpired(doc, old)) {
-                Log.warning("drop expired document: " + identifier);
-                return false;
-            } else if (!database.clearDocuments(identifier, type)) {
-                Log.error("failed to clear old documents: " + identifier + ", type: " + type);
-                return false;
-            }
+        if (old != null && DocumentHelper.isExpired(doc, old)) {
+            Log.warning("drop expired document: " + identifier);
+            return false;
         }
         return database.saveDocument(doc);
     }

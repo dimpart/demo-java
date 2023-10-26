@@ -118,7 +118,7 @@ public class AdminManager {
         //
         //  3. broadcast bulletin document
         //
-        return broadcastDocument((Bulletin) doc);
+        return broadcastDocument(doc);
     }
 
     /**
