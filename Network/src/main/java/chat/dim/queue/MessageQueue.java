@@ -40,6 +40,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import chat.dim.port.Departure;
+import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.utils.Log;
 
@@ -77,7 +78,7 @@ public final class MessageQueue {
                 ReliableMessage item;
                 for (MessageWrapper wrapper : array) {
                     item = wrapper.getMessage();
-                    if (item != null && signature.equals(item.get("signature"))) {
+                    if (isDuplicated(item, rMsg)) {
                         Log.warning("[QUEUE] duplicated message: " + signature);
                         ok = false;
                         break;
@@ -93,6 +94,28 @@ public final class MessageQueue {
             writeLock.unlock();
         }
         return ok;
+    }
+    private boolean isDuplicated(ReliableMessage msg1, ReliableMessage msg2) {
+        if (msg1 == null || msg2 == null) {
+            return false;
+        }
+        Object sig1 = msg1.get("signature");
+        Object sig2 = msg2.get("signature");
+        if (sig1 == null || sig2 == null) {
+            assert false : "signature should not empty here: " + msg1 + ", " + msg2;
+            return false;
+        } else if (!sig1.equals(sig2)) {
+            return false;
+        }
+        // maybe it's a group message split for every members,
+        // so we still need to check receiver here.
+        ID to1 = msg1.getReceiver();
+        ID to2 = msg2.getReceiver();
+        if (to1 == null || to2 == null) {
+            assert false : "receiver should not empty here: " + msg1 + ", " + msg2;
+            return false;
+        }
+        return to1.equals(to2);
     }
     private void insert(int priority) {
         int total = priorities.size();
