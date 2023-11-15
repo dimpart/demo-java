@@ -37,7 +37,7 @@ import java.util.Map;
 import chat.dim.compat.Compatible;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.msg.MessageHelper;
-import chat.dim.protocol.Document;
+import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
@@ -86,8 +86,8 @@ public abstract class CommonPacker extends MessagePacker {
     protected List<ID> getMembers(ID group) {
         Facebook facebook = getFacebook();
         CommonMessenger messenger = (CommonMessenger) getMessenger();
-        List<Document> documents = facebook.getDocuments(group);
-        if (documents == null || documents.isEmpty()) {
+        Bulletin doc = facebook.getBulletin(group);
+        if (doc == null) {
             // group not ready, try to query document for it
             if (messenger.queryDocument(group)) {
                 Log.info("querying document for group: " + group);

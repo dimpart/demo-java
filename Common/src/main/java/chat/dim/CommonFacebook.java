@@ -108,7 +108,12 @@ public class CommonFacebook extends Facebook {
 
     public Document getDocument(ID identifier, String type) {
         List<Document> documents = getDocuments(identifier);
-        return DocumentHelper.lastDocument(documents, type);
+        Document doc = DocumentHelper.lastDocument(documents, type);
+        // compatible for document type
+        if (doc == null && Document.VISA.equals(type)) {
+            doc = DocumentHelper.lastDocument(documents, "profile");
+        }
+        return doc;
     }
 
     public String getName(ID identifier) {

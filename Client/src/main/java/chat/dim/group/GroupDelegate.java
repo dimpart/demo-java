@@ -185,17 +185,7 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
             return null;
         }
         AccountDBI db = getDatabase();
-        List<ID> admins = db.getAdministrators(group);
-        if (admins != null && admins.size() > 0) {
-            // got from database
-            return admins;
-        }
-        Object array = doc.getProperty("administrators");
-        if (array instanceof List) {
-            // got from bulletin
-            return ID.convert((List<?>) array);
-        }
-        return null;
+        return db.getAdministrators(group);
     }
 
     public boolean saveAdministrators(List<ID> newAdmins, ID group) {

@@ -129,6 +129,17 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
     public abstract boolean queryMembers(ID identifier);
 
     @Override
+    public byte[] encryptKey(byte[] data, ID receiver, InstantMessage iMsg) {
+        try {
+            return super.encryptKey(data, receiver, iMsg);
+        } catch (Exception e) {
+            // FIXME:
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
     public byte[] serializeKey(SymmetricKey password, InstantMessage iMsg) {
         // TODO: reuse message key
 

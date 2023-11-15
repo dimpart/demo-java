@@ -35,6 +35,7 @@ import java.util.Map;
 public final class SQLBuilder {
 
     public static final String CREATE = "CREATE";
+    public static final String ALTER = "ALTER";
 
     public static final String INSERT = "INSERT";
     public static final String SELECT = "SELECT";
@@ -96,7 +97,7 @@ public final class SQLBuilder {
     }
 
     //
-    //  CREATE TABLE table (field type, ...);
+    //  CREATE TABLE IF NOT EXISTS table (field type, ...);
     //
     public static String buildCreateTable(String table, String[] fields) {
         SQLBuilder builder = new SQLBuilder(CREATE);
@@ -105,6 +106,36 @@ public final class SQLBuilder {
         builder.append("(");
         builder.appendStringList(fields);
         builder.append(")");
+        return builder.toString();
+    }
+
+    //
+    //  CREATE INDEX IF NOT EXISTS name ON table (fields);
+    //
+    public static String buildCreateIndex(String name, String table, String[] fields) {
+        SQLBuilder builder = new SQLBuilder(CREATE);
+        builder.append(" INDEX IF NOT EXISTS ");
+        builder.append(name);
+        builder.append(" ON ");
+        builder.append(table);
+        builder.append("(");
+        builder.appendStringList(fields);
+        builder.append(")");
+        return builder.toString();
+    }
+
+    //
+    //  ALTER TABLE table ADD COLUMN IF NOT EXISTS name type;
+    //
+    public static String buildAddColumn(String table, String name, String type) {
+        SQLBuilder builder = new SQLBuilder(ALTER);
+        builder.append(" TABLE ");
+        builder.append(table);
+        // builder.append(" ADD COLUMN IF NOT EXISTS ");
+        builder.append(" ADD COLUMN ");
+        builder.append(name);
+        builder.append(" ");
+        builder.append(type);
         return builder.toString();
     }
 
