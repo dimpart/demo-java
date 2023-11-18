@@ -42,7 +42,7 @@ import chat.dim.protocol.Meta;
 /**
  *  Client Facebook with Address Name Service
  */
-public class ClientFacebook extends CommonFacebook {
+public abstract class ClientFacebook extends CommonFacebook {
 
     public ClientFacebook(AccountDBI db) {
         super(db);

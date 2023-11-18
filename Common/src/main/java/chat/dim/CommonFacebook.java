@@ -1,6 +1,6 @@
 /* license: https://mit-license.org
  *
- *  DIMP : Decentralized Instant Messaging Protocol
+ *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
  *                                Written in 2022 by Moky <albert.moky@gmail.com>
  *
@@ -36,9 +36,12 @@ import java.util.List;
 import chat.dim.crypto.DecryptKey;
 import chat.dim.crypto.SignKey;
 import chat.dim.dbi.AccountDBI;
+import chat.dim.mkm.BroadcastHelper;
 import chat.dim.mkm.DocumentHelper;
 import chat.dim.mkm.User;
+import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
+import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.utils.Log;
@@ -46,7 +49,7 @@ import chat.dim.utils.Log;
 /**
  *  Common Facebook with Database
  */
-public class CommonFacebook extends Facebook {
+public abstract class CommonFacebook extends Facebook {
 
     private final AccountDBI database;
     private User current;
@@ -61,11 +64,14 @@ public class CommonFacebook extends Facebook {
         return database;
     }
 
+    protected abstract Archivist getArchivist();
+
     @Override
     public List<User> getLocalUsers() {
         List<User> localUsers = new ArrayList<>();
         User user;
-        List<ID> array = database.getLocalUsers();
+        AccountDBI db = getDatabase();
+        List<ID> array = db.getLocalUsers();
         if (array == null || array.isEmpty()) {
             user = current;
             if (user != null) {
@@ -150,7 +156,8 @@ public class CommonFacebook extends Facebook {
             return true;
         }
         // meta not exists yet, save it
-        return database.saveMeta(meta, identifier);
+        AccountDBI db = getDatabase();
+        return db.saveMeta(meta, identifier);
     }
 
     @Override
@@ -182,7 +189,8 @@ public class CommonFacebook extends Facebook {
             Log.warning("drop expired document: " + identifier);
             return false;
         }
-        return database.saveDocument(doc);
+        AccountDBI db = getDatabase();
+        return db.saveDocument(doc);
     }
 
     //
@@ -197,7 +205,13 @@ public class CommonFacebook extends Facebook {
             return null;
         }
         /*/
-        return database.getMeta(entity);
+        AccountDBI db = getDatabase();
+        Meta meta = db.getMeta(entity);
+        Archivist archivist = getArchivist();
+        if (archivist.checkMeta(entity, meta)) {
+            Log.info("querying meta for: " + entity);
+        }
+        return meta;
     }
 
     @Override
@@ -208,7 +222,13 @@ public class CommonFacebook extends Facebook {
             return null;
         }
         /*/
-        return database.getDocuments(entity);
+        AccountDBI db = getDatabase();
+        List<Document> docs = db.getDocuments(entity);
+        Archivist archivist = getArchivist();
+        if (archivist.checkDocuments(entity, docs)) {
+            Log.info("querying documents for: " + entity);
+        }
+        return docs;
     }
 
     //
@@ -217,22 +237,26 @@ public class CommonFacebook extends Facebook {
 
     @Override
     public List<ID> getContacts(ID user) {
-        return database.getContacts(user);
+        AccountDBI db = getDatabase();
+        return db.getContacts(user);
     }
 
     @Override
     public List<DecryptKey> getPrivateKeysForDecryption(ID user) {
-        return database.getPrivateKeysForDecryption(user);
+        AccountDBI db = getDatabase();
+        return db.getPrivateKeysForDecryption(user);
     }
 
     @Override
     public SignKey getPrivateKeyForSignature(ID user) {
-        return database.getPrivateKeyForSignature(user);
+        AccountDBI db = getDatabase();
+        return db.getPrivateKeyForSignature(user);
     }
 
     @Override
     public SignKey getPrivateKeyForVisaSignature(ID user) {
-        return database.getPrivateKeyForVisaSignature(user);
+        AccountDBI db = getDatabase();
+        return db.getPrivateKeyForVisaSignature(user);
     }
 
     //
@@ -241,50 +265,123 @@ public class CommonFacebook extends Facebook {
 
     @Override
     public ID getFounder(ID group) {
-        ID user = database.getFounder(group);
+        assert group.isGroup() : "group ID error: " + group;
+        // check broadcast group
+        if (group.isBroadcast()) {
+            // founder of broadcast group
+            return BroadcastHelper.getBroadcastFounder(group);
+        }
+        // check bulletin document
+        Bulletin doc = getBulletin(group);
+        if (doc == null) {
+            // the owner(founder) should be set in the bulletin document of group
+            return null;
+        }
+        // check local storage
+        AccountDBI db = getDatabase();
+        ID user = db.getFounder(group);
         if (user != null) {
-            // got from database
+            // got from local storage
             return user;
         }
-        return super.getFounder(group);
+        // get from bulletin document
+        user = doc.getFounder();
+        assert user != null : "founder not designated for group: " + group;
+        return user;
     }
 
     @Override
     public ID getOwner(ID group) {
-        ID user = database.getOwner(group);
+        assert group.isGroup() : "group ID error: " + group;
+        // check broadcast group
+        if (group.isBroadcast()) {
+            // owner of broadcast group
+            return BroadcastHelper.getBroadcastOwner(group);
+        }
+        // check bulletin document
+        Bulletin doc = getBulletin(group);
+        if (doc == null) {
+            // the owner(founder) should be set in the bulletin document of group
+            return null;
+        }
+        // check local storage
+        AccountDBI db = getDatabase();
+        ID user = db.getOwner(group);
         if (user != null) {
-            // got from database
+            // got from local storage
             return user;
         }
-        return super.getOwner(group);
+        // check group type
+        if (EntityType.GROUP.equals(group.getType())) {
+            // Polylogue owner is its founder
+            user = db.getFounder(group);
+            if (user == null) {
+                user = doc.getFounder();
+            }
+        }
+        assert user != null : "owner not found for group: " + group;
+        return user;
     }
 
     @Override
     public List<ID> getMembers(ID group) {
+        assert group.isGroup() : "group ID error: " + group;
+        // check group owner
         ID owner = getOwner(group);
         if (owner == null) {
-            assert false : "group owner not found: " + group;
+            // assert false : "group owner not found: " + group;
             return null;
         }
-        List<ID> users = database.getMembers(group);
-        if (users == null || users.isEmpty()) {
-            users = super.getMembers(group);
-            if (users == null || users.isEmpty()) {
-                users = new ArrayList<>();
-                users.add(owner);
-            }
+        // check local storage
+        AccountDBI db = getDatabase();
+        List<ID> members = db.getMembers(group);
+        Archivist archivist = getArchivist();
+        if (archivist.checkMembers(group, members)) {
+            Log.info("querying members for group: " + group);
         }
-        assert users.get(0).equals(owner) : "group owner must be the first member: " + group;
-        return users;
+        if (members == null || members.isEmpty()) {
+            members = new ArrayList<>();
+            members.add(owner);
+        } else {
+            assert members.get(0).equals(owner) : "group owner must be the first member: " + group;
+        }
+        return members;
     }
 
     @Override
     public List<ID> getAssistants(ID group) {
-        List<ID> bots = database.getAssistants(group);
+        assert group.isGroup() : "group ID error: " + group;
+        // check bulletin document
+        Bulletin doc = getBulletin(group);
+        if (doc == null) {
+            // the assistants should be set in the bulletin document of group
+            return null;
+        }
+        // check local storage
+        AccountDBI db = getDatabase();
+        List<ID> bots = db.getAssistants(group);
         if (bots != null && !bots.isEmpty()) {
-            // got from database
+            // got from local storage
             return bots;
         }
-        return super.getAssistants(group);
+        // get from bulletin document
+        return doc.getAssistants();
     }
+
+    public List<ID> getAdministrators(ID group) {
+        assert group.isGroup() : "group ID error: " + group;
+        // check bulletin document
+        Bulletin doc = getBulletin(group);
+        if (doc == null) {
+            // the administrators should be set in the bulletin document
+            return null;
+        }
+        // the 'administrators' should be saved into local storage
+        // when the newest bulletin document received,
+        // so we must get them from the local storage only,
+        // not from the bulletin document.
+        AccountDBI db = getDatabase();
+        return db.getAdministrators(group);
+    }
+
 }

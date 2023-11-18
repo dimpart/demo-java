@@ -36,7 +36,6 @@ import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.core.TwinsHelper;
 import chat.dim.dbi.AccountDBI;
-import chat.dim.mkm.DocumentHelper;
 import chat.dim.mkm.Group;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
@@ -88,31 +87,24 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
 
     @Override
     public Meta getMeta(ID identifier) {
-        Meta meta = getFacebook().getMeta(identifier);
-        if (meta == null) {
-            // if not found, query it from any station
-            getMessenger().queryMeta(identifier);
-        }
-        return meta;
+        CommonFacebook facebook = getFacebook();
+        return facebook.getMeta(identifier);
     }
 
     @Override
     public List<Document> getDocuments(ID identifier) {
-        List<Document> documents = getFacebook().getDocuments(identifier);
-        if (documents == null) {
-            // if not found, query it from any station
-            getMessenger().queryDocument(identifier);
-        }
-        return documents;
+        CommonFacebook facebook = getFacebook();
+        return facebook.getDocuments(identifier);
     }
 
     public Bulletin getBulletin(ID group) {
-        List<Document> documents = getDocuments(group);
-        return DocumentHelper.lastBulletin(documents);
+        CommonFacebook facebook = getFacebook();
+        return facebook.getBulletin(group);
     }
 
     public boolean saveDocument(Document doc) {
-        return getFacebook().saveDocument(doc);
+        CommonFacebook facebook = getFacebook();
+        return facebook.saveDocument(doc);
     }
 
     //
@@ -121,51 +113,26 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
 
     @Override
     public ID getFounder(ID group) {
-        assert group.isGroup() : "ID error: " + group;
-        Bulletin doc = getBulletin(group);
-        if (doc == null) {
-            // the owner(founder) should be set in the bulletin document of group
-            return null;
-        }
-        return getFacebook().getFounder(group);
+        CommonFacebook facebook = getFacebook();
+        return facebook.getFounder(group);
     }
 
     @Override
     public ID getOwner(ID group) {
-        assert group.isGroup() : "ID error: " + group;
-        Bulletin doc = getBulletin(group);
-        if (doc == null) {
-            // the owner(founder) should be set in the bulletin document of group
-            return null;
-        }
-        return getFacebook().getOwner(group);
+        CommonFacebook facebook = getFacebook();
+        return facebook.getOwner(group);
     }
 
     @Override
     public List<ID> getAssistants(ID group) {
-        assert group.isGroup() : "ID error: " + group;
-        Bulletin doc = getBulletin(group);
-        if (doc == null) {
-            // the group assistants should be set in the bulletin document
-            return null;
-        }
-        return getFacebook().getAssistants(group);
+        CommonFacebook facebook = getFacebook();
+        return facebook.getAssistants(group);
     }
 
     @Override
     public List<ID> getMembers(ID group) {
-        assert group.isGroup() : "ID error: " + group;
-        Bulletin doc = getBulletin(group);
-        if (doc == null) {
-            // group not ready
-            return null;
-        }
-        List<ID> members = getFacebook().getMembers(group);
-        if (members == null || members.size() < 2) {
-            // if not found, query from bots/admins/owner
-            getMessenger().queryMembers(group);
-        }
-        return members;
+        CommonFacebook facebook = getFacebook();
+        return facebook.getMembers(group);
     }
 
     public boolean saveMembers(List<ID> newMembers, ID group) {
@@ -178,14 +145,8 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     //
 
     public List<ID> getAdministrators(ID group) {
-        assert group.isGroup() : "ID error: " + group;
-        Bulletin doc = getBulletin(group);
-        if (doc == null) {
-            // the administrators should be set in the bulletin document
-            return null;
-        }
-        AccountDBI db = getDatabase();
-        return db.getAdministrators(group);
+        CommonFacebook facebook = getFacebook();
+        return facebook.getAdministrators(group);
     }
 
     public boolean saveAdministrators(List<ID> newAdmins, ID group) {

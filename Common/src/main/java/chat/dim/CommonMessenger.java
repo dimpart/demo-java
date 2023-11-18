@@ -1,6 +1,6 @@
 /* license: https://mit-license.org
  *
- *  DIMP : Decentralized Instant Messaging Protocol
+ *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
  *                                Written in 2022 by Moky <albert.moky@gmail.com>
  *
@@ -104,30 +104,6 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         this.processor = processor;
     }
 
-    /**
-     *  Request for meta with entity ID
-     *
-     * @param identifier - entity ID
-     * @return false on duplicated
-     */
-    public abstract boolean queryMeta(ID identifier);
-
-    /**
-     *  Request for meta & visa document with entity ID
-     *
-     * @param identifier - entity ID
-     * @return false on duplicated
-     */
-    public abstract boolean queryDocument(ID identifier);
-
-    /**
-     *  Request for group members with group ID
-     *
-     * @param identifier - group ID
-     * @return false on duplicated
-     */
-    public abstract boolean queryMembers(ID identifier);
-
     @Override
     public byte[] encryptKey(byte[] data, ID receiver, InstantMessage iMsg) {
         try {
@@ -189,7 +165,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
     @Override
     public Pair<InstantMessage, ReliableMessage> sendContent(ID sender, ID receiver, Content content, int priority) {
         if (sender == null) {
-            User current = facebook.getCurrentUser();
+            User current = getFacebook().getCurrentUser();
             assert current != null : "current user not set";
             sender = current.getIdentifier();
         }
@@ -246,7 +222,7 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
         }
         // 2. call gate keeper to send the message data package
         //    put message package into the waiting queue of current session
-        return session.queueMessagePackage(rMsg, data, priority);
+        return getSession().queueMessagePackage(rMsg, data, priority);
     }
 
 }

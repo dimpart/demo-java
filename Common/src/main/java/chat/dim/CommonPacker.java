@@ -1,6 +1,6 @@
 /* license: https://mit-license.org
  *
- *  DIMP : Decentralized Instant Messaging Protocol
+ *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
  *                                Written in 2023 by Moky <albert.moky@gmail.com>
  *
@@ -37,7 +37,6 @@ import java.util.Map;
 import chat.dim.compat.Compatible;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.msg.MessageHelper;
-import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
@@ -69,41 +68,14 @@ public abstract class CommonPacker extends MessagePacker {
 
     // for checking whether user's ready
     protected EncryptKey getVisaKey(ID user) {
-        EncryptKey visaKey = getFacebook().getPublicKeyForEncryption(user);
-        if (visaKey != null) {
-            // user is ready
-            return visaKey;
-        }
-        // user not ready, try to query document for it
-        CommonMessenger messenger = (CommonMessenger) getMessenger();
-        if (messenger.queryDocument(user)) {
-            Log.info("querying document for user: " + user);
-        }
-        return null;
+        Facebook facebook = getFacebook();
+        return facebook.getPublicKeyForEncryption(user);
     }
 
     // for checking whether group's ready
     protected List<ID> getMembers(ID group) {
         Facebook facebook = getFacebook();
-        CommonMessenger messenger = (CommonMessenger) getMessenger();
-        Bulletin doc = facebook.getBulletin(group);
-        if (doc == null) {
-            // group not ready, try to query document for it
-            if (messenger.queryDocument(group)) {
-                Log.info("querying document for group: " + group);
-            }
-            return null;
-        }
-        List<ID> members = facebook.getMembers(group);
-        if (members == null || members.isEmpty()) {
-            // group not ready, try to query members for it
-            if (messenger.queryMembers(group)) {
-                Log.info("querying members for group: " + group);
-            }
-            return null;
-        }
-        // group is ready
-        return members;
+        return facebook.getMembers(group);
     }
 
     /**
