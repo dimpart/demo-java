@@ -36,16 +36,12 @@ import java.nio.channels.SocketChannel;
 
 import chat.dim.CommonMessenger;
 import chat.dim.Session;
-import chat.dim.dbi.MessageDBI;
 import chat.dim.dbi.SessionDBI;
 import chat.dim.port.Departure;
-import chat.dim.port.Docker;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.queue.MessageWrapper;
 import chat.dim.type.Pair;
 
 public abstract class BaseSession extends GateKeeper implements Session {
@@ -125,16 +121,16 @@ public abstract class BaseSession extends GateKeeper implements Session {
     //
     //  Docker Delegate
     //
-
+    /*/
     @Override
     public void onDockerSent(Departure ship, Docker docker) {
         if (ship instanceof MessageWrapper) {
             ReliableMessage msg = ((MessageWrapper) ship).getMessage();
             if (msg != null) {
-                CommonMessenger messenger = getMessenger();
-                assert messenger != null : "messenger not set yet";
+                // FIXME: another way to get message db?
+                MessageDBI mdb = (MessageDBI) database;
                 // remove from database for actual receiver
-                removeReliableMessage(msg, getIdentifier(), messenger.getDatabase());
+                removeReliableMessage(msg, getIdentifier(), mdb);
             }
         }
     }
@@ -158,4 +154,5 @@ public abstract class BaseSession extends GateKeeper implements Session {
         }
         db.removeReliableMessage(receiver, msg);
     }
+    /*/
 }

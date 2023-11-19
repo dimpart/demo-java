@@ -32,10 +32,10 @@ package chat.dim.group;
 
 import java.util.List;
 
+import chat.dim.ClientFacebook;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.core.TwinsHelper;
-import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.Group;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
@@ -57,10 +57,6 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     @Override
     public CommonMessenger getMessenger() {
         return (CommonMessenger) super.getMessenger();
-    }
-
-    public AccountDBI getDatabase() {
-        return getFacebook().getDatabase();
     }
 
     public String buildGroupName(List<ID> members) {
@@ -136,8 +132,8 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     }
 
     public boolean saveMembers(List<ID> newMembers, ID group) {
-        AccountDBI db = getDatabase();
-        return db.saveMembers(newMembers, group);
+        ClientFacebook facebook = (ClientFacebook) getFacebook();
+        return facebook.saveMembers(newMembers, group);
     }
 
     //
@@ -145,13 +141,13 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     //
 
     public List<ID> getAdministrators(ID group) {
-        CommonFacebook facebook = getFacebook();
+        ClientFacebook facebook = (ClientFacebook) getFacebook();
         return facebook.getAdministrators(group);
     }
 
     public boolean saveAdministrators(List<ID> newAdmins, ID group) {
-        AccountDBI db = getDatabase();
-        return db.saveAdministrators(newAdmins, group);
+        ClientFacebook facebook = (ClientFacebook) getFacebook();
+        return facebook.saveAdministrators(newAdmins, group);
     }
 
     //

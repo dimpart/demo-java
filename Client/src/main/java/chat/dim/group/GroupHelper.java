@@ -54,7 +54,7 @@ public class GroupHelper {
     }
 
     protected AccountDBI getDatabase() {
-        return delegate.getDatabase();
+        return delegate.getFacebook().getDatabase();
     }
 
     //

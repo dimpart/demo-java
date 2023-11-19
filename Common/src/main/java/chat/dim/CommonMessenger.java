@@ -32,7 +32,6 @@ package chat.dim;
 
 import chat.dim.compat.Compatible;
 import chat.dim.crypto.SymmetricKey;
-import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Entity;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Command;
@@ -49,15 +48,15 @@ import chat.dim.utils.Log;
 /**
  *  Common Messenger with Session & Database
  */
-public abstract class CommonMessenger extends Messenger implements Transmitter {
+public class CommonMessenger extends Messenger implements Transmitter {
 
     private final Session session;
     private final CommonFacebook facebook;
-    private final MessageDBI database;
+    private final CipherKeyDelegate database;
     private Packer packer;
     private Processor processor;
 
-    public CommonMessenger(Session session, CommonFacebook facebook, MessageDBI database) {
+    public CommonMessenger(Session session, CommonFacebook facebook, CipherKeyDelegate database) {
         super();
         this.session = session;
         this.facebook = facebook;
@@ -77,10 +76,6 @@ public abstract class CommonMessenger extends Messenger implements Transmitter {
 
     public CommonFacebook getFacebook() {
         return facebook;
-    }
-
-    public MessageDBI getDatabase() {
-        return database;
     }
 
     @Override

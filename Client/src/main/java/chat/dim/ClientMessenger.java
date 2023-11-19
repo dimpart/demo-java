@@ -30,7 +30,6 @@
  */
 package chat.dim;
 
-import chat.dim.dbi.MessageDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
@@ -45,9 +44,9 @@ import chat.dim.protocol.ReportCommand;
 /**
  *  Client Messenger for Handshake & Broadcast Report
  */
-public abstract class ClientMessenger extends CommonMessenger {
+public class ClientMessenger extends CommonMessenger {
 
-    public ClientMessenger(Session session, CommonFacebook facebook, MessageDBI database) {
+    public ClientMessenger(Session session, CommonFacebook facebook, CipherKeyDelegate database) {
         super(session, facebook, database);
     }
 
@@ -56,7 +55,10 @@ public abstract class ClientMessenger extends CommonMessenger {
         return (ClientSession) super.getSession();
     }
 
-    protected abstract ClientArchivist getArchivist();
+    protected ClientArchivist getArchivist() {
+        CommonFacebook facebook = getFacebook();
+        return (ClientArchivist) facebook.getArchivist();
+    }
 
     /**
      *  Send handshake command to current station

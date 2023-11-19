@@ -30,12 +30,14 @@
  */
 package chat.dim;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.dbi.AccountDBI;
+import chat.dim.mkm.BroadcastHelper;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
+import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 
@@ -43,10 +45,6 @@ import chat.dim.protocol.Meta;
  *  Client Facebook with Address Name Service
  */
 public abstract class ClientFacebook extends CommonFacebook {
-
-    public ClientFacebook(AccountDBI db) {
-        super(db);
-    }
 
     @Override
     public boolean saveDocument(Document doc) {
@@ -64,9 +62,140 @@ public abstract class ClientFacebook extends CommonFacebook {
         return ok;
     }
 
-    private boolean saveAdministrators(List<ID> newAdmins, ID group) {
-        AccountDBI db = getDatabase();
-        return db.saveAdministrators(newAdmins, group);
+    //
+    //  GroupDataSource
+    //
+
+    @Override
+    public ID getFounder(ID group) {
+        assert group.isGroup() : "group ID error: " + group;
+        // check broadcast group
+        if (group.isBroadcast()) {
+            // founder of broadcast group
+            return BroadcastHelper.getBroadcastFounder(group);
+        }
+        // check bulletin document
+        Bulletin doc = getBulletin(group);
+        if (doc == null) {
+            // the owner(founder) should be set in the bulletin document of group
+            return null;
+        }
+        // check local storage
+        CommonArchivist archivist = getArchivist();
+        ID user = archivist.getFounder(group);
+        if (user != null) {
+            // got from local storage
+            return user;
+        }
+        // get from bulletin document
+        user = doc.getFounder();
+        assert user != null : "founder not designated for group: " + group;
+        return user;
+    }
+
+    @Override
+    public ID getOwner(ID group) {
+        assert group.isGroup() : "group ID error: " + group;
+        // check broadcast group
+        if (group.isBroadcast()) {
+            // owner of broadcast group
+            return BroadcastHelper.getBroadcastOwner(group);
+        }
+        // check bulletin document
+        Bulletin doc = getBulletin(group);
+        if (doc == null) {
+            // the owner(founder) should be set in the bulletin document of group
+            return null;
+        }
+        // check local storage
+        CommonArchivist archivist = getArchivist();
+        ID user = archivist.getOwner(group);
+        if (user != null) {
+            // got from local storage
+            return user;
+        }
+        // check group type
+        if (EntityType.GROUP.equals(group.getType())) {
+            // Polylogue owner is its founder
+            user = archivist.getFounder(group);
+            if (user == null) {
+                user = doc.getFounder();
+            }
+        }
+        assert user != null : "owner not found for group: " + group;
+        return user;
+    }
+
+    @Override
+    public List<ID> getMembers(ID group) {
+        assert group.isGroup() : "group ID error: " + group;
+        // check group owner
+        ID owner = getOwner(group);
+        if (owner == null) {
+            // assert false : "group owner not found: " + group;
+            return null;
+        }
+        // check local storage
+        CommonArchivist archivist = getArchivist();
+        List<ID> members = archivist.getMembers(group);
+        archivist.checkMembers(group, members);
+        if (members == null || members.isEmpty()) {
+            members = new ArrayList<>();
+            members.add(owner);
+        } else {
+            assert members.get(0).equals(owner) : "group owner must be the first member: " + group;
+        }
+        return members;
+    }
+
+    @Override
+    public List<ID> getAssistants(ID group) {
+        assert group.isGroup() : "group ID error: " + group;
+        // check bulletin document
+        Bulletin doc = getBulletin(group);
+        if (doc == null) {
+            // the assistants should be set in the bulletin document of group
+            return null;
+        }
+        // check local storage
+        CommonArchivist archivist = getArchivist();
+        List<ID> bots = archivist.getAssistants(group);
+        if (bots != null && !bots.isEmpty()) {
+            // got from local storage
+            return bots;
+        }
+        // get from bulletin document
+        return doc.getAssistants();
+    }
+
+    //
+    //  Organizational Structure
+    //
+
+    public List<ID> getAdministrators(ID group) {
+        assert group.isGroup() : "group ID error: " + group;
+        // check bulletin document
+        Bulletin doc = getBulletin(group);
+        if (doc == null) {
+            // the administrators should be set in the bulletin document
+            return null;
+        }
+        // the 'administrators' should be saved into local storage
+        // when the newest bulletin document received,
+        // so we must get them from the local storage only,
+        // not from the bulletin document.
+        CommonArchivist archivist = getArchivist();
+        return archivist.getAdministrators(group);
+    }
+
+    public boolean saveAdministrators(List<ID> members, ID group) {
+        CommonArchivist archivist = getArchivist();
+        return archivist.saveAdministrators(members, group);
+    }
+
+    public boolean saveMembers(List<ID> newMembers, ID group) {
+        CommonArchivist archivist = getArchivist();
+        return archivist.saveMembers(newMembers, group);
     }
 
     //

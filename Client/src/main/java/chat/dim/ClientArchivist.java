@@ -33,6 +33,7 @@ package chat.dim;
 import java.util.Date;
 import java.util.List;
 
+import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
@@ -46,35 +47,25 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.Visa;
 import chat.dim.protocol.group.QueryCommand;
 import chat.dim.type.Pair;
-import chat.dim.utils.FrequencyChecker;
 import chat.dim.utils.Log;
 
-public abstract class ClientArchivist extends Archivist {
+public abstract class ClientArchivist extends CommonArchivist {
 
-    // each respond will be expired after 10 minutes
-    public static final int RESPOND_EXPIRES = 600 * 1000;  // milliseconds
-
-    private final FrequencyChecker<ID> documentResponses;
-
-    public ClientArchivist() {
-        super(QUERY_EXPIRES);
-        documentResponses = new FrequencyChecker<>(RESPOND_EXPIRES);
-    }
-
-    protected boolean isDocumentResponseExpired(ID identifier, boolean force) {
-        return documentResponses.isExpired(identifier, 0, force);
+    public ClientArchivist(AccountDBI db) {
+        super(db);
     }
 
     protected abstract CommonFacebook getFacebook();
     protected abstract CommonMessenger getMessenger();
 
     @Override
-    protected boolean queryMeta(ID identifier) {
+    public boolean queryMeta(ID identifier) {
         if (!isMetaQueryExpired(identifier)) {
             // query not expired yet
             Log.debug("meta query not expired yet: " + identifier);
             return false;
         }
+        Log.info("querying meta for: " + identifier);
         CommonMessenger messenger = getMessenger();
         Content content = MetaCommand.query(identifier);
         Pair<InstantMessage, ReliableMessage> pair;
@@ -83,12 +74,13 @@ public abstract class ClientArchivist extends Archivist {
     }
 
     @Override
-    protected boolean queryDocuments(ID identifier, Date lastTime) {
+    public boolean queryDocuments(ID identifier, Date lastTime) {
         if (!isDocumentQueryExpired(identifier)) {
             // query not expired yet
             Log.debug("document query not expired yet: " + identifier);
             return false;
         }
+        Log.info("querying documents for: " + identifier);
         CommonMessenger messenger = getMessenger();
         Content content = DocumentCommand.query(identifier, lastTime);
         Pair<InstantMessage, ReliableMessage> pair;
@@ -97,7 +89,7 @@ public abstract class ClientArchivist extends Archivist {
     }
 
     @Override
-    protected boolean queryMembers(ID group, Date lastTime) {
+    public boolean queryMembers(ID group, Date lastTime) {
         if (!isMembersQueryExpired(group)) {
             // query not expired yet
             Log.debug("members query not expired yet: " + group);
@@ -110,6 +102,7 @@ public abstract class ClientArchivist extends Archivist {
             return false;
         }
         ID me = user.getIdentifier();
+        Log.info("querying members for group: " + group);
         // build query command for group members
         QueryCommand command = GroupCommand.query(group, lastTime);
         boolean ok;
@@ -151,6 +144,7 @@ public abstract class ClientArchivist extends Archivist {
                 Log.warning("ignore cycled querying: " + sender + ", group: " + group);
                 continue;
             }
+            Log.info("querying members for group: " + group + ", bot: " + receiver);
             pair = messenger.sendContent(sender, receiver, command, 1);
             if (pair != null && pair.second != null) {
                 success += 1;
@@ -161,7 +155,7 @@ public abstract class ClientArchivist extends Archivist {
     }
 
     protected boolean queryMembersFromAdministrators(ID sender, QueryCommand command) {
-        CommonFacebook facebook = getFacebook();
+        ClientFacebook facebook = (ClientFacebook) getFacebook();
         CommonMessenger messenger = getMessenger();
         ID group = command.getGroup();
         assert group != null : "group command error: " + command;
@@ -178,6 +172,7 @@ public abstract class ClientArchivist extends Archivist {
                 Log.warning("ignore cycled querying: " + sender + ", group: " + group);
                 continue;
             }
+            Log.info("querying members for group: " + group + ", admin: " + receiver);
             pair = messenger.sendContent(sender, receiver, command, 1);
             if (pair != null && pair.second != null) {
                 success += 1;
@@ -202,6 +197,7 @@ public abstract class ClientArchivist extends Archivist {
         }
         Pair<InstantMessage, ReliableMessage> pair;
         // querying members from owner
+        Log.info("querying members for group: " + group + ", owner: " + owner);
         pair = messenger.sendContent(sender, owner, command, 1);
         Log.info("querying members from owner: " + owner + ", group: " + group);
         return pair != null && pair.second != null;
