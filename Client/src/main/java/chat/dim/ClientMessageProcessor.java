@@ -30,6 +30,7 @@
  */
 package chat.dim;
 
+import java.util.Date;
 import java.util.List;
 
 import chat.dim.core.ContentProcessor;
@@ -54,9 +55,52 @@ public class ClientMessageProcessor extends MessageProcessor {
         return (CommonMessenger) super.getMessenger();
     }
 
+    private void checkGroupTimes(Content content, ReliableMessage rMsg) {
+        ID group = content.getGroup();
+        if (group == null) {
+            return;
+        }
+        Facebook facebook = getFacebook();
+        ClientArchivist archivist = (ClientArchivist) facebook.getArchivist();
+        Date now = new Date();
+        boolean docUpdated = false;
+        boolean memUpdated = false;
+        // check group document time
+        Date lastDocumentTime = rMsg.getDateTime("GDT", null);
+        if (lastDocumentTime != null) {
+            if (lastDocumentTime.after(now)) {
+                // calibrate the clock
+                lastDocumentTime = now;
+            }
+            docUpdated = archivist.setLastDocumentTime(group, lastDocumentTime);
+        }
+        // check group history time
+        Date lastHistoryTime = rMsg.getDateTime("GHT", null);
+        if (lastHistoryTime != null) {
+            if (lastHistoryTime.after(now)) {
+                // calibrate the clock
+                lastHistoryTime = now;
+            }
+            memUpdated = archivist.setLastGroupHistoryTime(group, lastHistoryTime);
+        }
+        // check whether needs update
+        if (docUpdated) {
+            facebook.getDocuments(group);
+        }
+        if (memUpdated) {
+            archivist.setLastActiveMember(group, rMsg.getSender());
+            facebook.getMembers(group);
+        }
+    }
+
     @Override
     public List<Content> processContent(Content content, ReliableMessage rMsg) {
         List<Content> responses = super.processContent(content, rMsg);
+
+        // check group document & history times from the message
+        // to make sure the group info synchronized
+        checkGroupTimes(content, rMsg);
+
         if (responses == null || responses.size() == 0) {
             // respond nothing
             return responses;

@@ -31,12 +31,15 @@
 package chat.dim;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
+import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
@@ -47,12 +50,30 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.Visa;
 import chat.dim.protocol.group.QueryCommand;
 import chat.dim.type.Pair;
+import chat.dim.utils.FrequencyChecker;
 import chat.dim.utils.Log;
 
 public abstract class ClientArchivist extends CommonArchivist {
 
+    // each respond will be expired after 10 minutes
+    public static final int RESPOND_EXPIRES = 600 * 1000;  // milliseconds
+
+    private final FrequencyChecker<ID> documentResponses;
+
+    // group => member
+    private final Map<ID, ID> lastActiveMembers = new HashMap<>();
+
     public ClientArchivist(AccountDBI db) {
         super(db);
+        documentResponses = new FrequencyChecker<>(RESPOND_EXPIRES);
+    }
+
+    protected boolean isDocumentResponseExpired(ID identifier, boolean force) {
+        return documentResponses.isExpired(identifier, 0, force);
+    }
+
+    public void setLastActiveMember(ID group, ID member) {
+        lastActiveMembers.put(group, member);
     }
 
     protected abstract CommonFacebook getFacebook();
@@ -74,13 +95,14 @@ public abstract class ClientArchivist extends CommonArchivist {
     }
 
     @Override
-    public boolean queryDocuments(ID identifier, Date lastTime) {
+    public boolean queryDocuments(ID identifier, List<Document> documents) {
         if (!isDocumentQueryExpired(identifier)) {
             // query not expired yet
             Log.debug("document query not expired yet: " + identifier);
             return false;
         }
-        Log.info("querying documents for: " + identifier);
+        Date lastTime = getLastDocumentTime(identifier, documents);
+        Log.info("querying documents for: " + identifier + ", last time: " + lastTime);
         CommonMessenger messenger = getMessenger();
         Content content = DocumentCommand.query(identifier, lastTime);
         Pair<InstantMessage, ReliableMessage> pair;
@@ -89,7 +111,7 @@ public abstract class ClientArchivist extends CommonArchivist {
     }
 
     @Override
-    public boolean queryMembers(ID group, Date lastTime) {
+    public boolean queryMembers(ID group, List<ID> members) {
         if (!isMembersQueryExpired(group)) {
             // query not expired yet
             Log.debug("members query not expired yet: " + group);
@@ -102,7 +124,8 @@ public abstract class ClientArchivist extends CommonArchivist {
             return false;
         }
         ID me = user.getIdentifier();
-        Log.info("querying members for group: " + group);
+        Date lastTime = getLastGroupHistoryTime(group);
+        Log.info("querying members for group: " + group + ", last time: " + lastTime);
         // build query command for group members
         QueryCommand command = GroupCommand.query(group, lastTime);
         boolean ok;
@@ -121,9 +144,16 @@ public abstract class ClientArchivist extends CommonArchivist {
         if (ok) {
             return true;
         }
-        // failed
+        // all failed, try last active member
+        Pair<InstantMessage, ReliableMessage> pair = null;
+        ID lastMember = lastActiveMembers.get(group);
+        if (lastMember != null) {
+            Log.info("querying members from member: " + lastMember + ", group: " + group);
+            CommonMessenger messenger = getMessenger();
+            pair = messenger.sendContent(me, lastMember, command, 1);
+        }
         Log.error("group not ready: " + group);
-        return false;
+        return pair != null && pair.second != null;
     }
 
     protected boolean queryMembersFromAssistants(ID sender, QueryCommand command) {
@@ -151,7 +181,16 @@ public abstract class ClientArchivist extends CommonArchivist {
             }
         }
         Log.info("querying members from bots: " + bots + ", group: " + group);
-        return success > 0;
+        if (success > 0) {
+            ID lastMember = lastActiveMembers.get(group);
+            if (lastMember != null && !bots.contains(lastMember)) {
+                Log.info("querying members from member: " + lastMember + ", group: " + group);
+                messenger.sendContent(sender, lastMember, command, 1);
+            }
+            return true;
+        }
+        // failed
+        return false;
     }
 
     protected boolean queryMembersFromAdministrators(ID sender, QueryCommand command) {
@@ -179,7 +218,16 @@ public abstract class ClientArchivist extends CommonArchivist {
             }
         }
         Log.info("querying members from admins: " + admins + ", group: " + group);
-        return success > 0;
+        if (success > 0) {
+            ID lastMember = lastActiveMembers.get(group);
+            if (lastMember != null && !admins.contains(lastMember)) {
+                Log.info("querying members from member: " + lastMember + ", group: " + group);
+                messenger.sendContent(sender, lastMember, command, 1);
+            }
+            return true;
+        }
+        // failed
+        return false;
     }
 
     protected boolean queryMembersFromOwner(ID sender, QueryCommand command) {
@@ -200,7 +248,16 @@ public abstract class ClientArchivist extends CommonArchivist {
         Log.info("querying members for group: " + group + ", owner: " + owner);
         pair = messenger.sendContent(sender, owner, command, 1);
         Log.info("querying members from owner: " + owner + ", group: " + group);
-        return pair != null && pair.second != null;
+        if (pair != null && pair.second != null) {
+            ID lastMember = lastActiveMembers.get(group);
+            if (lastMember != null && !owner.equals(lastMember)) {
+                Log.info("querying members from member: " + lastMember + ", group: " + group);
+                messenger.sendContent(sender, lastMember, command, 1);
+            }
+            return true;
+        }
+        // failed
+        return false;
     }
 
     /**

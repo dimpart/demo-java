@@ -53,7 +53,7 @@ public abstract class CommonFacebook extends Facebook {
         current = null;
     }
 
-    protected abstract CommonArchivist getArchivist();
+    public abstract CommonArchivist getArchivist();
 
     public AccountDBI getDatabase() {
         CommonArchivist archivist = getArchivist();

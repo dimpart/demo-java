@@ -30,8 +30,10 @@
  */
 package chat.dim.cpu.group;
 
+import java.util.Date;
 import java.util.List;
 
+import chat.dim.CommonArchivist;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
@@ -91,6 +93,26 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
                             "ID", group.toString()
                     )
             ));
+        }
+
+        // check last group time
+        Date queryTime = rMsg.getDateTime("last_time", null);
+        if (queryTime != null) {
+            // check last group history time
+            CommonArchivist archivist = getFacebook().getArchivist();
+            Date lastTime = archivist.getLastGroupHistoryTime(group);
+            if (lastTime == null) {
+                assert false : "group history error: " + group;
+            } else if (!lastTime.after(queryTime)) {
+                // group history not updated
+                return respondReceipt("Group history not updated.", rMsg.getEnvelope(), command, newMap(
+                        "template", "Group history not updated: ${ID}, last time: ${time}",
+                        "replacements", newMap(
+                                "ID", group.toString(),
+                                "time", lastTime.getTime() / 1000.0d
+                        )
+                ));
+            }
         }
 
         // 3. send newest group history commands

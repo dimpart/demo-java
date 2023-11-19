@@ -30,10 +30,13 @@
  */
 package chat.dim.group;
 
+import java.util.Date;
 import java.util.List;
 
+import chat.dim.CommonArchivist;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
+import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.FileContent;
 import chat.dim.protocol.ForwardContent;
@@ -90,6 +93,30 @@ public class GroupEmitter {
         return delegate.getMessenger();
     }
 
+    private void attachGroupTimes(ID group, InstantMessage iMsg) {
+        CommonFacebook facebook = getFacebook();
+        Bulletin doc = facebook.getBulletin(group);
+        if (doc == null) {
+            assert false : "failed to get bulletin document for group: " + group;
+            return;
+        }
+        // attach group document time
+        Date lastDocumentTime = doc.getTime();
+        if (lastDocumentTime == null) {
+            assert false : "document error: " + doc;
+        } else {
+            iMsg.setDateTime("GDT", lastDocumentTime);
+        }
+        // attach group history time
+        CommonArchivist archivist = facebook.getArchivist();
+        Date lastHistoryTime = archivist.getLastGroupHistoryTime(group);
+        if (lastHistoryTime == null) {
+            assert false : "document error: " + doc;
+        } else {
+            iMsg.setDateTime("GHT", lastHistoryTime);
+        }
+    }
+
     public ReliableMessage sendInstantMessage(InstantMessage iMsg, int priority) {
         Content content = iMsg.getContent();
         ID group = content.getGroup();
@@ -98,6 +125,10 @@ public class GroupEmitter {
             return null;
         }
         assert iMsg.getReceiver().equals(group) : "group message error: " + iMsg;
+
+        // attach group document & history times
+        // for the receiver to check whether group info synchronized
+        attachGroupTimes(group, iMsg);
 
         // TODO: if it's a file message
         //       please upload the file data first

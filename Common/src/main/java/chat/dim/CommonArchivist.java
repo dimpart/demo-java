@@ -30,6 +30,7 @@
  */
 package chat.dim;
 
+import java.util.Date;
 import java.util.List;
 
 import chat.dim.crypto.DecryptKey;
@@ -40,31 +41,49 @@ import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.Group;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Document;
+import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
-import chat.dim.utils.FrequencyChecker;
+import chat.dim.protocol.ReliableMessage;
+import chat.dim.type.Pair;
 
 public abstract class CommonArchivist extends Archivist implements User.DataSource, Group.DataSource {
-
-    // each respond will be expired after 10 minutes
-    public static final int RESPOND_EXPIRES = 600 * 1000;  // milliseconds
-
-    private final FrequencyChecker<ID> documentResponses;
 
     private final AccountDBI database;
 
     public CommonArchivist(AccountDBI db) {
         super(QUERY_EXPIRES);
         database = db;
-        documentResponses = new FrequencyChecker<>(RESPOND_EXPIRES);
     }
 
     public AccountDBI getDatabase() {
         return database;
     }
 
-    protected boolean isDocumentResponseExpired(ID identifier, boolean force) {
-        return documentResponses.isExpired(identifier, 0, force);
+    @Override
+    public Date getLastGroupHistoryTime(ID group) {
+        AccountDBI adb = getDatabase();
+        List<Pair<GroupCommand, ReliableMessage>> array = adb.getGroupHistories(group);
+        if (array == null || array.isEmpty()) {
+            return null;
+        }
+        Date lastTime = null;
+        GroupCommand his;
+        Date hisTime;
+        for (Pair<GroupCommand, ReliableMessage> pair : array) {
+            his = pair.first;
+            if (his == null) {
+                assert false : "group command error: " + pair;
+                continue;
+            }
+            hisTime = his.getTime();
+            if (hisTime == null) {
+                assert false : "group command error: " + his;
+            } else if (lastTime == null || lastTime.before(hisTime)) {
+                lastTime = hisTime;
+            }
+        }
+        return lastTime;
     }
 
     public List<ID> getLocalUsers() {
