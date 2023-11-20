@@ -105,7 +105,7 @@ public abstract class CommonArchivist extends Archivist implements User.DataSour
         } else {
             // calibrate the clock
             // make sure the document time is not in the far future
-            long current = System.currentTimeMillis() + 15000;
+            long current = System.currentTimeMillis() + 65536;
             if (docTime.getTime() > current) {
                 assert false : "document time error: " + docTime + ", " + doc;
                 return false;
@@ -198,6 +198,10 @@ public abstract class CommonArchivist extends Archivist implements User.DataSour
         AccountDBI db = getDatabase();
         return db.getAssistants(group);
     }
+
+    //
+    //  Organization Structure
+    //
 
     public List<ID> getAdministrators(ID group) {
         AccountDBI db = getDatabase();

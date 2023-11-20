@@ -73,7 +73,7 @@ public class GroupHelper {
         } else {
             // calibrate the clock
             // make sure the command time is not in the far future
-            long current = System.currentTimeMillis() + 15000;
+            long current = System.currentTimeMillis() + 65536;
             if (cmdTime.getTime() > current) {
                 assert false : "group command time error: " + cmdTime + ", " + content;
                 return false;
