@@ -99,6 +99,18 @@ public abstract class CommonArchivist extends Archivist implements User.DataSour
 
     @Override
     public boolean saveDocument(Document doc) {
+        Date docTime = doc.getTime();
+        if (docTime == null) {
+            assert false : "document error: " + doc;
+        } else {
+            // calibrate the clock
+            // make sure the document time is not in the far future
+            long current = System.currentTimeMillis() + 15000;
+            if (docTime.getTime() > current) {
+                assert false : "document time error: " + docTime + ", " + doc;
+                return false;
+            }
+        }
         AccountDBI db = getDatabase();
         return db.saveDocument(doc);
     }

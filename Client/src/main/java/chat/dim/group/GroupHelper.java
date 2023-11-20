@@ -31,6 +31,7 @@
 package chat.dim.group;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import chat.dim.dbi.AccountDBI;
@@ -54,7 +55,7 @@ public class GroupHelper {
     }
 
     protected AccountDBI getDatabase() {
-        return delegate.getFacebook().getDatabase();
+        return delegate.getFacebook().getArchivist().getDatabase();
     }
 
     //
@@ -65,6 +66,18 @@ public class GroupHelper {
         if (isCommandExpired(content)) {
             Log.warning("drop expired command: " + content.getCmd() + ", " + rMsg.getSender() + " => " + group);
             return false;
+        }
+        Date cmdTime = content.getTime();
+        if (cmdTime == null) {
+            assert false : "group command error: " + content;
+        } else {
+            // calibrate the clock
+            // make sure the command time is not in the far future
+            long current = System.currentTimeMillis() + 15000;
+            if (cmdTime.getTime() > current) {
+                assert false : "group command time error: " + cmdTime + ", " + content;
+                return false;
+            }
         }
         AccountDBI db = getDatabase();
         if (content instanceof ResetCommand) {

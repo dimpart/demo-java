@@ -35,7 +35,6 @@ import java.util.List;
 
 import chat.dim.crypto.DecryptKey;
 import chat.dim.crypto.SignKey;
-import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.DocumentHelper;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Document;
@@ -53,12 +52,8 @@ public abstract class CommonFacebook extends Facebook {
         current = null;
     }
 
+    @Override
     public abstract CommonArchivist getArchivist();
-
-    public AccountDBI getDatabase() {
-        CommonArchivist archivist = getArchivist();
-        return archivist.getDatabase();
-    }
 
     @Override
     public List<User> getLocalUsers() {

@@ -94,7 +94,7 @@ public class GroupManager {
     }
 
     protected AccountDBI getDatabase() {
-        return delegate.getFacebook().getDatabase();
+        return delegate.getFacebook().getArchivist().getDatabase();
     }
 
     /**

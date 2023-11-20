@@ -101,7 +101,7 @@ public class ClientMessageProcessor extends MessageProcessor {
         // to make sure the group info synchronized
         checkGroupTimes(content, rMsg);
 
-        if (responses == null || responses.size() == 0) {
+        if (responses == null || responses.isEmpty()) {
             // respond nothing
             return responses;
         } else if (responses.get(0) instanceof HandshakeCommand) {

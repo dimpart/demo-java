@@ -30,16 +30,22 @@
  */
 package chat.dim;
 
+import java.util.List;
+
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
 import chat.dim.protocol.Content;
+import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.LoginCommand;
+import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReportCommand;
+import chat.dim.protocol.Visa;
+import chat.dim.utils.Log;
 
 /**
  *  Client Messenger for Handshake & Broadcast Report
@@ -96,8 +102,51 @@ public class ClientMessenger extends CommonMessenger {
      */
     public void handshakeSuccess() {
         // broadcast current documents after handshake success
+        broadcastDocument(false);
+    }
+
+    /**
+     *  Broadcast meta & visa document to all stations
+     */
+    public void broadcastDocument(boolean updated) {
+        CommonFacebook facebook = getFacebook();
+        User user = facebook.getCurrentUser();
+        assert user != null : "current user not found";
+        Visa visa = user.getVisa();
+        if (visa == null) {
+            assert false : "visa not found: " + user;
+            return;
+        }
+        ID me = user.getIdentifier();
+        Meta meta = user.getMeta();
+        DocumentCommand command = DocumentCommand.response(me, meta, visa);
+
         ClientArchivist archivist = getArchivist();
-        archivist.broadcastDocument(false);
+        //
+        //  send to all contacts
+        //
+        List<ID> contacts = facebook.getContacts(me);
+        if (contacts == null) {
+            Log.warning("contacts not found: " + me);
+        } else for (ID item : contacts) {
+            if (archivist.isDocumentResponseExpired(item, updated)) {
+                Log.info("sending visa to " + item);
+                sendContent(me, item, command, 1);
+            } else {
+                // not expired yet
+                Log.debug("visa response not expired yet: " + item);
+            }
+        }
+        //
+        //  broadcast to 'everyone@everywhere'
+        //
+        if (archivist.isDocumentResponseExpired(ID.EVERYONE, updated)) {
+            Log.info("sending visa to " + ID.EVERYONE);
+            sendContent(me, ID.EVERYONE, command, 1);
+        } else {
+            // not expired yet
+            Log.debug("visa response not expired yet: " + ID.EVERYONE);
+        }
     }
 
     /**

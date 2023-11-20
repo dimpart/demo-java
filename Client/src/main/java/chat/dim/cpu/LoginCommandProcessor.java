@@ -36,7 +36,6 @@ import chat.dim.ClientMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.dbi.SessionDBI;
-import chat.dim.network.ClientSession;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.LoginCommand;
@@ -50,15 +49,22 @@ public class LoginCommandProcessor extends BaseCommandProcessor {
     }
 
     @Override
+    protected ClientMessenger getMessenger() {
+        return (ClientMessenger) super.getMessenger();
+    }
+
+    private SessionDBI getDatabase() {
+        return getMessenger().getSession().getDatabase();
+    }
+
+    @Override
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof LoginCommand : "login command error: " + content;
         LoginCommand command = (LoginCommand) content;
         ID sender = command.getIdentifier();
         assert rMsg.getSender().equals(sender) : "sender not match: " + sender + ", " + rMsg.getSender();
         // save login command to session db
-        ClientMessenger messenger = (ClientMessenger) getMessenger();
-        ClientSession session = messenger.getSession();
-        SessionDBI db = session.getDatabase();
+        SessionDBI db = getDatabase();
         if (db.saveLoginCommandMessage(sender, command, rMsg)) {
             Log.info("saved login command for user: " + sender);
         } else {

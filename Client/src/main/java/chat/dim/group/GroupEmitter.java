@@ -111,7 +111,7 @@ public class GroupEmitter {
         CommonArchivist archivist = facebook.getArchivist();
         Date lastHistoryTime = archivist.getLastGroupHistoryTime(group);
         if (lastHistoryTime == null) {
-            assert false : "document error: " + doc;
+            assert false : "failed to get history time: " + group;
         } else {
             iMsg.setDateTime("GHT", lastHistoryTime);
         }

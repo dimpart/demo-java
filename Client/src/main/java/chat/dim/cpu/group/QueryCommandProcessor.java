@@ -38,7 +38,6 @@ import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.QueryCommand;
@@ -61,7 +60,7 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
     @Override
     public List<Content> process(Content content, ReliableMessage rMsg) {
         assert content instanceof QueryCommand : "query command error: " + content;
-        GroupCommand command = (GroupCommand) content;
+        QueryCommand command = (QueryCommand) content;
 
         // 0. check command
         Pair<ID, List<Content>> pair = checkCommandExpired(command, rMsg);
@@ -96,7 +95,7 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
         }
 
         // check last group time
-        Date queryTime = rMsg.getDateTime("last_time", null);
+        Date queryTime = command.getLastTime();
         if (queryTime != null) {
             // check last group history time
             CommonArchivist archivist = getFacebook().getArchivist();

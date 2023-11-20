@@ -76,7 +76,7 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         }
         Pair<List<ID>, List<Content>> pair1 = checkCommandMembers(command, rMsg);
         List<ID> newMembers = pair1.first;
-        if (newMembers == null || newMembers.size() == 0) {
+        if (newMembers == null || newMembers.isEmpty()) {
             // command error
             return pair1.second;
         }
