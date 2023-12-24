@@ -31,7 +31,6 @@
 package chat.dim;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import chat.dim.compat.Compatible;
@@ -72,12 +71,6 @@ public abstract class CommonPacker extends MessagePacker {
         return facebook.getPublicKeyForEncryption(user);
     }
 
-    // for checking whether group's ready
-    protected List<ID> getMembers(ID group) {
-        Facebook facebook = getFacebook();
-        return facebook.getMembers(group);
-    }
-
     /**
      *  Check sender before verifying received message
      *
@@ -103,40 +96,6 @@ public abstract class CommonPacker extends MessagePacker {
         error.put("message", "verify key not found");
         error.put("user", sender.toString());
         suspendMessage(rMsg, error);  // rMsg.put("error", error);
-        return false;
-    }
-
-    protected boolean checkReceiver(ReliableMessage sMsg) {
-        ID receiver = sMsg.getReceiver();
-        // check group
-        ID group = ID.parse(sMsg.get("group"));
-        if (group == null && receiver.isGroup()) {
-            /// Transform:
-            ///     (B) => (J)
-            ///     (D) => (G)
-            group = receiver;
-        }
-        if (group == null || group.isBroadcast()) {
-            /// A, C - personal message (or hidden group message)
-            //      the packer will call the facebook to select a user from local
-            //      for this receiver, if no user matched (private key not found),
-            //      this message will be ignored;
-            /// E, F, G - broadcast group message
-            //      broadcast message is not encrypted, so it can be read by anyone.
-            return true;
-        }
-        /// H, J, K - group message
-        //      check for received group message
-        List<ID> members = getMembers(group);
-        if (members != null && members.size() > 0) {
-            // group is ready
-            return true;
-        }
-        // group not ready, suspend message for waiting members
-        Map<String, String> error = new HashMap<>();
-        error.put("message", "group not ready");
-        error.put("group", group.toString());
-        suspendMessage(sMsg, error);  // rMsg.put("error", error);
         return false;
     }
 
@@ -184,16 +143,11 @@ public abstract class CommonPacker extends MessagePacker {
 
     @Override
     public SecureMessage verifyMessage(ReliableMessage rMsg) {
-        // 1. check sender's meta
+        // 1. check receiver/group with local user
+        // 2. check sender's visa info
         if (!checkSender(rMsg)) {
             // sender not ready
             Log.warning("sender not ready: " + rMsg.getSender());
-            return null;
-        }
-        // 2. check receiver/group with local user
-        if (!checkReceiver(rMsg)) {
-            // receiver (group) not ready
-            Log.warning("receiver not ready: " + rMsg.getReceiver());
             return null;
         }
         return super.verifyMessage(rMsg);

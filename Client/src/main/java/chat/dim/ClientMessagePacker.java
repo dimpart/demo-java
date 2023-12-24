@@ -37,6 +37,9 @@ import java.util.Map;
 
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
+import chat.dim.protocol.ReliableMessage;
+import chat.dim.protocol.SecureMessage;
+import chat.dim.utils.Log;
 
 public abstract class ClientMessagePacker extends CommonPacker {
 
@@ -49,6 +52,12 @@ public abstract class ClientMessagePacker extends CommonPacker {
         Facebook facebook = super.getFacebook();
         assert facebook instanceof ClientFacebook : "facebook error: " + facebook;
         return (ClientFacebook) facebook;
+    }
+
+    // for checking whether group's ready
+    protected List<ID> getMembers(ID group) {
+        Facebook facebook = getFacebook();
+        return facebook.getMembers(group);
     }
 
     @Override
@@ -99,6 +108,51 @@ public abstract class ClientMessagePacker extends CommonPacker {
         // so we must return true here to let the messaging continue;
         // when the member's visa is responded, we should send the suspended message again.
         return waiting.size() < members.size();
+    }
+
+    protected boolean checkGroup(ReliableMessage sMsg) {
+        ID receiver = sMsg.getReceiver();
+        // check group
+        ID group = ID.parse(sMsg.get("group"));
+        if (group == null && receiver.isGroup()) {
+            /// Transform:
+            ///     (B) => (J)
+            ///     (D) => (G)
+            group = receiver;
+        }
+        if (group == null || group.isBroadcast()) {
+            /// A, C - personal message (or hidden group message)
+            //      the packer will call the facebook to select a user from local
+            //      for this receiver, if no user matched (private key not found),
+            //      this message will be ignored;
+            /// E, F, G - broadcast group message
+            //      broadcast message is not encrypted, so it can be read by anyone.
+            return true;
+        }
+        /// H, J, K - group message
+        //      check for received group message
+        List<ID> members = getMembers(group);
+        if (members != null && members.size() > 0) {
+            // group is ready
+            return true;
+        }
+        // group not ready, suspend message for waiting members
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "group not ready");
+        error.put("group", group.toString());
+        suspendMessage(sMsg, error);  // rMsg.put("error", error);
+        return false;
+    }
+
+    @Override
+    public SecureMessage verifyMessage(ReliableMessage rMsg) {
+        // check receiver/group with local user
+        if (!checkGroup(rMsg)) {
+            // receiver (group) not ready
+            Log.warning("receiver not ready: " + rMsg.getReceiver());
+            return null;
+        }
+        return super.verifyMessage(rMsg);
     }
 
 }
