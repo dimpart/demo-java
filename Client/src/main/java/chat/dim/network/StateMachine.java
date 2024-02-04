@@ -109,7 +109,8 @@ public class StateMachine extends AutoMachine<StateMachine, StateTransition, Ses
             return Docker.Status.ERROR;
         }
         CommonGate gate = session.getGate();
-        Docker docker = gate.getDocker(session.getRemoteAddress(), null, null);
+        //Docker docker = gate.getDocker(session.getRemoteAddress(), null, null);
+        Docker docker = gate.getDocker(session.getRemoteAddress(), null);
         return docker == null ? Docker.Status.ERROR : docker.getStatus();
     }
 }

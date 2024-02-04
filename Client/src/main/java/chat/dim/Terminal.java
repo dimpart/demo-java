@@ -324,7 +324,11 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
                 return;
             }
             SocketAddress remote = session.getRemoteAddress();
-            Docker docker = session.getGate().getDocker(remote, null, new ArrayList<>());
+            if (remote == null) {
+                Log.warning("failed to get remote address: " + session);
+                return;
+            }
+            Docker docker = session.getGate().fetchDocker(remote, null, new ArrayList<>());
             if (docker == null) {
                 Log.error("failed to connect: " + remote);
             } else {

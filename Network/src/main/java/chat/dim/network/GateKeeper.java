@@ -175,10 +175,27 @@ public class GateKeeper extends Runner implements Docker.Delegate {
         super.finish();
     }
 
+    private long reconnectTime = 0;
+
     @Override
     public boolean process() {
-        Hub hub = gate.getHub();
+        // check docker for remote address
+        Docker docker = gate.getDocker(remoteAddress, null);
+        if (docker == null) {
+            long now = System.currentTimeMillis();
+            if (now < reconnectTime) {
+                return false;
+            }
+            docker = gate.fetchDocker(remoteAddress, null, new ArrayList<>());
+            if (docker == null) {
+                Log.error("gate error: " + remoteAddress);
+                reconnectTime = now + 8000;
+                return false;
+            }
+        }
+        // try to process income/outgo packages
         try {
+            Hub hub = gate.getHub();
             boolean incoming = hub.process();
             boolean outgoing = gate.process();
             if (incoming || outgoing) {
@@ -209,15 +226,15 @@ public class GateKeeper extends Runner implements Docker.Delegate {
             return true;
         }
         // try to push
-        boolean ok = gate.sendShip(wrapper, remoteAddress, null);
+        boolean ok = docker.sendShip(wrapper);
         if (!ok) {
-            Log.error("gate error, failed to send data");
+            Log.error("docker error: " + remoteAddress + ", " + docker);
         }
         return true;
     }
 
     protected Departure dockerPack(byte[] payload, int priority) {
-        Docker docker = gate.getDocker(remoteAddress, null, new ArrayList<>());
+        Docker docker = gate.fetchDocker(remoteAddress, null, new ArrayList<>());
         assert docker instanceof DeparturePacker : "departure packer error: " + docker;
         return ((DeparturePacker) docker).packData(payload, priority);
     }
