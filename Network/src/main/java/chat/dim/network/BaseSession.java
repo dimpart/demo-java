@@ -54,7 +54,7 @@ public abstract class BaseSession extends GateKeeper implements Session {
         super(remote, sock);
         database = sdb;
         identifier = null;
-        messengerRef = new WeakReference<>(null);
+        messengerRef = null;
     }
 
     @Override
@@ -81,10 +81,11 @@ public abstract class BaseSession extends GateKeeper implements Session {
     }
 
     public CommonMessenger getMessenger() {
-        return messengerRef.get();
+        WeakReference<CommonMessenger> ref = messengerRef;
+        return ref == null ? null : ref.get();
     }
     public void setMessenger(CommonMessenger messenger) {
-        messengerRef = new WeakReference<>(messenger);
+        messengerRef = messenger == null ? null : new WeakReference<>(messenger);
     }
 
     @Override
@@ -118,41 +119,4 @@ public abstract class BaseSession extends GateKeeper implements Session {
         return messenger.sendReliableMessage(rMsg, priority);
     }
 
-    //
-    //  Docker Delegate
-    //
-    /*/
-    @Override
-    public void onDockerSent(Departure ship, Docker docker) {
-        if (ship instanceof MessageWrapper) {
-            ReliableMessage msg = ((MessageWrapper) ship).getMessage();
-            if (msg != null) {
-                // FIXME: another way to get message db?
-                MessageDBI mdb = (MessageDBI) database;
-                // remove from database for actual receiver
-                removeReliableMessage(msg, getIdentifier(), mdb);
-            }
-        }
-    }
-
-    private static void removeReliableMessage(ReliableMessage msg, ID receiver, MessageDBI db) {
-        // 0. if session ID is empty, means user not login;
-        //    this message must be a handshake command, and
-        //    its receiver must be the targeted user.
-        // 1. if this session is a station, check original receiver;
-        //    a message to station won't be stored.
-        // 2. if the msg.receiver is a different user ID, means it's
-        //    a roaming message, remove it for actual receiver.
-        // 3. if the original receiver is a group, it must had been
-        //    replaced to the group assistant ID by GroupDeliver.
-        if (receiver == null || EntityType.STATION.equals(receiver.getType())) {
-            //if (msg.getReceiver().equals(receiver)) {
-            //    // station message won't be stored
-            //    return;
-            //}
-            receiver = msg.getReceiver();
-        }
-        db.removeReliableMessage(receiver, msg);
-    }
-    /*/
 }

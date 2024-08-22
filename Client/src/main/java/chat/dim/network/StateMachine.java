@@ -34,7 +34,7 @@ import java.lang.ref.WeakReference;
 
 import chat.dim.fsm.AutoMachine;
 import chat.dim.fsm.Context;
-import chat.dim.port.Docker;
+import chat.dim.port.Porter;
 import chat.dim.protocol.ID;
 
 /**
@@ -103,14 +103,14 @@ public class StateMachine extends AutoMachine<StateMachine, StateTransition, Ses
         return session == null ? null : session.getIdentifier();
     }
 
-    Docker.Status getStatus() {
+    Porter.Status getStatus() {
         ClientSession session = getSession();
         if (session == null) {
-            return Docker.Status.ERROR;
+            return Porter.Status.ERROR;
         }
         CommonGate gate = session.getGate();
-        //Docker docker = gate.getDocker(session.getRemoteAddress(), null, null);
-        Docker docker = gate.getDocker(session.getRemoteAddress(), null);
-        return docker == null ? Docker.Status.ERROR : docker.getStatus();
+        //Porter docker = gate.getPorter(session.getRemoteAddress(), null, null);
+        Porter docker = gate.getPorter(session.getRemoteAddress(), null);
+        return docker == null ? Porter.Status.ERROR : docker.getStatus();
     }
 }

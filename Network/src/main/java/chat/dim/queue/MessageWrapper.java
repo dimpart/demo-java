@@ -30,6 +30,7 @@
  */
 package chat.dim.queue;
 
+import java.util.Date;
 import java.util.List;
 
 import chat.dim.port.Arrival;
@@ -77,12 +78,12 @@ public final class MessageWrapper implements Departure {
     }
 
     @Override
-    public void touch(long now) {
+    public void touch(Date now) {
         ship.touch(now);
     }
 
     @Override
-    public Status getStatus(long now) {
+    public Status getStatus(Date now) {
         return ship.getStatus(now);
     }
 }

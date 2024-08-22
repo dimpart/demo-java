@@ -30,8 +30,10 @@
  */
 package chat.dim.network;
 
+import java.util.Date;
+
 import chat.dim.fsm.BaseTransition;
-import chat.dim.port.Docker;
+import chat.dim.port.Porter;
 import chat.dim.utils.Log;
 
 /**
@@ -61,8 +63,9 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         super(order.ordinal());
     }
 
-    boolean isExpired(SessionState state, long now) {
-        return 0 < state.timestamp && state.timestamp < (now - 30 * 1000);
+    boolean isExpired(SessionState state, Date now) {
+        Date last = state.enterTime;
+        return last != null && last.getTime() < (now.getTime() - 30 * 1000);
     }
 
     /**
@@ -82,7 +85,7 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         StateTransition getDefaultConnectingTransition() {
             return new StateTransition(SessionState.Order.CONNECTING) {
                 @Override
-                public boolean evaluate(StateMachine ctx, long now) {
+                public boolean evaluate(StateMachine ctx, Date now) {
                     // change to 'connecting' when current user set
                     return ctx.getSessionID() != null;
                     /*/
@@ -103,9 +106,9 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         StateTransition getConnectingConnectedTransition() {
             return new StateTransition(SessionState.Order.CONNECTED) {
                 @Override
-                public boolean evaluate(StateMachine ctx, long now) {
-                    Docker.Status status = ctx.getStatus();
-                    return status.equals(Docker.Status.READY);
+                public boolean evaluate(StateMachine ctx, Date now) {
+                    Porter.Status status = ctx.getStatus();
+                    return status.equals(Porter.Status.READY);
                 }
             };
         }
@@ -120,13 +123,13 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         StateTransition getConnectingErrorTransition() {
             return new StateTransition(SessionState.Order.ERROR) {
                 @Override
-                public boolean evaluate(StateMachine ctx, long now) {
+                public boolean evaluate(StateMachine ctx, Date now) {
                     if (isExpired(ctx.getCurrentState(), now)) {
                         // connecting expired, do it again
                         return true;
                     }
-                    Docker.Status status = ctx.getStatus();
-                    return !(status.equals(Docker.Status.PREPARING) || status.equals(Docker.Status.READY));
+                    Porter.Status status = ctx.getStatus();
+                    return !(status.equals(Porter.Status.PREPARING) || status.equals(Porter.Status.READY));
                 }
             };
         }
@@ -141,14 +144,14 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         StateTransition getConnectedHandshakingTransition() {
             return new StateTransition(SessionState.Order.HANDSHAKING) {
                 @Override
-                public boolean evaluate(StateMachine ctx, long now) {
+                public boolean evaluate(StateMachine ctx, Date now) {
                     if (ctx.getSessionID() == null) {
                         // FIXME: current user lost?
                         //        state will be changed to 'error'
                         return false;
                     }
-                    Docker.Status status = ctx.getStatus();
-                    return status.equals(Docker.Status.READY);
+                    Porter.Status status = ctx.getStatus();
+                    return status.equals(Porter.Status.READY);
                 }
             };
         }
@@ -163,13 +166,13 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         StateTransition getConnectedErrorTransition() {
             return new StateTransition(SessionState.Order.ERROR) {
                 @Override
-                public boolean evaluate(StateMachine ctx, long now) {
+                public boolean evaluate(StateMachine ctx, Date now) {
                     if (ctx.getSessionID() == null) {
                         // FIXME: current user lost?
                         return true;
                     }
-                    Docker.Status status = ctx.getStatus();
-                    return !status.equals(Docker.Status.READY);
+                    Porter.Status status = ctx.getStatus();
+                    return !status.equals(Porter.Status.READY);
                 }
             };
         }
@@ -184,14 +187,14 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         StateTransition getHandshakingRunningTransition() {
             return new StateTransition(SessionState.Order.RUNNING) {
                 @Override
-                public boolean evaluate(StateMachine ctx, long now) {
+                public boolean evaluate(StateMachine ctx, Date now) {
                     if (ctx.getSessionID() == null) {
                         // FIXME: current user lost?
                         //        state will be changed to 'error'
                         return false;
                     }
-                    Docker.Status status = ctx.getStatus();
-                    if (!status.equals(Docker.Status.READY)) {
+                    Porter.Status status = ctx.getStatus();
+                    if (!status.equals(Porter.Status.READY)) {
                         // connection lost, state will be changed to 'error'
                         return false;
                     }
@@ -212,14 +215,14 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         StateTransition getHandshakingConnectedTransition() {
             return new StateTransition(SessionState.Order.CONNECTED) {
                 @Override
-                public boolean evaluate(StateMachine ctx, long now) {
+                public boolean evaluate(StateMachine ctx, Date now) {
                     if (ctx.getSessionID() == null) {
                         // FIXME: current user lost?
                         //        state will be changed to 'error'
                         return false;
                     }
-                    Docker.Status status = ctx.getStatus();
-                    if (!status.equals(Docker.Status.READY)) {
+                    Porter.Status status = ctx.getStatus();
+                    if (!status.equals(Porter.Status.READY)) {
                         // connection lost, state will be changed to 'error'
                         return false;
                     }
@@ -243,14 +246,14 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         StateTransition getHandshakingErrorTransition() {
             return new StateTransition(SessionState.Order.ERROR) {
                 @Override
-                public boolean evaluate(StateMachine ctx, long now) {
+                public boolean evaluate(StateMachine ctx, Date now) {
                     if (ctx.getSessionID() == null) {
                         // FIXME: current user lost?
                         //        state will be changed to 'error'
                         return true;
                     }
-                    Docker.Status status = ctx.getStatus();
-                    return !status.equals(Docker.Status.READY);
+                    Porter.Status status = ctx.getStatus();
+                    return !status.equals(Porter.Status.READY);
                 }
             };
         }
@@ -268,9 +271,9 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         StateTransition getRunningDefaultTransition() {
             return new StateTransition(SessionState.Order.DEFAULT) {
                 @Override
-                public boolean evaluate(StateMachine ctx, long now) {
-                    Docker.Status status = ctx.getStatus();
-                    if (!status.equals(Docker.Status.READY)) {
+                public boolean evaluate(StateMachine ctx, Date now) {
+                    Porter.Status status = ctx.getStatus();
+                    if (!status.equals(Porter.Status.READY)) {
                         // connection lost, state will be changed to 'error'
                         return false;
                     }
@@ -292,9 +295,9 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         StateTransition getRunningErrorTransition() {
             return new StateTransition(SessionState.Order.ERROR) {
                 @Override
-                public boolean evaluate(StateMachine ctx, long now) {
-                    Docker.Status status = ctx.getStatus();
-                    return !status.equals(Docker.Status.READY);
+                public boolean evaluate(StateMachine ctx, Date now) {
+                    Porter.Status status = ctx.getStatus();
+                    return !status.equals(Porter.Status.READY);
                 }
             };
         }
@@ -307,10 +310,10 @@ public abstract class StateTransition extends BaseTransition<StateMachine> {
         StateTransition getErrorDefaultTransition() {
             return new StateTransition(SessionState.Order.DEFAULT) {
                 @Override
-                public boolean evaluate(StateMachine ctx, long now) {
-                    Docker.Status status = ctx.getStatus();
+                public boolean evaluate(StateMachine ctx, Date now) {
+                    Porter.Status status = ctx.getStatus();
                     Log.debug("docker status: " + status);
-                    return !status.equals(Docker.Status.ERROR);
+                    return !status.equals(Porter.Status.ERROR);
                 }
             };
         }

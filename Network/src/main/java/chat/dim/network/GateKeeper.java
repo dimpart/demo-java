@@ -36,14 +36,14 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
+import java.util.Date;
 
 import chat.dim.net.Connection;
 import chat.dim.net.Hub;
 import chat.dim.pack.DeparturePacker;
 import chat.dim.port.Arrival;
 import chat.dim.port.Departure;
-import chat.dim.port.Docker;
+import chat.dim.port.Porter;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.queue.MessageQueue;
 import chat.dim.queue.MessageWrapper;
@@ -52,21 +52,21 @@ import chat.dim.tcp.StreamChannel;
 import chat.dim.tcp.StreamHub;
 import chat.dim.utils.Log;
 
-public class GateKeeper extends Runner implements Docker.Delegate {
+public class GateKeeper extends Runner implements Porter.Delegate {
 
     private final SocketAddress remoteAddress;
     private final CommonGate gate;
     private final MessageQueue queue;
     private boolean active;
-    private long lastActive;  // last update time
+    private Date lastActive;  // last update time
 
     public GateKeeper(SocketAddress remote, SocketChannel sock) {
-        super();
+        super(Runner.INTERVAL_SLOW);
         remoteAddress = remote;
         gate = createGate(remote, sock);
         queue = new MessageQueue();
         active = false;
-        lastActive = 0;
+        lastActive = null;
     }
 
     protected CommonGate createGate(SocketAddress remote, SocketChannel sock) {
@@ -101,7 +101,8 @@ public class GateKeeper extends Runner implements Docker.Delegate {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            StreamChannel channel = new StreamChannel(remote, local, sock);
+            StreamChannel channel = new StreamChannel(remote, local);
+            channel.setSocketChannel(sock);
             StreamServerHub hub = new StreamServerHub(delegate);
             hub.putChannel(channel);
             return hub;
@@ -133,14 +134,15 @@ public class GateKeeper extends Runner implements Docker.Delegate {
     public boolean isActive() {
         return active;
     }
-    public boolean setActive(boolean flag, long when) {
+    public boolean setActive(boolean flag, Date when) {
         if (active == flag) {
             // flag not changed
             return false;
         }
-        if (when <= 0) {
-            when = System.currentTimeMillis();
-        } else if (when <= lastActive) {
+        Date last = lastActive;
+        if (when == null) {
+            when = new Date();
+        } else if (last != null && !when.after(last)) {
             return false;
         }
         active = flag;
@@ -148,45 +150,18 @@ public class GateKeeper extends Runner implements Docker.Delegate {
         return true;
     }
 
-    @Override
-    public boolean isRunning() {
-        if (super.isRunning()) {
-            return gate.isRunning();
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public void stop() {
-        super.stop();
-        gate.stop();
-    }
-
-    @Override
-    public void setup() {
-        super.setup();
-        gate.start();
-    }
-
-    @Override
-    public void finish() {
-        gate.stop();
-        super.finish();
-    }
-
     private long reconnectTime = 0;
 
     @Override
     public boolean process() {
         // check docker for remote address
-        Docker docker = gate.getDocker(remoteAddress, null);
+        Porter docker = gate.getPorter(remoteAddress, null);
         if (docker == null) {
             long now = System.currentTimeMillis();
             if (now < reconnectTime) {
                 return false;
             }
-            docker = gate.fetchDocker(remoteAddress, null, new ArrayList<>());
+            docker = gate.fetchPorter(remoteAddress, null);
             if (docker == null) {
                 Log.error("gate error: " + remoteAddress);
                 reconnectTime = now + 8000;
@@ -234,7 +209,7 @@ public class GateKeeper extends Runner implements Docker.Delegate {
     }
 
     protected Departure dockerPack(byte[] payload, int priority) {
-        Docker docker = gate.fetchDocker(remoteAddress, null, new ArrayList<>());
+        Porter docker = gate.fetchPorter(remoteAddress, null);
         assert docker instanceof DeparturePacker : "departure packer error: " + docker;
         return ((DeparturePacker) docker).packData(payload, priority);
     }
@@ -248,27 +223,28 @@ public class GateKeeper extends Runner implements Docker.Delegate {
     //
 
     @Override
-    public void onDockerStatusChanged(Docker.Status previous, Docker.Status current, Docker docker) {
+    public void onPorterStatusChanged(Porter.Status previous, Porter.Status current, Porter docker) {
         Log.info("docker status changed: " + previous + " => " + current + ", " + docker);
     }
 
     @Override
-    public void onDockerReceived(Arrival ship, Docker docker) {
+    public void onPorterReceived(Arrival ship, Porter docker) {
         Log.debug("docker received a ship: " + ship + ", " + docker);
     }
 
     @Override
-    public void onDockerSent(Departure ship, Docker docker) {
+    public void onPorterSent(Departure ship, Porter docker) {
         // TODO: remove sent message from local cache
     }
 
     @Override
-    public void onDockerFailed(IOError error, Departure ship, Docker docker) {
+    public void onPorterFailed(IOError error, Departure ship, Porter docker) {
         Log.error("docker failed to send ship: " + ship + ", " + docker);
     }
 
     @Override
-    public void onDockerError(IOError error, Departure ship, Docker docker) {
+    public void onPorterError(IOError error, Departure ship, Porter docker) {
         Log.error("docker error while sending ship: " + ship + ", " + docker);
     }
+
 }

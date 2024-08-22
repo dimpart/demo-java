@@ -30,6 +30,8 @@
  */
 package chat.dim.network;
 
+import java.util.Date;
+
 import chat.dim.fsm.BaseState;
 import chat.dim.fsm.State;
 
@@ -58,12 +60,12 @@ public class SessionState extends BaseState<StateMachine, StateTransition> {
     }
 
     private final String name;
-    long timestamp;
+    Date enterTime;
 
     SessionState(Order stateOrder) {
         super(stateOrder.ordinal());
         name = stateOrder.name();
-        timestamp = 0;
+        enterTime = null;
     }
 
     @Override
@@ -90,21 +92,21 @@ public class SessionState extends BaseState<StateMachine, StateTransition> {
     }
 
     @Override
-    public void onEnter(State<StateMachine, StateTransition> previous, StateMachine machine, long now) {
-        timestamp = now;
+    public void onEnter(State<StateMachine, StateTransition> previous, StateMachine machine, Date now) {
+        enterTime = now;
     }
 
     @Override
-    public void onExit(State<StateMachine, StateTransition> next, StateMachine machine, long now) {
-        timestamp = 0;
+    public void onExit(State<StateMachine, StateTransition> next, StateMachine machine, Date now) {
+        enterTime = null;
     }
 
     @Override
-    public void onPause(StateMachine machine, long now) {
+    public void onPause(StateMachine machine, Date now) {
     }
 
     @Override
-    public void onResume(StateMachine machine, long now) {
+    public void onResume(StateMachine machine, Date now) {
     }
 
     /**

@@ -42,7 +42,7 @@ import chat.dim.mkm.Station;
 import chat.dim.mtp.StreamArrival;
 import chat.dim.net.Connection;
 import chat.dim.port.Arrival;
-import chat.dim.port.Docker;
+import chat.dim.port.Porter;
 import chat.dim.tcp.StreamHub;
 import chat.dim.threading.BackgroundThreads;
 import chat.dim.utils.ArrayUtils;
@@ -146,13 +146,13 @@ public class ClientSession extends BaseSession {
 
     @Override
     public void setup() {
-        setActive(true, 0);
+        setActive(true, null);
         super.setup();
     }
 
     @Override
     public void finish() {
-        setActive(false, 0);
+        setActive(false, null);
         super.finish();
     }
 
@@ -181,22 +181,22 @@ public class ClientSession extends BaseSession {
     //
 
     @Override
-    public void onDockerStatusChanged(Docker.Status previous, Docker.Status current, Docker docker) {
-        //super.onDockerStatusChanged(previous, current, docker);
-        if (current == null || current.equals(Docker.Status.ERROR)) {
+    public void onPorterStatusChanged(Porter.Status previous, Porter.Status current, Porter docker) {
+        //super.onPorterStatusChanged(previous, current, docker);
+        if (current == null || current.equals(Porter.Status.ERROR)) {
             // connection error or session finished
             // TODO: reconnect?
-            setActive(false, 0);
+            setActive(false, null);
             // TODO: clear session ID and handshake again
-        } else if (current.equals(Docker.Status.READY)) {
+        } else if (current.equals(Porter.Status.READY)) {
             // connected/ reconnected
-            setActive(true, 0);
+            setActive(true, null);
         }
     }
 
     @Override
-    public void onDockerReceived(Arrival ship, Docker docker) {
-        //super.onDockerReceived(ship, docker);
+    public void onPorterReceived(Arrival ship, Porter docker) {
+        //super.onPorterReceived(ship, docker);
         List<byte[]> allResponses = new ArrayList<>();
         Messenger messenger = getMessenger();
         // 1. get data packages from arrival ship's payload

@@ -31,7 +31,7 @@
 package chat.dim;
 
 import java.net.SocketAddress;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.Locale;
 
 import chat.dim.dbi.SessionDBI;
@@ -39,7 +39,7 @@ import chat.dim.mkm.Station;
 import chat.dim.network.ClientSession;
 import chat.dim.network.SessionState;
 import chat.dim.network.StateMachine;
-import chat.dim.port.Docker;
+import chat.dim.port.Porter;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.skywalker.Runner;
@@ -51,15 +51,15 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
     public final SessionDBI database;
 
     private ClientMessenger messenger;
-    private long lastTime;
+    private Date lastTime;
 
     public Terminal(CommonFacebook barrack, SessionDBI sdb) {
-        super();
+        super(Runner.INTERVAL_SLOW);
         facebook = barrack;
         database = sdb;
         messenger = null;
         // last online time
-        lastTime = 0;
+        lastTime = null;
     }
 
     // "zh-CN"
@@ -191,7 +191,7 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
             if (state.equals(SessionState.Order.RUNNING)) {
                 // report client state
                 transceiver.reportOffline(uid);
-                idle(512);
+                sleep(512);
             }
         }
         // pause the session
@@ -210,7 +210,7 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         ID uid = session.getIdentifier();
         if (uid != null) {
             // already signed in, wait a while to check session state
-            idle(512);
+            sleep(512);
             SessionState state = session.getState();
             if (state.equals(SessionState.Order.RUNNING)) {
                 // report client state
@@ -239,13 +239,13 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
 
     @Override
     protected void idle() {
-        idle(16 * 1000);
+        sleep(16 * 1000);
     }
 
     @Override
     public boolean process() {
         // check timeout
-        long now = System.currentTimeMillis();
+        Date now = new Date();
         if (!isExpired(lastTime, now)) {
             // not expired yet
             return false;
@@ -274,9 +274,13 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         return false;
     }
 
-    protected boolean isExpired(long last, long now) {
+    protected boolean isExpired(Date last, Date now) {
         // keep online every 5 minutes
-        return now < (last + 300 * 1000);
+        if (last == null) {
+            return false;
+        }
+        long expired = last.getTime() + 300 * 1000;
+        return now.getTime() < expired;
     }
 
     protected void keepOnline(ID uid, ClientMessenger messenger) {
@@ -297,12 +301,12 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
     //
 
     @Override
-    public void enterState(SessionState next, StateMachine ctx, long now) {
+    public void enterState(SessionState next, StateMachine ctx, Date now) {
         // called before state changed
     }
 
     @Override
-    public void exitState(SessionState previous, StateMachine ctx, long now) {
+    public void exitState(SessionState previous, StateMachine ctx, Date now) {
         // called after state changed
         ClientMessenger messenger = getMessenger();
         SessionState current = ctx.getCurrentState();
@@ -328,7 +332,7 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
                 Log.warning("failed to get remote address: " + session);
                 return;
             }
-            Docker docker = session.getGate().fetchDocker(remote, null, new ArrayList<>());
+            Porter docker = session.getGate().fetchPorter(remote, null);
             if (docker == null) {
                 Log.error("failed to connect: " + remote);
             } else {
@@ -346,12 +350,12 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
     }
 
     @Override
-    public void pauseState(SessionState current, StateMachine ctx, long now) {
+    public void pauseState(SessionState current, StateMachine ctx, Date now) {
 
     }
 
     @Override
-    public void resumeState(SessionState current, StateMachine ctx, long now) {
+    public void resumeState(SessionState current, StateMachine ctx, Date now) {
         // TODO: clear session key for re-login?
     }
 }

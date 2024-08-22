@@ -31,6 +31,7 @@
 package chat.dim;
 
 import java.net.SocketAddress;
+import java.util.Date;
 
 import chat.dim.dbi.SessionDBI;
 import chat.dim.protocol.ID;
@@ -66,7 +67,7 @@ public interface Session extends Transmitter {
      * @param when   - now
      * @return true on changed
      */
-    boolean setActive(boolean active, long when);
+    boolean setActive(boolean active, Date when);
     boolean isActive();
 
     /**

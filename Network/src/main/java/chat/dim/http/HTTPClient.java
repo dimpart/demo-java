@@ -71,6 +71,10 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private Thread thread = null;
 
+    public HTTPClient() {
+        super(Runner.INTERVAL_SLOW);
+    }
+
     /**
      *  Add an upload task
      *
