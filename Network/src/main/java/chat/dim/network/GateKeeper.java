@@ -55,7 +55,7 @@ import chat.dim.utils.Log;
 public class GateKeeper extends Runner implements Porter.Delegate {
 
     private final SocketAddress remoteAddress;
-    private final CommonGate gate;
+    private final CommonGate<StreamHub> gate;
     private final MessageQueue queue;
     private boolean active;
     private Date lastActive;  // last update time
@@ -69,7 +69,7 @@ public class GateKeeper extends Runner implements Porter.Delegate {
         lastActive = null;
     }
 
-    protected CommonGate createGate(SocketAddress remote, SocketChannel sock) {
+    protected CommonGate<StreamHub> createGate(SocketAddress remote, SocketChannel sock) {
         CommonGate streamGate;
         if (sock == null) {
             streamGate = new TCPClientGate(this);
@@ -127,7 +127,7 @@ public class GateKeeper extends Runner implements Porter.Delegate {
         return remoteAddress;
     }
 
-    public CommonGate getGate() {
+    public CommonGate<StreamHub> getGate() {
         return gate;
     }
 
