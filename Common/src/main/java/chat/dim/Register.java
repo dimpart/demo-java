@@ -61,7 +61,6 @@ import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.Meta;
-import chat.dim.protocol.MetaType;
 import chat.dim.protocol.MuteCommand;
 import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.Visa;
@@ -90,7 +89,7 @@ public class Register {
         //
         //  Step 2: generate meta with private key (and meta seed)
         //
-        Meta meta = Meta.generate(MetaType.ETH.value, idKey, null);
+        Meta meta = Meta.generate(Meta.ETH, idKey, null);
         //
         //  Step 3: generate ID with meta
         //
@@ -133,7 +132,7 @@ public class Register {
         //
         //  Step 2: generate meta with private key (and meta seed)
         //
-        Meta meta = Meta.generate(MetaType.MKM.value, privateKey, seed);
+        Meta meta = Meta.generate(Meta.MKM, privateKey, seed);
         //
         //  Step 3: generate ID with meta
         //
@@ -243,9 +242,11 @@ public class Register {
      */
     static void registerCompatibleMetaFactories() {
 
-        Meta.setFactory(MetaType.MKM, new CompatibleMetaFactory(MetaType.MKM));
-        Meta.setFactory(MetaType.BTC, new CompatibleMetaFactory(MetaType.BTC));
-        Meta.setFactory(MetaType.ExBTC, new CompatibleMetaFactory(MetaType.ExBTC));
+        Meta.setFactory("1", new CompatibleMetaFactory("1"));
+        Meta.setFactory("2", new CompatibleMetaFactory("2"));
+
+        Meta.setFactory(Meta.MKM, new CompatibleMetaFactory(Meta.MKM));
+        Meta.setFactory(Meta.BTC, new CompatibleMetaFactory(Meta.BTC));
     }
 
     public static void prepare() {

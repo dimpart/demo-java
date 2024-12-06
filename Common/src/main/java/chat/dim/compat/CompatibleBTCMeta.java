@@ -36,7 +36,7 @@ import chat.dim.crypto.VerifyKey;
 import chat.dim.format.TransportableData;
 import chat.dim.mkm.BaseMeta;
 import chat.dim.protocol.Address;
-import chat.dim.protocol.MetaType;
+import chat.dim.protocol.Meta;
 
 /**
  *  Meta to build BTC address for ID
@@ -57,12 +57,12 @@ public final class CompatibleBTCMeta extends BaseMeta {
         super(dictionary);
     }
 
-    public CompatibleBTCMeta(int version, VerifyKey key) {
-        super(version, key, null, null);
+    public CompatibleBTCMeta(String type, VerifyKey key) {
+        super(type, key, null, null);
     }
 
-    public CompatibleBTCMeta(int version, VerifyKey key, String seed, TransportableData fingerprint) {
-        super(version, key, seed, fingerprint);
+    public CompatibleBTCMeta(String type, VerifyKey key, String seed, TransportableData fingerprint) {
+        super(type, key, seed, fingerprint);
     }
 
     // cache
@@ -70,7 +70,7 @@ public final class CompatibleBTCMeta extends BaseMeta {
 
     @Override
     public Address generateAddress(int type) {
-        assert MetaType.BTC.equals(getType()) || MetaType.ExBTC.equals(getType()) : "meta version error";
+        assert Meta.BTC.equals(getType()) || "2".equals(getType()) : "meta version error: " + getType();
         //assert NetworkID.BTC_MAIN.equals(type) : "BTC address type error: " + type;
         Address address = cachedAddress;
         if (address == null || address.getType() != type) {
