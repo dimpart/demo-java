@@ -81,6 +81,26 @@ public enum MetaType {
         return Integer.toString(value);
     }
 
+    public static String parseString(Object type) {
+        if (type instanceof String) {
+            return (String) type;
+        } else if (type instanceof MetaType) {
+            return Integer.toString(((MetaType) type).value);
+        } else if (type instanceof Integer) {
+            return Integer.toString((int) type);
+        } else if (type instanceof Number) {
+            return Integer.toString(((Number) type).intValue());
+        } else {
+            assert type == null : "meta type error: " + type;
+            return null;
+        }
+    }
+
+    public static boolean hasSeed(Object type) {
+        int version = parseInt(type, 0);
+        return 0 < version && (version & MKM.value) == MKM.value;
+    }
+
     public static int parseInt(Object type, int defaultValue) {
         if (type == null) {
             return defaultValue;
@@ -91,13 +111,14 @@ public enum MetaType {
             return ((Number) type).intValue();
         } else if (type instanceof String) {
             // fixed values
-            if (type.equals(Meta.MKM)) {
+            if (type.equals("MKM") || type.equals("mkm")) {
                 return 1;
-            } else if (type.equals(Meta.BTC)) {
+            } else if (type.equals("BTC") || type.equals("btc")) {
                 return 2;
-            } else if (type.equals(Meta.ETH)) {
+            } else if (type.equals("ETH") || type.equals("eth")) {
                 return 4;
             }
+            // TODO: other algorithms
         } else if (type instanceof MetaType) {
             // enum
             return ((MetaType) type).value;

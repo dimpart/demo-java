@@ -30,191 +30,120 @@
  */
 package chat.dim;
 
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.crypto.DecryptKey;
 import chat.dim.crypto.EncryptKey;
-import chat.dim.crypto.SignKey;
 import chat.dim.crypto.VerifyKey;
 import chat.dim.dbi.AccountDBI;
+import chat.dim.mkm.BaseGroup;
+import chat.dim.mkm.BaseUser;
+import chat.dim.mkm.Bot;
+import chat.dim.mkm.DocumentHelper;
 import chat.dim.mkm.Group;
+import chat.dim.mkm.ServiceProvider;
+import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Document;
-import chat.dim.protocol.GroupCommand;
+import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
-import chat.dim.protocol.ReliableMessage;
-import chat.dim.type.Pair;
+import chat.dim.protocol.Visa;
 
-public abstract class CommonArchivist extends Archivist implements User.DataSource, Group.DataSource {
+public abstract class CommonArchivist implements Archivist {
 
-    private final AccountDBI database;
+    public abstract AccountDBI getDatabase();
 
-    public CommonArchivist(AccountDBI db) {
-        super(QUERY_EXPIRES);
-        database = db;
-    }
+    protected abstract Facebook getFacebook();
 
-    public AccountDBI getDatabase() {
-        return database;
+    @Override
+    public User createUser(ID identifier) {
+        assert identifier.isUser() : "user ID error: " + identifier;
+        // check visa key
+        if (!identifier.isBroadcast()) {
+            Facebook facebook = getFacebook();
+            if (facebook.getPublicKeyForEncryption(identifier) == null) {
+                assert false : "visa.key not found: " + identifier;
+                return null;
+            }
+            // NOTICE: if visa.key exists, then visa & meta must exist too.
+        }
+        int type = identifier.getType();
+        // check user type
+        if (EntityType.STATION.equals(type)) {
+            return new Station(identifier);
+        } else if (EntityType.BOT.equals(type)) {
+            return new Bot(identifier);
+        }
+        // general user, or 'anyone@anywhere'
+        return new BaseUser(identifier);
     }
 
     @Override
-    public Date getLastGroupHistoryTime(ID group) {
-        AccountDBI adb = getDatabase();
-        List<Pair<GroupCommand, ReliableMessage>> array = adb.getGroupHistories(group);
-        if (array == null || array.isEmpty()) {
+    public Group createGroup(ID identifier) {
+        assert identifier.isGroup() : "group ID error: " + identifier;
+        // check members
+        if (!identifier.isBroadcast()) {
+            Facebook facebook = getFacebook();
+            List<ID> members = facebook.getMembers(identifier);
+            if (members == null || members.isEmpty()) {
+                assert false : "group members not found: " + identifier;
+                return null;
+            }
+            // NOTICE: if members exist, then owner (founder) must exist,
+            //         and bulletin & meta must exist too.
+        }
+        int type = identifier.getType();
+        // check group type
+        if (EntityType.ISP.equals(type)) {
+            return new ServiceProvider(identifier);
+        }
+        // general group, or 'everyone@everywhere'
+        return new BaseGroup(identifier);
+    }
+
+    @Override
+    public VerifyKey getMetaKey(ID user) {
+        Facebook facebook = getFacebook();
+        Meta meta = facebook.getMeta(user);
+        if (meta != null/* && meta.isValid()*/) {
+            return meta.getPublicKey();
+        }
+        //throw new NullPointerException("failed to get meta for ID: " + user);
+        return null;
+    }
+
+    @Override
+    public EncryptKey getVisaKey(ID user) {
+        Facebook facebook = getFacebook();
+        List<Document> documents = facebook.getDocuments(user);
+        Visa doc = DocumentHelper.lastVisa(documents);
+        if (doc != null/* && doc.isValid()*/) {
+            return doc.getPublicKey();
+        }
+        return null;
+    }
+
+    @Override
+    public List<User> getLocalUsers() {
+        AccountDBI db = getDatabase();
+        List<ID> array = db.getLocalUsers();
+        if (array == null) {
             return null;
         }
-        Date lastTime = null;
-        GroupCommand his;
-        Date hisTime;
-        for (Pair<GroupCommand, ReliableMessage> pair : array) {
-            his = pair.first;
-            if (his == null) {
-                assert false : "group command error: " + pair;
-                continue;
-            }
-            hisTime = his.getTime();
-            if (hisTime == null) {
-                assert false : "group command error: " + his;
-            } else if (lastTime == null || lastTime.before(hisTime)) {
-                lastTime = hisTime;
+        List<User> localUsers = new ArrayList<>();
+        User user;
+        Facebook facebook = getFacebook();
+        for (ID item : array) {
+            assert facebook.getPrivateKeyForSignature(item) != null : "private key not found: " + item;
+            user = facebook.getUser(item);
+            if (user != null) {
+                localUsers.add(user);
+            } else {
+                assert false : "failed to create user: " + item;
             }
         }
-        return lastTime;
-    }
-
-    public List<ID> getLocalUsers() {
-        AccountDBI db = getDatabase();
-        return db.getLocalUsers();
-    }
-
-    @Override
-    public boolean saveMeta(Meta meta, ID identifier) {
-        AccountDBI db = getDatabase();
-        return db.saveMeta(meta, identifier);
-    }
-
-    @Override
-    public boolean saveDocument(Document doc) {
-        Date docTime = doc.getTime();
-        if (docTime == null) {
-            assert false : "document error: " + doc;
-        } else {
-            // calibrate the clock
-            // make sure the document time is not in the far future
-            long current = System.currentTimeMillis() + 65536;
-            if (docTime.getTime() > current) {
-                assert false : "document time error: " + docTime + ", " + doc;
-                return false;
-            }
-        }
-        AccountDBI db = getDatabase();
-        return db.saveDocument(doc);
-    }
-
-    //
-    //  EntityDataSource
-    //
-
-    @Override
-    public Meta getMeta(ID entity) {
-        AccountDBI db = getDatabase();
-        return db.getMeta(entity);
-    }
-
-    @Override
-    public List<Document> getDocuments(ID entity) {
-        AccountDBI db = getDatabase();
-        return db.getDocuments(entity);
-    }
-
-    //
-    //  UserDataSource
-    //
-
-    @Override
-    public List<ID> getContacts(ID user) {
-        AccountDBI db = getDatabase();
-        return db.getContacts(user);
-    }
-
-    @Override
-    public EncryptKey getPublicKeyForEncryption(ID user) {
-        assert false : "DON'T call me!";
-        return null;
-    }
-
-    @Override
-    public List<VerifyKey> getPublicKeysForVerification(ID user) {
-        assert false : "DON'T call me!";
-        return null;
-    }
-
-    @Override
-    public List<DecryptKey> getPrivateKeysForDecryption(ID user) {
-        AccountDBI db = getDatabase();
-        return db.getPrivateKeysForDecryption(user);
-    }
-
-    @Override
-    public SignKey getPrivateKeyForSignature(ID user) {
-        AccountDBI db = getDatabase();
-        return db.getPrivateKeyForSignature(user);
-    }
-
-    @Override
-    public SignKey getPrivateKeyForVisaSignature(ID user) {
-        AccountDBI db = getDatabase();
-        return db.getPrivateKeyForVisaSignature(user);
-    }
-
-    //
-    //  GroupDataSource
-    //
-
-    @Override
-    public ID getFounder(ID group) {
-        AccountDBI db = getDatabase();
-        return db.getFounder(group);
-    }
-
-    @Override
-    public ID getOwner(ID group) {
-        AccountDBI db = getDatabase();
-        return db.getOwner(group);
-    }
-
-    @Override
-    public List<ID> getMembers(ID group) {
-        AccountDBI db = getDatabase();
-        return db.getMembers(group);
-    }
-
-    @Override
-    public List<ID> getAssistants(ID group) {
-        AccountDBI db = getDatabase();
-        return db.getAssistants(group);
-    }
-
-    //
-    //  Organization Structure
-    //
-
-    public List<ID> getAdministrators(ID group) {
-        AccountDBI db = getDatabase();
-        return db.getAdministrators(group);
-    }
-    public boolean saveAdministrators(List<ID> members, ID group) {
-        AccountDBI db = getDatabase();
-        return db.saveAdministrators(members, group);
-    }
-
-    public boolean saveMembers(List<ID> newMembers, ID group) {
-        AccountDBI db = getDatabase();
-        return db.saveMembers(newMembers, group);
+        return localUsers;
     }
 
 }

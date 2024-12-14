@@ -43,7 +43,7 @@ import chat.dim.type.Converter;
 public class ProviderInfo {
 
     // default service provider
-    public static ID GSP = new Identifier("gsp@everywhere", "gsp", Address.EVERYWHERE, null);
+    public static ID GSP = Identifier.create("gsp", Address.EVERYWHERE, null);
 
     public final ID identifier;
     public int chosen;
@@ -54,11 +54,17 @@ public class ProviderInfo {
         this.chosen = chosen;
     }
 
+    @Override
+    public String toString() {
+        String clazz = getClass().getName();
+        return "<" + clazz + " ID=\"" + identifier.toString() + "\" chosen=" + chosen + " />";
+    }
+
     //
     //  Conveniences
     //
 
-    public static List<ProviderInfo> convert(List<Map<String, Object>> array) {
+    public static List<ProviderInfo> convert(Iterable<Map<String, Object>> array) {
         List<ProviderInfo> providers = new ArrayList<>();
         ID identifier;
         int chosen;
@@ -74,7 +80,7 @@ public class ProviderInfo {
         return providers;
     }
 
-    public static List<Map<String, Object>> revert(List<ProviderInfo> providers) {
+    public static List<Map<String, Object>> revert(Iterable<ProviderInfo> providers) {
         List<Map<String, Object>> array = new ArrayList<>();
         for (ProviderInfo info : providers) {
             array.add(TwinsHelper.newMap(

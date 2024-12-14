@@ -30,15 +30,19 @@
  */
 package chat.dim;
 
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import chat.dim.crypto.DecryptKey;
 import chat.dim.crypto.SignKey;
+import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.DocumentHelper;
 import chat.dim.mkm.User;
+import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.Meta;
+import chat.dim.protocol.Visa;
 
 /**
  *  Common Facebook with Database
@@ -52,45 +56,29 @@ public abstract class CommonFacebook extends Facebook {
         current = null;
     }
 
+    public abstract EntityChecker getEntityChecker();
+
     @Override
     public abstract CommonArchivist getArchivist();
 
-    @Override
-    public List<User> getLocalUsers() {
-        List<User> localUsers = new ArrayList<>();
-        User user;
+    protected AccountDBI getDatabase() {
         CommonArchivist archivist = getArchivist();
-        List<ID> array = archivist.getLocalUsers();
-        if (array == null || array.isEmpty()) {
-            user = current;
-            if (user != null) {
-                localUsers.add(user);
-            }
-        } else {
-            for (ID item : array) {
-                assert getPrivateKeyForSignature(item) != null : "private key not found: " + item;
-                user = getUser(item);
-                if (user != null) {
-                    localUsers.add(user);
-                } else {
-                    assert false : "failed to create user: " + item;
-                }
-            }
-        }
-        return localUsers;
+        return archivist.getDatabase();
     }
 
     public User getCurrentUser() {
         // Get current user (for signing and sending message)
         User user = current;
-        if (user == null) {
-            //current = super.getCurrentUser();
-            List<User> localUsers = getLocalUsers();
-            if (/*localUsers != null && */!localUsers.isEmpty()) {
-                user = localUsers.get(0);
-                current = user;
-            }
+        if (user != null) {
+            return user;
         }
+        CommonArchivist archivist = getArchivist();
+        List<User> localUsers = archivist.getLocalUsers();
+        if (localUsers == null || localUsers.isEmpty()) {
+            return null;
+        }
+        user = localUsers.get(0);
+        current = user;
         return user;
     }
 
@@ -101,14 +89,31 @@ public abstract class CommonFacebook extends Facebook {
         current = user;
     }
 
+    //
+    //  Documents
+    //
+
     public Document getDocument(ID identifier, String type) {
         List<Document> documents = getDocuments(identifier);
         Document doc = DocumentHelper.lastDocument(documents, type);
         // compatible for document type
         if (doc == null && Document.VISA.equals(type)) {
-            doc = DocumentHelper.lastDocument(documents, "profile");
+            doc = DocumentHelper.lastDocument(documents, Document.PROFILE);
         }
         return doc;
+    }
+
+    public Visa getVisa(ID user) {
+        // assert user.isUser() : "user ID error: " + user;
+        List<Document> documents = getDocuments(user);
+        return DocumentHelper.lastVisa(documents);
+    }
+
+
+    public Bulletin getBulletin(ID group) {
+        // assert group.isGroup() : "group ID error: " + group;
+        List<Document> documents = getDocuments(group);
+        return DocumentHelper.lastBulletin(documents);
     }
 
     public String getName(ID identifier) {
@@ -132,32 +137,80 @@ public abstract class CommonFacebook extends Facebook {
         return Anonymous.getName(identifier);
     }
 
+    // -------- Storage
+
+    @Override
+    public boolean saveMeta(Meta meta, ID identifier) {
+        AccountDBI db = getDatabase();
+        return db.saveMeta(meta, identifier);
+    }
+
+    @Override
+    public boolean saveDocument(Document doc) {
+        Date docTime = doc.getTime();
+        if (docTime == null) {
+            assert false : "document error: " + doc;
+        } else {
+            // calibrate the clock
+            // make sure the document time is not in the far future
+            long current = System.currentTimeMillis() + 65536;
+            if (docTime.getTime() > current) {
+                assert false : "document time error: " + docTime + ", " + doc;
+                return false;
+            }
+        }
+        AccountDBI db = getDatabase();
+        return db.saveDocument(doc);
+    }
+
     //
-    //  UserDataSource
+    //  Entity DataSource
+    //
+
+    @Override
+    public Meta getMeta(ID entity) {
+        AccountDBI db = getDatabase();
+        Meta meta = db.getMeta(entity);
+        EntityChecker checker = getEntityChecker();
+        checker.checkMeta(entity, meta);
+        return meta;
+    }
+
+    @Override
+    public List<Document> getDocuments(ID entity) {
+        AccountDBI db = getDatabase();
+        List<Document> docs = db.getDocuments(entity);
+        EntityChecker checker = getEntityChecker();
+        checker.checkDocuments(entity, docs);
+        return docs;
+    }
+
+    //
+    //  User DataSource
     //
 
     @Override
     public List<ID> getContacts(ID user) {
-        CommonArchivist archivist = getArchivist();
-        return archivist.getContacts(user);
+        AccountDBI db = getDatabase();
+        return db.getContacts(user);
     }
 
     @Override
     public List<DecryptKey> getPrivateKeysForDecryption(ID user) {
-        CommonArchivist archivist = getArchivist();
-        return archivist.getPrivateKeysForDecryption(user);
+        AccountDBI db = getDatabase();
+        return db.getPrivateKeysForDecryption(user);
     }
 
     @Override
     public SignKey getPrivateKeyForSignature(ID user) {
-        CommonArchivist archivist = getArchivist();
-        return archivist.getPrivateKeyForSignature(user);
+        AccountDBI db = getDatabase();
+        return db.getPrivateKeyForSignature(user);
     }
 
     @Override
     public SignKey getPrivateKeyForVisaSignature(ID user) {
-        CommonArchivist archivist = getArchivist();
-        return archivist.getPrivateKeyForVisaSignature(user);
+        AccountDBI db = getDatabase();
+        return db.getPrivateKeyForVisaSignature(user);
     }
 
 }

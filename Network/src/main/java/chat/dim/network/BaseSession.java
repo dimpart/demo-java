@@ -99,10 +99,10 @@ public abstract class BaseSession extends GateKeeper implements Session {
     //
 
     @Override
-    public Pair<InstantMessage, ReliableMessage> sendContent(ID sender, ID receiver, Content content, int priority) {
+    public Pair<InstantMessage, ReliableMessage> sendContent(Content content, ID sender, ID receiver, int priority) {
         CommonMessenger messenger = getMessenger();
         assert messenger != null : "messenger not set yet";
-        return messenger.sendContent(sender, receiver, content, priority);
+        return messenger.sendContent(content, sender, receiver, priority);
     }
 
     @Override

@@ -34,9 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import chat.dim.compat.CompatibleBTCAddress;
 import chat.dim.compat.CompatibleMetaFactory;
 import chat.dim.compat.EntityIDFactory;
+import chat.dim.compat.UnknownAddress;
 import chat.dim.core.CoreFactoryManager;
 import chat.dim.crypto.AsymmetricKey;
 import chat.dim.crypto.EncryptKey;
@@ -47,6 +47,7 @@ import chat.dim.dbi.PrivateKeyDBI;
 import chat.dim.format.Base64;
 import chat.dim.format.DataCoder;
 import chat.dim.format.PortableNetworkFile;
+import chat.dim.mkm.BTCAddress;
 import chat.dim.mkm.BaseAddressFactory;
 import chat.dim.mkm.BaseBulletin;
 import chat.dim.mkm.BaseVisa;
@@ -208,7 +209,9 @@ public class Register {
             @Override
             public Address createAddress(String address) {
                 if (address == null) {
-                    throw new NullPointerException("address empty");
+                    //throw new NullPointerException("address empty");
+                    assert false : "address empty";
+                    return null;
                 }
                 int len = address.length();
                 assert len > 0 : "address empty";
@@ -224,12 +227,17 @@ public class Register {
                     }
                 }
                 Address res;
-                if (len == 42) {
+                if (26 <= len && len <= 35) {
+                    res = BTCAddress.parse(address);
+                } else if (len == 42) {
                     res = ETHAddress.parse(address);
-                } else if (26 <= len && len <= 35) {
-                    res = CompatibleBTCAddress.parse(address);
                 } else {
-                    throw new AssertionError("invalid address: " + address);
+                    //throw new AssertionError("invalid address: " + address);
+                    res = null;
+                }
+                // TODO: other types of address
+                if (res == null && 4 < len && len < 64) {
+                    res = new UnknownAddress(address);
                 }
                 assert res != null : "invalid address: " + address;
                 return res;
@@ -242,11 +250,21 @@ public class Register {
      */
     static void registerCompatibleMetaFactories() {
 
-        Meta.setFactory("1", new CompatibleMetaFactory("1"));
-        Meta.setFactory("2", new CompatibleMetaFactory("2"));
+        Meta.Factory mkm = new CompatibleMetaFactory(Meta.MKM);
+        Meta.Factory btc = new CompatibleMetaFactory(Meta.BTC);
+        Meta.Factory eth = new CompatibleMetaFactory(Meta.ETH);
 
-        Meta.setFactory(Meta.MKM, new CompatibleMetaFactory(Meta.MKM));
-        Meta.setFactory(Meta.BTC, new CompatibleMetaFactory(Meta.BTC));
+        Meta.setFactory("1", mkm);
+        Meta.setFactory("2", btc);
+        Meta.setFactory("4", eth);
+
+        Meta.setFactory("mkm", mkm);
+        Meta.setFactory("btc", btc);
+        Meta.setFactory("eth", eth);
+
+        Meta.setFactory("MKM", mkm);
+        Meta.setFactory("BTC", btc);
+        Meta.setFactory("ETH", eth);
     }
 
     public static void prepare() {

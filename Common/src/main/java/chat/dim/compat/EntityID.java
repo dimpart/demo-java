@@ -31,6 +31,7 @@
 package chat.dim.compat;
 
 import chat.dim.protocol.Address;
+import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.type.ConstantString;
 
@@ -44,7 +45,7 @@ import chat.dim.type.ConstantString;
  *          address  - a string to identify an entity
  *          terminal - entity login resource(device), OPTIONAL
  */
-final class EntityID extends ConstantString implements ID {
+public final class EntityID extends ConstantString implements ID {
 
     private final String name;
     private final Address address;
@@ -79,6 +80,12 @@ final class EntityID extends ConstantString implements ID {
      */
     @Override
     public int getType() {
+        String text = getName();
+        if (text == null || text.isEmpty()) {
+            // all ID without 'name' field must be a user
+            // e.g.: BTC address
+            return EntityType.USER.value;
+        }
         assert address != null : "ID.address should not be empty: " + this;
         // compatible with MKM 0.9.*
         return NetworkID.getType(address.getType());
@@ -86,19 +93,17 @@ final class EntityID extends ConstantString implements ID {
 
     @Override
     public boolean isBroadcast() {
-        assert address != null : "ID.address should not be empty: " + this;
-        return address.isBroadcast();
+        return EntityType.isBroadcast(getType());
     }
 
     @Override
     public boolean isUser() {
-        assert address != null : "ID.address should not be empty: " + this;
-        return address.isUser();
+        return EntityType.isUser(getType());
     }
 
     @Override
     public boolean isGroup() {
-        assert address != null : "ID.address should not be empty: " + this;
-        return address.isGroup();
+        return EntityType.isGroup(getType());
     }
+
 }

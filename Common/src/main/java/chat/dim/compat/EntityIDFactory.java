@@ -46,20 +46,21 @@ public final class EntityIDFactory extends GeneralIdentifierFactory {
         if (identifier == null) {
             throw new NullPointerException("ID empty");
         }
-        int len = identifier.length();
-        assert len > 0 : "ID empty";
-        if (len == 15) {
+        int size = identifier.length();
+        if (size < 4 || size > 64) {
+            assert false : "ID error: " + identifier;
+        } else if (size == 15) {
             // "anyone@anywhere"
             if (ID.ANYONE.equalsIgnoreCase(identifier)) {
                 return ID.ANYONE;
             }
-        } else if (len == 19) {
+        } else if (size == 19) {
             // "everyone@everywhere"
             // "stations@everywhere"
             if (ID.EVERYONE.equalsIgnoreCase(identifier)) {
                 return ID.EVERYONE;
             }
-        } else if (len == 13) {
+        } else if (size == 13) {
             // "moky@anywhere"
             if (ID.FOUNDER.equalsIgnoreCase(identifier)) {
                 return ID.FOUNDER;

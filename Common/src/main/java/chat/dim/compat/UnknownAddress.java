@@ -1,13 +1,13 @@
 /* license: https://mit-license.org
  *
- *  DIMP : Decentralized Instant Messaging Protocol
+ *  Ming-Ke-Ming : Decentralized User Identity Authentication
  *
- *                                Written in 2022 by Moky <albert.moky@gmail.com>
+ *                                Written in 2024 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 Albert Moky
+ * Copyright (c) 2024 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,55 +28,24 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim;
+package chat.dim.compat;
 
-import java.net.SocketAddress;
-import java.util.Date;
+import chat.dim.protocol.Address;
+import chat.dim.type.ConstantString;
 
-import chat.dim.dbi.SessionDBI;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.ReliableMessage;
+/**
+ *  Unsupported Address
+ *  ~~~~~~~~~~~~~~~~~~~
+ */
+public final class UnknownAddress extends ConstantString implements Address {
 
-public interface Session extends Transmitter {
+    public UnknownAddress(String string) {
+        super(string);
+    }
 
-    SessionDBI getDatabase();
+    @Override
+    public int getType() {
+        return 0;
+    }
 
-    /**
-     *  Get remote socket address
-     *
-     * @return host & port
-     */
-    SocketAddress getRemoteAddress();
-
-    // session key
-    String getSessionKey();
-
-    /**
-     *  Update user ID
-     *
-     * @param identifier - login user ID
-     * @return true on changed
-     */
-    boolean setIdentifier(ID identifier);
-    ID getIdentifier();
-
-    /**
-     *  Update active flag
-     *
-     * @param active - flag
-     * @param when   - now
-     * @return true on changed
-     */
-    boolean setActive(boolean active, Date when);
-    boolean isActive();
-
-    /**
-     *  Pack message into a waiting queue
-     *
-     * @param rMsg     - network message
-     * @param data     - serialized message
-     * @param priority - smaller is faster
-     * @return false on error
-     */
-    boolean queueMessagePackage(ReliableMessage rMsg, byte[] data, int priority);
 }

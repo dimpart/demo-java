@@ -30,14 +30,15 @@
  */
 package chat.dim.sqlite.account;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import chat.dim.crypto.PublicKey;
 import chat.dim.dbi.MetaDBI;
 import chat.dim.format.JSON;
+import chat.dim.format.TransportableData;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
+import chat.dim.protocol.MetaType;
 import chat.dim.sql.SQLConditions;
 import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
@@ -77,19 +78,18 @@ public class MetaTable extends DataTableHandler<Meta> implements MetaDBI {
             extractor = (resultSet, index) -> {
                 int type = resultSet.getInt("type");
                 String json = resultSet.getString("pub_key");
-                Object key = JSON.decode(json);
-
-                Map<String, Object> info = new HashMap<>();
-                info.put("version", type);
-                info.put("type", type);
-                info.put("key", key);
-                if ((type & 1) == 1) {
+                PublicKey key = PublicKey.parse(JSON.decode(json));
+                Meta meta;
+                if (MetaType.hasSeed(type)) {
                     String seed = resultSet.getString("seed");
                     String fingerprint = resultSet.getString("fingerprint");
-                    info.put("seed", seed);
-                    info.put("fingerprint", fingerprint);
+                    TransportableData ted = TransportableData.parse(fingerprint);
+                    meta = Meta.create(Integer.toString(type), key, seed, ted);
+                } else {
+                    meta = Meta.create(Integer.toString(type), key, null, null);
                 }
-                return Meta.parse(info);
+                meta.put("version", type);  // compatible with 0.9.*
+                return meta;
             };
         }
         return true;
@@ -125,15 +125,16 @@ public class MetaTable extends DataTableHandler<Meta> implements MetaDBI {
             return false;
         }
 
-        String type = meta.getType();
+        int type = MetaType.parseInt(meta.getType(), 0);
         String json = JSON.encode(meta.getPublicKey());
-        String seed = meta.getSeed();
+        String seed;
         String fingerprint;
-        if (seed == null) {
+        if (MetaType.hasSeed(type)) {
+            seed = meta.getSeed();
+            fingerprint = meta.getString("fingerprint", "");
+        } else {
             seed = "";
             fingerprint = "";
-        } else {
-            fingerprint = meta.getString("fingerprint", "");
         }
 
         Object[] values = {entity.toString(), type, json, seed, fingerprint};

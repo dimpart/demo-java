@@ -63,7 +63,7 @@ public class StationInfo {
     //  Conveniences
     //
 
-    public static List<StationInfo> convert(List<Map<String, Object>> array) {
+    public static List<StationInfo> convert(Iterable<Map<String, Object>> array) {
         List<StationInfo> stations = new ArrayList<>();
         ID identifier;
         String host;
@@ -85,7 +85,7 @@ public class StationInfo {
         return stations;
     }
 
-    public static List<Map<String, Object>> revert(List<StationInfo> stations) {
+    public static List<Map<String, Object>> revert(Iterable<StationInfo> stations) {
         List<Map<String, Object>> array = new ArrayList<>();
         for (StationInfo info : stations) {
             array.add(TwinsHelper.newMap(

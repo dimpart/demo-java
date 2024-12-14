@@ -30,6 +30,8 @@
  */
 package chat.dim;
 
+import java.util.Date;
+
 import chat.dim.compat.Compatible;
 import chat.dim.crypto.SymmetricKey;
 import chat.dim.mkm.Entity;
@@ -41,6 +43,7 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
+import chat.dim.protocol.Visa;
 import chat.dim.type.Converter;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
@@ -158,7 +161,7 @@ public class CommonMessenger extends Messenger implements Transmitter {
     //
 
     @Override
-    public Pair<InstantMessage, ReliableMessage> sendContent(ID sender, ID receiver, Content content, int priority) {
+    public Pair<InstantMessage, ReliableMessage> sendContent(Content content, ID sender, ID receiver, int priority) {
         if (sender == null) {
             User current = getFacebook().getCurrentUser();
             assert current != null : "current user not set";
@@ -170,30 +173,63 @@ public class CommonMessenger extends Messenger implements Transmitter {
         return new Pair<>(iMsg, rMsg);
     }
 
+    private boolean attachVisaTime(ID sender, InstantMessage iMsg) {
+        if (iMsg.getContent() instanceof Command) {
+            // no need to attach times for command
+            return false;
+        }
+        Visa doc = getFacebook().getVisa(sender);
+        if (doc == null) {
+            assert false : "failed to get visa document for sender: " + sender.toString();
+            return false;
+        }
+        // attach sender document time
+        Date lastDocumentTime = doc.getTime();
+        if (lastDocumentTime == null) {
+            assert false : "command error: " + doc.toMap();
+        } else {
+            iMsg.setDateTime("SDT", lastDocumentTime);
+        }
+        return true;
+    }
+
     @Override
     public ReliableMessage sendInstantMessage(InstantMessage iMsg, int priority) {
-        // 0. check cycled message
-        if (iMsg.getSender().equals(iMsg.getReceiver())) {
+        ID sender = iMsg.getSender();
+        //
+        //  0. check cycled message
+        //
+        if (iMsg.getReceiver().equals(sender)) {
             Log.warning("drop cycled message: " + iMsg.getContent() + " "
-                    + iMsg.getSender() + " => " + iMsg.getReceiver() + ", " + iMsg.getGroup());
+                    + sender + " => " + iMsg.getReceiver() + ", " + iMsg.getGroup());
             return null;
         } else {
             Log.debug("send instant message (type=" + iMsg.getContent().getType() + "): "
-                    + iMsg.getSender() + " => " + iMsg.getReceiver() + ", " + iMsg.getGroup());
+                    + sender + " => " + iMsg.getReceiver() + ", " + iMsg.getGroup());
+            // attach sender's document times
+            // for the receiver to check whether user info synchronized
+            boolean ok = attachVisaTime(sender, iMsg);
+            assert ok || iMsg.getContent() instanceof Command : "failed to attach document time: " + sender;
         }
-        // 1. encrypt message
+        //
+        //  1. encrypt message
+        //
         SecureMessage sMsg = encryptMessage(iMsg);
         if (sMsg == null) {
             // assert false : "public key not found?";
             return null;
         }
-        // 2. sign message
+        //
+        //  2. sign message
+        //
         ReliableMessage rMsg = signMessage(sMsg);
         if (rMsg == null) {
             // TODO: set msg.state = error
             throw new NullPointerException("failed to sign message: " + sMsg);
         }
-        // 3. send message
+        //
+        //  3. send message
+        //
         if (sendReliableMessage(rMsg, priority)) {
             return rMsg;
         }

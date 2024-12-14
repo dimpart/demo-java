@@ -32,55 +32,43 @@ package chat.dim.compat;
 
 import java.util.Map;
 
-import chat.dim.crypto.PrivateKey;
-import chat.dim.crypto.SignKey;
 import chat.dim.crypto.VerifyKey;
 import chat.dim.format.TransportableData;
-import chat.dim.format.UTF8;
 import chat.dim.mkm.AccountFactoryManager;
+import chat.dim.mkm.BTCMeta;
+import chat.dim.mkm.DefaultMeta;
 import chat.dim.mkm.ETHMeta;
+import chat.dim.mkm.GeneralMetaFactory;
 import chat.dim.protocol.Meta;
 
-public final class CompatibleMetaFactory implements Meta.Factory {
+public final class CompatibleMetaFactory extends GeneralMetaFactory {
 
-    private final String algorithm;
-
-    public CompatibleMetaFactory(String type) {
-        super();
-        algorithm = type;
+    public CompatibleMetaFactory(String algorithm) {
+        super(algorithm);
     }
 
     @Override
     public Meta createMeta(VerifyKey key, String seed, TransportableData fingerprint) {
-        switch (algorithm) {
+        Meta out;
+        switch (type) {
 
             case Meta.MKM:
-            case "1":
-                return new CompatibleDefaultMeta("1", key, seed, fingerprint);
+                out = new DefaultMeta("1", key, seed, fingerprint);
+                break;
 
             case Meta.BTC:
-            case "2":
-                return new CompatibleBTCMeta("2", key);
+                out = new BTCMeta("2", key);
+                break;
 
             case Meta.ETH:
-            case "4":
-                // ETH
-                return new ETHMeta("4", key);
-        }
-        return null;
-    }
+                out = new ETHMeta("4", key);
+                break;
 
-    @Override
-    public Meta generateMeta(SignKey sKey, String seed) {
-        TransportableData fingerprint;
-        if (seed == null || seed.length() == 0) {
-            fingerprint = null;
-        } else {
-            byte[] sig = sKey.sign(UTF8.encode(seed));
-            fingerprint = TransportableData.create(sig);
+            default:
+                throw new IllegalArgumentException("unknown meta type: " + type);
         }
-        VerifyKey key = ((PrivateKey) sKey).getPublicKey();
-        return createMeta(key, seed, fingerprint);
+        assert out.isValid() : "meta error: " + out;
+        return out;
     }
 
     @Override
@@ -90,17 +78,20 @@ public final class CompatibleMetaFactory implements Meta.Factory {
         String type = man.generalFactory.getMetaType(meta, "");
         switch (type) {
 
-            case Meta.MKM:
+            case "MKM":
+            case "mkm":
             case "1":
-                out = new CompatibleDefaultMeta(meta);
+                out = new DefaultMeta(meta);
                 break;
 
-            case Meta.BTC:
+            case "BTC":
+            case "btc":
             case "2":
-                out = new CompatibleBTCMeta(meta);
+                out = new BTCMeta(meta);
                 break;
 
-            case Meta.ETH:
+            case "ETH":
+            case "eth":
             case "4":
                 out = new ETHMeta(meta);
                 break;

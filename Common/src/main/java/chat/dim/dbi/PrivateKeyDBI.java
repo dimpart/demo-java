@@ -85,7 +85,7 @@ public interface PrivateKeyDBI {
     //  Conveniences
     //
 
-    static List<DecryptKey> convertDecryptKeys(List<PrivateKey> privateKeys) {
+    static List<DecryptKey> convertDecryptKeys(Iterable<PrivateKey> privateKeys) {
         List<DecryptKey> decryptKeys = new ArrayList<>();
         for (PrivateKey key : privateKeys) {
             if (key instanceof DecryptKey) {
@@ -94,7 +94,7 @@ public interface PrivateKeyDBI {
         }
         return decryptKeys;
     }
-    static List<PrivateKey> convertPrivateKeys(List<DecryptKey> decryptKeys) {
+    static List<PrivateKey> convertPrivateKeys(Iterable<DecryptKey> decryptKeys) {
         List<PrivateKey> privateKeys = new ArrayList<>();
         for (DecryptKey key : decryptKeys) {
             if (key instanceof PrivateKey) {
@@ -104,7 +104,7 @@ public interface PrivateKeyDBI {
         return privateKeys;
     }
 
-    static List<Map<String, Object>> revertPrivateKeys(List<PrivateKey> privateKeys) {
+    static List<Map<String, Object>> revertPrivateKeys(Iterable<PrivateKey> privateKeys) {
         List<Map<String, Object>> array = new ArrayList<>();
         for (PrivateKey key : privateKeys) {
             array.add(key.toMap());

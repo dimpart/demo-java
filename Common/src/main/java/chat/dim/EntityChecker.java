@@ -1,13 +1,13 @@
 /* license: https://mit-license.org
  *
- *  DIMP : Decentralized Instant Messaging Protocol
+ *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
- *                                Written in 2022 by Moky <albert.moky@gmail.com>
+ *                                Written in 2024 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 Albert Moky
+ * Copyright (c) 2024 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,53 +30,45 @@
  */
 package chat.dim;
 
-import java.net.SocketAddress;
 import java.util.Date;
+import java.util.List;
 
-import chat.dim.dbi.SessionDBI;
+import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
-import chat.dim.protocol.ReliableMessage;
+import chat.dim.protocol.Meta;
 
-public interface Session extends Transmitter {
-
-    SessionDBI getDatabase();
+public interface EntityChecker {
 
     /**
-     *  Get remote socket address
+     *  Check meta for querying
      *
-     * @return host & port
+     * @param identifier - entity ID
+     * @param meta       - exists meta
+     * @return ture on querying
      */
-    SocketAddress getRemoteAddress();
+    boolean checkMeta(ID identifier, Meta meta);
 
-    // session key
-    String getSessionKey();
-
-    /**
-     *  Update user ID
-     *
-     * @param identifier - login user ID
-     * @return true on changed
-     */
-    boolean setIdentifier(ID identifier);
-    ID getIdentifier();
 
     /**
-     *  Update active flag
+     *  Check documents for querying/updating
      *
-     * @param active - flag
-     * @param when   - now
-     * @return true on changed
+     * @param identifier - entity ID
+     * @param documents  - exist document
+     * @return true on querying
      */
-    boolean setActive(boolean active, Date when);
-    boolean isActive();
+    boolean checkDocuments(ID identifier, List<Document> documents);
+
 
     /**
-     *  Pack message into a waiting queue
+     *  Check group members for querying
      *
-     * @param rMsg     - network message
-     * @param data     - serialized message
-     * @param priority - smaller is faster
-     * @return false on error
+     * @param group   - group ID
+     * @param members - exist members
+     * @return true on querying
      */
-    boolean queueMessagePackage(ReliableMessage rMsg, byte[] data, int priority);
+    boolean checkMembers(ID group, List<ID> members);
+
+    boolean setLastDocumentTime(ID identifier, Date current);
+    boolean setLastGroupHistoryTime(ID group, Date current);
+
 }

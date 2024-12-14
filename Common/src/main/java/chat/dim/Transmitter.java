@@ -47,7 +47,7 @@ public interface Transmitter {
      * @param priority - smaller is faster
      * @return (iMsg, None) on error
      */
-    Pair<InstantMessage, ReliableMessage> sendContent(ID sender, ID receiver, Content content, int priority);
+    Pair<InstantMessage, ReliableMessage> sendContent(Content content, ID sender, ID receiver, int priority);
 
     /**
      *  Send instant message with priority

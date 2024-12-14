@@ -69,6 +69,7 @@ public class GateKeeper extends Runner implements Porter.Delegate {
         lastActive = null;
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     protected CommonGate<StreamHub> createGate(SocketAddress remote, SocketChannel sock) {
         CommonGate streamGate;
         if (sock == null) {

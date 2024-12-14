@@ -35,6 +35,7 @@ import java.util.Map;
 
 import chat.dim.protocol.Command;
 import chat.dim.protocol.MetaCommand;
+import chat.dim.protocol.MetaType;
 import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 
@@ -49,11 +50,19 @@ public interface Compatible {
         }
     }
     static void fixMetaVersion(Map<String, Object> meta) {
-        Object version = meta.get("version");
-        if (version == null) {
-            meta.put("version", meta.get("type"));
-        } else if (!meta.containsKey("type")) {
+        Object type = meta.get("type");
+        if (type == null) {
+            type = meta.get("version");
+        } else if (type instanceof String && !meta.containsKey("algorithm")) {
+            // TODO: check number
+            if (((String) type).length() > 2) {
+                meta.put("algorithm", type);
+            }
+        }
+        int version = MetaType.parseInt(type, 0);
+        if (version > 0) {
             meta.put("type", version);
+            meta.put("version", version);
         }
     }
 
