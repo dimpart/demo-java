@@ -33,7 +33,6 @@ package chat.dim;
 import java.util.Date;
 import java.util.List;
 
-import chat.dim.core.ContentProcessorFactory;
 import chat.dim.cpu.ClientContentProcessorCreator;
 import chat.dim.mkm.User;
 import chat.dim.msg.ContentProcessor;
@@ -45,7 +44,7 @@ import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.TextContent;
 
-public class ClientMessageProcessor extends CommonProcessor {
+public class ClientMessageProcessor extends CommonMessageProcessor {
 
     public ClientMessageProcessor(ClientFacebook facebook, ClientMessenger messenger) {
         super(facebook, messenger);
@@ -62,12 +61,8 @@ public class ClientMessageProcessor extends CommonProcessor {
     }
 
     @Override
-    protected ContentProcessor.Factory createFactory() {
-        return new ContentProcessorFactory(createCreator());
-    }
-
-    protected ContentProcessor.Creator createCreator() {
-        return new ClientContentProcessorCreator(getFacebook(), getMessenger());
+    protected ContentProcessor.Creator createCreator(Facebook facebook, Messenger messenger) {
+        return new ClientContentProcessorCreator(facebook, messenger);
     }
 
     private void checkGroupTimes(Content content, ReliableMessage rMsg) {

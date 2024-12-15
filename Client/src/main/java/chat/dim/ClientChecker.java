@@ -30,9 +30,11 @@
  */
 package chat.dim;
 
+import java.lang.ref.WeakReference;
 import java.util.Date;
 import java.util.List;
 
+import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
@@ -43,14 +45,32 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.MetaCommand;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.protocol.Visa;
 import chat.dim.protocol.group.QueryCommand;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
 public class ClientChecker extends EntityChecker {
 
-    public ClientChecker(ClientFacebook facebook) {
-        super(facebook);
+    private final WeakReference<CommonFacebook> barrack;
+    private WeakReference<CommonMessenger> transceiver;
+
+    public ClientChecker(CommonFacebook facebook, AccountDBI db) {
+        super(db);
+        barrack = new WeakReference<>(facebook);
+        transceiver = null;
+    }
+
+    protected CommonFacebook getFacebook() {
+        return barrack.get();
+    }
+
+    protected CommonMessenger getMessenger() {
+        WeakReference<CommonMessenger> ref = transceiver;
+        return ref == null ? null : ref.get();
+    }
+    public void setMessenger(CommonMessenger messenger) {
+        transceiver = messenger == null ? null : new WeakReference<>(messenger);
     }
 
     @Override
@@ -229,6 +249,26 @@ public class ClientChecker extends EntityChecker {
             messenger.sendContent(command, sender, lastMember, 1);
         }
         return true;
+    }
+
+    @Override
+    public boolean sendVisa(Visa visa, ID receiver, boolean updated) {
+        CommonMessenger messenger = getMessenger();
+        ID me = visa.getIdentifier();
+        if (me.equals(receiver)) {
+            Log.warning("skip cycled message: " + receiver);
+            return false;
+        }
+        if (!isDocumentResponseExpired(receiver, updated)) {
+            // response not expired yet
+            Log.debug("visa response not expired yet: " + receiver);
+            return false;
+        }
+        Log.info("push visa document: " + me + " => " + receiver);
+        Content content = DocumentCommand.response(me, null, visa);
+        Pair<InstantMessage, ReliableMessage> pair;
+        pair = messenger.sendContent(content, me, receiver, 1);
+        return pair != null && pair.second != null;
     }
 
 }

@@ -49,7 +49,7 @@ import chat.dim.protocol.TextContent;
 import chat.dim.protocol.Visa;
 import chat.dim.utils.Log;
 
-public abstract class ClientMessagePacker extends CommonPacker {
+public abstract class ClientMessagePacker extends CommonMessagePacker {
 
     public ClientMessagePacker(ClientFacebook facebook, ClientMessenger messenger) {
         super(facebook, messenger);

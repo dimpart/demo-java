@@ -2,12 +2,12 @@
  *
  *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
- *                                Written in 2024 by Moky <albert.moky@gmail.com>
+ *                                Written in 2023 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2024 Albert Moky
+ * Copyright (c) 2023 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,38 +28,32 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.group;
+package chat.dim;
 
-import chat.dim.CommonArchivist;
-import chat.dim.CommonFacebook;
-import chat.dim.CommonMessenger;
 import chat.dim.dbi.AccountDBI;
+import chat.dim.group.SharedGroupManager;
+import chat.dim.mkm.Entity;
+import chat.dim.mkm.Group;
+import chat.dim.protocol.ID;
 
+public class ClientArchivist extends CommonArchivist {
 
-abstract class TripletsHelper {
-    protected TripletsHelper(GroupDelegate dataSource) {
-        assert dataSource != null : "Group delegate should not empty";
-        delegate = dataSource;
+    public ClientArchivist(Facebook facebook, AccountDBI db) {
+        super(facebook, db);
     }
 
-    protected final GroupDelegate delegate;
-
-    protected CommonFacebook getFacebook() {
-        return delegate.getFacebook();
-    }
-
-    protected CommonMessenger getMessenger() {
-        return delegate.getMessenger();
-    }
-
-    protected CommonArchivist getArchivist() {
-        CommonFacebook facebook = getFacebook();
-        return facebook == null ? null : facebook.getArchivist();
-    }
-
-    protected AccountDBI getDatabase() {
-        CommonFacebook facebook = getFacebook();
-        return facebook == null ? null : facebook.getDatabase();
+    @Override
+    public Group createGroup(ID group) {
+        Group grp = super.createGroup(group);
+        if (grp != null) {
+            Entity.DataSource delegate = grp.getDataSource();
+            if (delegate == null || delegate == getFacebook()) {
+                // replace group's data source
+                SharedGroupManager manager = SharedGroupManager.getInstance();
+                grp.setDataSource(manager);
+            }
+        }
+        return grp;
     }
 
 }

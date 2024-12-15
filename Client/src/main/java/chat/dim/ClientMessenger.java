@@ -67,11 +67,6 @@ public abstract class ClientMessenger extends CommonMessenger {
         return (ClientSession) super.getSession();
     }
 
-    protected CommonArchivist getArchivist() {
-        CommonFacebook facebook = getFacebook();
-        return facebook.getArchivist();
-    }
-
     @Override
     public List<ReliableMessage> processReliableMessage(ReliableMessage rMsg) {
         List<ReliableMessage> responses = super.processReliableMessage(rMsg);
@@ -88,7 +83,7 @@ public abstract class ClientMessenger extends CommonMessenger {
     }
 
     protected ReliableMessage buildReceipt(Envelope originalEnvelope) {
-        User user = getFacebook().getCurrentUser();
+        User user = facebook.getCurrentUser();
         if (user == null) {
             assert false : "failed to get current user";
             return null;
@@ -106,6 +101,7 @@ public abstract class ClientMessenger extends CommonMessenger {
         ReliableMessage rMsg = signMessage(sMsg);
         if (rMsg == null) {
             assert false : "failed to sign message: " + me + " -> " + to;
+            return null;
         }
         return rMsg;
     }
@@ -131,7 +127,7 @@ public abstract class ClientMessenger extends CommonMessenger {
             return false;
         }
         /*/
-        User user = getFacebook().getCurrentUser();
+        User user = facebook.getCurrentUser();
         if (!user.getIdentifier().equals(receiver)) {
             // forward message
             return true;
@@ -195,7 +191,6 @@ public abstract class ClientMessenger extends CommonMessenger {
         ID sid = station.getIdentifier();
         if (sessionKey == null) {
             // first handshake
-            CommonFacebook facebook = getFacebook();
             User user = facebook.getCurrentUser();
             assert user != null : "current user not found";
             ID me = user.getIdentifier();
@@ -233,7 +228,6 @@ public abstract class ClientMessenger extends CommonMessenger {
      *  Broadcast meta & visa document to all stations
      */
     public void broadcastDocument(boolean updated) {
-        CommonFacebook facebook = getFacebook();
         User user = facebook.getCurrentUser();
         assert user != null : "current user not found";
         Visa visa = user.getVisa();

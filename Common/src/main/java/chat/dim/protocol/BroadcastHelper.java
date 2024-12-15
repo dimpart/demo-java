@@ -28,12 +28,10 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.group;
+package chat.dim.protocol;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import chat.dim.protocol.ID;
 
 public interface BroadcastHelper {
 

@@ -53,9 +53,10 @@ import chat.dim.utils.Log;
  */
 public class CommonMessenger extends Messenger implements Transmitter {
 
-    private final Session session;
-    private final CommonFacebook facebook;
-    private final CipherKeyDelegate database;
+    protected final Session session;
+    protected final CommonFacebook facebook;
+    protected final CipherKeyDelegate database;
+
     private Packer packer;
     private Processor processor;
 
@@ -163,7 +164,7 @@ public class CommonMessenger extends Messenger implements Transmitter {
     @Override
     public Pair<InstantMessage, ReliableMessage> sendContent(Content content, ID sender, ID receiver, int priority) {
         if (sender == null) {
-            User current = getFacebook().getCurrentUser();
+            User current = facebook.getCurrentUser();
             assert current != null : "current user not set";
             sender = current.getIdentifier();
         }
@@ -178,7 +179,7 @@ public class CommonMessenger extends Messenger implements Transmitter {
             // no need to attach times for command
             return false;
         }
-        Visa doc = getFacebook().getVisa(sender);
+        Visa doc = facebook.getVisa(sender);
         if (doc == null) {
             assert false : "failed to get visa document for sender: " + sender.toString();
             return false;
@@ -253,7 +254,7 @@ public class CommonMessenger extends Messenger implements Transmitter {
         }
         // 2. call gate keeper to send the message data package
         //    put message package into the waiting queue of current session
-        return getSession().queueMessagePackage(rMsg, data, priority);
+        return session.queueMessagePackage(rMsg, data, priority);
     }
 
 }

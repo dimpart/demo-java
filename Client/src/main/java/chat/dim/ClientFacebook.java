@@ -34,9 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.dbi.AccountDBI;
-import chat.dim.group.BroadcastHelper;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Address;
+import chat.dim.protocol.BroadcastHelper;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
@@ -61,7 +61,7 @@ public abstract class ClientFacebook extends CommonFacebook {
         assert receiver.isGroup() : "receiver error: " + receiver;
         // the messenger will check group info before decrypting message,
         // so we can trust that the group's meta & members MUST exist here.
-        Archivist archivist = getArchivist();
+        CommonArchivist archivist = getArchivist();
         List<User> users = archivist.getLocalUsers();
         List<ID> members = getMembers(receiver);
         assert !members.isEmpty() : "members not found: " + receiver;
@@ -109,8 +109,7 @@ public abstract class ClientFacebook extends CommonFacebook {
             return null;
         }
         // check local storage
-        AccountDBI db = getDatabase();
-        ID user = db.getFounder(group);
+        ID user = database.getFounder(group);
         if (user != null) {
             // got from local storage
             return user;
@@ -136,8 +135,7 @@ public abstract class ClientFacebook extends CommonFacebook {
             return null;
         }
         // check local storage
-        AccountDBI db = getDatabase();
-        ID user = db.getOwner(group);
+        ID user = database.getOwner(group);
         if (user != null) {
             // got from local storage
             return user;
@@ -168,10 +166,9 @@ public abstract class ClientFacebook extends CommonFacebook {
             // assert false : "group owner not found: " + group;
             return null;
         }
-        // check local storage
-        AccountDBI db = getDatabase();
-        List<ID> members = db.getMembers(group);
         EntityChecker checker = getEntityChecker();
+        // check local storage
+        List<ID> members = database.getMembers(group);
         checker.checkMembers(group, members);
         if (members == null || members.isEmpty()) {
             members = new ArrayList<>();
@@ -192,8 +189,7 @@ public abstract class ClientFacebook extends CommonFacebook {
             return null;
         }
         // check local storage
-        AccountDBI db = getDatabase();
-        List<ID> bots = db.getAssistants(group);
+        List<ID> bots = database.getAssistants(group);
         if (bots != null && !bots.isEmpty()) {
             // got from local storage
             return bots;
@@ -219,20 +215,17 @@ public abstract class ClientFacebook extends CommonFacebook {
         // when the newest bulletin document received,
         // so we must get them from the local storage only,
         // not from the bulletin document.
-        AccountDBI db = getDatabase();
-        return db.getAdministrators(group);
+        return database.getAdministrators(group);
     }
 
     @Override
     public boolean saveAdministrators(List<ID> members, ID group) {
-        AccountDBI db = getDatabase();
-        return db.saveAdministrators(members, group);
+        return database.saveAdministrators(members, group);
     }
 
     @Override
     public boolean saveMembers(List<ID> newMembers, ID group) {
-        AccountDBI db = getDatabase();
-        return db.saveMembers(newMembers, group);
+        return database.saveMembers(newMembers, group);
     }
 
     //

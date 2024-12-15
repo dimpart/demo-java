@@ -51,26 +51,20 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.Visa;
 
-public abstract class CommonArchivist implements Archivist {
+public class CommonArchivist implements Archivist {
 
-    private final WeakReference<CommonFacebook> barrack;
+    private final WeakReference<Facebook> barrack;
 
-    public CommonArchivist(CommonFacebook facebook) {
+    protected final AccountDBI database;
+
+    public CommonArchivist(Facebook facebook, AccountDBI db) {
         super();
         barrack = new WeakReference<>(facebook);
+        database = db;
     }
 
-    protected CommonFacebook getFacebook() {
+    protected Facebook getFacebook() {
         return barrack.get();
-    }
-
-    public AccountDBI getDatabase() {
-        CommonFacebook facebook = getFacebook();
-        if (facebook == null) {
-            assert false : "should not happen";
-            return null;
-        }
-        return facebook.getDatabase();
     }
 
     @Override
@@ -143,8 +137,7 @@ public abstract class CommonArchivist implements Archivist {
 
     @Override
     public List<User> getLocalUsers() {
-        AccountDBI db = getDatabase();
-        List<ID> array = db.getLocalUsers();
+        List<ID> array = database.getLocalUsers();
         if (array == null) {
             return null;
         }

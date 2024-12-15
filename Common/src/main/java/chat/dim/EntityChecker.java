@@ -30,25 +30,20 @@
  */
 package chat.dim;
 
-import java.lang.ref.WeakReference;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import chat.dim.dbi.AccountDBI;
-import chat.dim.protocol.Content;
 import chat.dim.protocol.Document;
-import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
-import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.Visa;
 import chat.dim.type.Pair;
 import chat.dim.utils.FrequencyChecker;
-import chat.dim.utils.Log;
 import chat.dim.utils.RecentTimeChecker;
 
 public abstract class EntityChecker {
@@ -74,41 +69,21 @@ public abstract class EntityChecker {
     // group => member
     private final Map<ID, ID> lastActiveMembers;
 
-    private final WeakReference<CommonFacebook> barrack;
-    private WeakReference<CommonMessenger> transceiver;
+    protected final AccountDBI database;
 
-    public EntityChecker(CommonFacebook facebook) {
+    public EntityChecker(AccountDBI db) {
         super();
-        barrack = new WeakReference<>(facebook);
-        transceiver = null;
+        database = db;
+
         lastActiveMembers = new HashMap<>();
         lastDocumentTimes = new RecentTimeChecker<>();
-        lastHistoryTimes = new RecentTimeChecker<>();
-        metaQueries = new FrequencyChecker<>(QUERY_EXPIRES);
-        docsQueries = new FrequencyChecker<>(QUERY_EXPIRES);
+        lastHistoryTimes  = new RecentTimeChecker<>();
+
+        metaQueries    = new FrequencyChecker<>(QUERY_EXPIRES);
+        docsQueries    = new FrequencyChecker<>(QUERY_EXPIRES);
         membersQueries = new FrequencyChecker<>(QUERY_EXPIRES);
+
         documentResponses = new FrequencyChecker<>(RESPOND_EXPIRES);
-    }
-
-    protected CommonFacebook getFacebook() {
-        return barrack.get();
-    }
-
-    protected CommonMessenger getMessenger() {
-        WeakReference<CommonMessenger> ref = transceiver;
-        return ref == null ? null : ref.get();
-    }
-    public void setMessenger(CommonMessenger messenger) {
-        transceiver = messenger == null ? null : new WeakReference<>(messenger);
-    }
-
-    public AccountDBI getDatabase() {
-        CommonFacebook facebook = getFacebook();
-        if (facebook == null) {
-            assert false : "should not happen";
-            return null;
-        }
-        return facebook.getDatabase();
     }
 
     protected boolean isMetaQueryExpired(ID identifier) {
@@ -284,8 +259,7 @@ public abstract class EntityChecker {
     }
 
     public Date getLastGroupHistoryTime(ID group) {
-        AccountDBI adb = getDatabase();
-        List<Pair<GroupCommand, ReliableMessage>> array = adb.getGroupHistories(group);
+        List<Pair<GroupCommand, ReliableMessage>> array = database.getGroupHistories(group);
         if (array == null || array.isEmpty()) {
             return null;
         }
@@ -344,25 +318,6 @@ public abstract class EntityChecker {
     ///  Send my visa document to contact
     ///  if document is updated, force to send it again.
     ///  else only send once every 10 minutes.
-    public boolean sendVisa(Visa visa, ID receiver, boolean updated) {
-        CommonMessenger messenger = getMessenger();
-        ID me = visa.getIdentifier();
-        if (me.equals(receiver)) {
-            Log.warning("skip cycled message: " + receiver);
-            return false;
-        }
-        CommonFacebook facebook = getFacebook();
-        EntityChecker checker = facebook.getEntityChecker();
-        if (!checker.isDocumentResponseExpired(receiver, updated)) {
-            // response not expired yet
-            Log.debug("visa response not expired yet: " + receiver);
-            return false;
-        }
-        Log.info("push visa document: " + me + " => " + receiver);
-        Content content = DocumentCommand.response(me, null, visa);
-        Pair<InstantMessage, ReliableMessage> pair;
-        pair = messenger.sendContent(content, me, receiver, 1);
-        return pair != null && pair.second != null;
-    }
+    public abstract boolean sendVisa(Visa visa, ID receiver, boolean updated);
 
 }

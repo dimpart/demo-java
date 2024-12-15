@@ -47,13 +47,13 @@ import chat.dim.utils.Log;
 
 public abstract class Terminal extends Runner implements SessionState.Delegate {
 
-    public final CommonFacebook facebook;
+    public final ClientFacebook facebook;
     public final SessionDBI database;
 
     private ClientMessenger messenger;
     private Date lastTime;
 
-    public Terminal(CommonFacebook barrack, SessionDBI sdb) {
+    public Terminal(ClientFacebook barrack, SessionDBI sdb) {
         super(Runner.INTERVAL_SLOW);
         facebook = barrack;
         database = sdb;
@@ -162,8 +162,8 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         session.start(this);
         return session;
     }/*/
-    protected abstract Packer createPacker(CommonFacebook facebook, ClientMessenger messenger);
-    protected abstract Processor createProcessor(CommonFacebook facebook, ClientMessenger messenger);
+    protected abstract Packer createPacker(ClientFacebook facebook, ClientMessenger messenger);
+    protected abstract Processor createProcessor(ClientFacebook facebook, ClientMessenger messenger);
     protected abstract ClientMessenger createMessenger(ClientSession session, CommonFacebook facebook);
 
     public boolean login(ID current) {

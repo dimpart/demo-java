@@ -30,34 +30,37 @@
  */
 package chat.dim;
 
-import java.lang.ref.WeakReference;
 import java.util.Date;
 import java.util.List;
 
+import chat.dim.core.ContentProcessorFactory;
+import chat.dim.msg.ContentProcessor;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 
-public abstract class CommonProcessor extends MessageProcessor {
+public abstract class CommonMessageProcessor extends MessageProcessor {
 
-    private final WeakReference<CommonFacebook> barrack;
-    private final WeakReference<CommonMessenger> transceiver;
-
-    public CommonProcessor(CommonFacebook facebook, CommonMessenger messenger) {
-        super();
-        barrack = new WeakReference<>(facebook);
-        transceiver = new WeakReference<>(messenger);
+    public CommonMessageProcessor(CommonFacebook facebook, CommonMessenger messenger) {
+        super(facebook, messenger);
     }
 
     @Override
     protected CommonFacebook getFacebook() {
-        return barrack.get();
+        return (CommonFacebook) super.getFacebook();
     }
 
     @Override
     protected CommonMessenger getMessenger() {
-        return transceiver.get();
+        return (CommonMessenger) super.getMessenger();
     }
+
+    @Override
+    protected ContentProcessor.Factory createFactory(Facebook facebook, Messenger messenger) {
+        ContentProcessor.Creator creator = createCreator(facebook, messenger);
+        return new ContentProcessorFactory(creator);
+    }
+    protected abstract ContentProcessor.Creator createCreator(Facebook facebook, Messenger messenger);
 
     private boolean checkVisaTime(Content content, ReliableMessage rMsg) {
         CommonFacebook facebook = getFacebook();

@@ -49,15 +49,16 @@ import chat.dim.protocol.Visa;
  */
 public abstract class CommonFacebook extends Facebook {
 
-    private final AccountDBI database;
+    protected final AccountDBI database;
+
     private CommonArchivist archivist;
     private EntityChecker checker;
 
     private User current;
 
-    public CommonFacebook(AccountDBI database) {
+    public CommonFacebook(AccountDBI db) {
         super();
-        this.database = database;
+        database = db;
         archivist = null;
         checker = null;
         // current user
@@ -162,8 +163,7 @@ public abstract class CommonFacebook extends Facebook {
 
     @Override
     public boolean saveMeta(Meta meta, ID identifier) {
-        AccountDBI db = getDatabase();
-        return db.saveMeta(meta, identifier);
+        return database.saveMeta(meta, identifier);
     }
 
     @Override
@@ -180,8 +180,7 @@ public abstract class CommonFacebook extends Facebook {
                 return false;
             }
         }
-        AccountDBI db = getDatabase();
-        return db.saveDocument(doc);
+        return database.saveDocument(doc);
     }
 
     //
@@ -190,8 +189,7 @@ public abstract class CommonFacebook extends Facebook {
 
     @Override
     public Meta getMeta(ID entity) {
-        AccountDBI db = getDatabase();
-        Meta meta = db.getMeta(entity);
+        Meta meta = database.getMeta(entity);
         EntityChecker checker = getEntityChecker();
         checker.checkMeta(entity, meta);
         return meta;
@@ -199,8 +197,7 @@ public abstract class CommonFacebook extends Facebook {
 
     @Override
     public List<Document> getDocuments(ID entity) {
-        AccountDBI db = getDatabase();
-        List<Document> docs = db.getDocuments(entity);
+        List<Document> docs = database.getDocuments(entity);
         EntityChecker checker = getEntityChecker();
         checker.checkDocuments(entity, docs);
         return docs;
@@ -212,26 +209,22 @@ public abstract class CommonFacebook extends Facebook {
 
     @Override
     public List<ID> getContacts(ID user) {
-        AccountDBI db = getDatabase();
-        return db.getContacts(user);
+        return database.getContacts(user);
     }
 
     @Override
     public List<DecryptKey> getPrivateKeysForDecryption(ID user) {
-        AccountDBI db = getDatabase();
-        return db.getPrivateKeysForDecryption(user);
+        return database.getPrivateKeysForDecryption(user);
     }
 
     @Override
     public SignKey getPrivateKeyForSignature(ID user) {
-        AccountDBI db = getDatabase();
-        return db.getPrivateKeyForSignature(user);
+        return database.getPrivateKeyForSignature(user);
     }
 
     @Override
     public SignKey getPrivateKeyForVisaSignature(ID user) {
-        AccountDBI db = getDatabase();
-        return db.getPrivateKeyForVisaSignature(user);
+        return database.getPrivateKeyForVisaSignature(user);
     }
 
     //
