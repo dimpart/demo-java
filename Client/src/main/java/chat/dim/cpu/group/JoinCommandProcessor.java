@@ -72,6 +72,13 @@ public class JoinCommandProcessor extends GroupCommandProcessor {
             return pair.second;
         }
 
+        User user = getFacebook().getCurrentUser();
+        if (user == null) {
+            assert false : "failed to get current user";
+            return null;
+        }
+        ID me = user.getIdentifier();
+
         // 1. check group
         Triplet<ID, List<ID>, List<Content>> trip = checkGroupMembers(command, rMsg);
         ID owner = trip.first;
@@ -89,13 +96,6 @@ public class JoinCommandProcessor extends GroupCommandProcessor {
         boolean isAdmin = admins.contains(sender);
         boolean isMember = members.contains(sender);
         boolean canReset = isOwner || isAdmin;
-
-        User user = getFacebook().getCurrentUser();
-        if (user == null) {
-            assert false : "failed to get current user";
-            return null;
-        }
-        ID me = user.getIdentifier();
 
         // 2. check membership
         if (isMember) {

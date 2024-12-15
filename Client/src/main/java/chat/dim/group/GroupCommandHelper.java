@@ -45,17 +45,10 @@ import chat.dim.protocol.group.ResignCommand;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
-public class GroupHelper {
+public class GroupCommandHelper extends TripletsHelper {
 
-    protected final GroupDelegate delegate;
-
-    public GroupHelper(GroupDelegate dataSource) {
-        super();
-        delegate = dataSource;
-    }
-
-    protected AccountDBI getDatabase() {
-        return delegate.getFacebook().getArchivist().getDatabase();
+    public GroupCommandHelper(GroupDelegate dataSource) {
+        super(dataSource);
     }
 
     //
@@ -67,6 +60,7 @@ public class GroupHelper {
             Log.warning("drop expired command: " + content.getCmd() + ", " + rMsg.getSender() + " => " + group);
             return false;
         }
+        // check command time
         Date cmdTime = content.getTime();
         if (cmdTime == null) {
             assert false : "group command error: " + content;
@@ -79,6 +73,7 @@ public class GroupHelper {
                 return false;
             }
         }
+        // update group history
         AccountDBI db = getDatabase();
         if (content instanceof ResetCommand) {
             Log.warning("cleaning group history for 'reset' command: " + rMsg.getSender() + " => " + group);
@@ -103,10 +98,13 @@ public class GroupHelper {
         return db.clearGroupAdminHistories(group);
     }
 
-    //
-    //  command time
-    //  (all group commands received must after the cached 'reset' command)
-    //
+    /**
+     *  Check command time
+     *  (all group commands received must after the cached 'reset' command)
+     *
+     * @param content - group command
+     * @return false on not expired
+     */
     public boolean isCommandExpired(GroupCommand content) {
         ID group = content.getGroup();
         if (group == null) {

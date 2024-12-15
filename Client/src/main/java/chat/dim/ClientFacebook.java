@@ -33,7 +33,9 @@ package chat.dim;
 import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.mkm.BroadcastHelper;
+import chat.dim.dbi.AccountDBI;
+import chat.dim.group.BroadcastHelper;
+import chat.dim.mkm.User;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
@@ -45,6 +47,32 @@ import chat.dim.protocol.Meta;
  *  Client Facebook with Address Name Service
  */
 public abstract class ClientFacebook extends CommonFacebook {
+
+    public ClientFacebook(AccountDBI database) {
+        super(database);
+    }
+
+    @Override
+    public User selectLocalUser(ID receiver) {
+        if (receiver.isUser()) {
+            return super.selectLocalUser(receiver);
+        }
+        // group message (recipient not designated)
+        assert receiver.isGroup() : "receiver error: " + receiver;
+        // the messenger will check group info before decrypting message,
+        // so we can trust that the group's meta & members MUST exist here.
+        Archivist archivist = getArchivist();
+        List<User> users = archivist.getLocalUsers();
+        List<ID> members = getMembers(receiver);
+        assert !members.isEmpty() : "members not found: " + receiver;
+        for (User item : users) {
+            if (members.contains(item.getIdentifier())) {
+                // DISCUSS: set this item to be current user?
+                return item;
+            }
+        }
+        return null;
+    }
 
     @Override
     public boolean saveDocument(Document doc) {
@@ -81,8 +109,8 @@ public abstract class ClientFacebook extends CommonFacebook {
             return null;
         }
         // check local storage
-        CommonArchivist archivist = getArchivist();
-        ID user = archivist.getFounder(group);
+        AccountDBI db = getDatabase();
+        ID user = db.getFounder(group);
         if (user != null) {
             // got from local storage
             return user;
@@ -108,8 +136,8 @@ public abstract class ClientFacebook extends CommonFacebook {
             return null;
         }
         // check local storage
-        CommonArchivist archivist = getArchivist();
-        ID user = archivist.getOwner(group);
+        AccountDBI db = getDatabase();
+        ID user = db.getOwner(group);
         if (user != null) {
             // got from local storage
             return user;
@@ -117,7 +145,7 @@ public abstract class ClientFacebook extends CommonFacebook {
         // check group type
         if (EntityType.GROUP.equals(group.getType())) {
             // Polylogue owner is its founder
-            user = archivist.getFounder(group);
+            user = getFounder(group);
             if (user == null) {
                 user = doc.getFounder();
             }
@@ -129,6 +157,11 @@ public abstract class ClientFacebook extends CommonFacebook {
     @Override
     public List<ID> getMembers(ID group) {
         assert group.isGroup() : "group ID error: " + group;
+        // check broadcast group
+        if (group.isBroadcast()) {
+            // members of broadcast group
+            return BroadcastHelper.getBroadcastMembers(group);
+        }
         // check group owner
         ID owner = getOwner(group);
         if (owner == null) {
@@ -136,9 +169,10 @@ public abstract class ClientFacebook extends CommonFacebook {
             return null;
         }
         // check local storage
-        CommonArchivist archivist = getArchivist();
-        List<ID> members = archivist.getMembers(group);
-        archivist.checkMembers(group, members);
+        AccountDBI db = getDatabase();
+        List<ID> members = db.getMembers(group);
+        EntityChecker checker = getEntityChecker();
+        checker.checkMembers(group, members);
         if (members == null || members.isEmpty()) {
             members = new ArrayList<>();
             members.add(owner);
@@ -158,8 +192,8 @@ public abstract class ClientFacebook extends CommonFacebook {
             return null;
         }
         // check local storage
-        CommonArchivist archivist = getArchivist();
-        List<ID> bots = archivist.getAssistants(group);
+        AccountDBI db = getDatabase();
+        List<ID> bots = db.getAssistants(group);
         if (bots != null && !bots.isEmpty()) {
             // got from local storage
             return bots;
@@ -172,6 +206,7 @@ public abstract class ClientFacebook extends CommonFacebook {
     //  Organizational Structure
     //
 
+    @Override
     public List<ID> getAdministrators(ID group) {
         assert group.isGroup() : "group ID error: " + group;
         // check bulletin document
@@ -184,18 +219,20 @@ public abstract class ClientFacebook extends CommonFacebook {
         // when the newest bulletin document received,
         // so we must get them from the local storage only,
         // not from the bulletin document.
-        CommonArchivist archivist = getArchivist();
-        return archivist.getAdministrators(group);
+        AccountDBI db = getDatabase();
+        return db.getAdministrators(group);
     }
 
+    @Override
     public boolean saveAdministrators(List<ID> members, ID group) {
-        CommonArchivist archivist = getArchivist();
-        return archivist.saveAdministrators(members, group);
+        AccountDBI db = getDatabase();
+        return db.saveAdministrators(members, group);
     }
 
+    @Override
     public boolean saveMembers(List<ID> newMembers, ID group) {
-        CommonArchivist archivist = getArchivist();
-        return archivist.saveMembers(newMembers, group);
+        AccountDBI db = getDatabase();
+        return db.saveMembers(newMembers, group);
     }
 
     //

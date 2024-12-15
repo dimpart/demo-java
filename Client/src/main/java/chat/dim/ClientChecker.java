@@ -31,11 +31,8 @@
 package chat.dim;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
@@ -48,34 +45,13 @@ import chat.dim.protocol.MetaCommand;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.QueryCommand;
 import chat.dim.type.Pair;
-import chat.dim.utils.FrequencyChecker;
 import chat.dim.utils.Log;
 
-public abstract class ClientArchivist extends CommonArchivist {
+public class ClientChecker extends EntityChecker {
 
-    // each respond will be expired after 10 minutes
-    public static final int RESPOND_EXPIRES = 600 * 1000;  // milliseconds
-
-    private final FrequencyChecker<ID> documentResponses;
-
-    // group => member
-    private final Map<ID, ID> lastActiveMembers = new HashMap<>();
-
-    public ClientArchivist(AccountDBI db) {
-        super(db);
-        documentResponses = new FrequencyChecker<>(RESPOND_EXPIRES);
+    public ClientChecker(ClientFacebook facebook) {
+        super(facebook);
     }
-
-    protected boolean isDocumentResponseExpired(ID identifier, boolean force) {
-        return documentResponses.isExpired(identifier, 0, force);
-    }
-
-    public void setLastActiveMember(ID group, ID member) {
-        lastActiveMembers.put(group, member);
-    }
-
-    protected abstract CommonFacebook getFacebook();
-    protected abstract CommonMessenger getMessenger();
 
     @Override
     public boolean queryMeta(ID identifier) {
@@ -88,7 +64,7 @@ public abstract class ClientArchivist extends CommonArchivist {
         CommonMessenger messenger = getMessenger();
         Content content = MetaCommand.query(identifier);
         Pair<InstantMessage, ReliableMessage> pair;
-        pair = messenger.sendContent(null, Station.ANY, content, 1);
+        pair = messenger.sendContent(content, null, Station.ANY, 1);
         return pair != null && pair.second != null;
     }
 
@@ -104,7 +80,7 @@ public abstract class ClientArchivist extends CommonArchivist {
         CommonMessenger messenger = getMessenger();
         Content content = DocumentCommand.query(identifier, lastTime);
         Pair<InstantMessage, ReliableMessage> pair;
-        pair = messenger.sendContent(null, Station.ANY, content, 1);
+        pair = messenger.sendContent(content, null, Station.ANY, 1);
         return pair != null && pair.second != null;
     }
 
@@ -144,11 +120,11 @@ public abstract class ClientArchivist extends CommonArchivist {
         }
         // all failed, try last active member
         Pair<InstantMessage, ReliableMessage> pair = null;
-        ID lastMember = lastActiveMembers.get(group);
+        ID lastMember = getLastActiveMember(group);
         if (lastMember != null) {
             Log.info("querying members from: " + lastMember + ", group: " + group);
             CommonMessenger messenger = getMessenger();
-            pair = messenger.sendContent(me, lastMember, command, 1);
+            pair = messenger.sendContent(command, me, lastMember, 1);
         }
         Log.error("group not ready: " + group);
         return pair != null && pair.second != null;
@@ -173,7 +149,7 @@ public abstract class ClientArchivist extends CommonArchivist {
                 Log.warning("ignore cycled querying: " + sender + ", group: " + group);
                 continue;
             }
-            pair = messenger.sendContent(sender, receiver, command, 1);
+            pair = messenger.sendContent(command, sender, receiver, 1);
             if (pair != null && pair.second != null) {
                 success += 1;
             }
@@ -182,16 +158,16 @@ public abstract class ClientArchivist extends CommonArchivist {
             // failed
             return false;
         }
-        ID lastMember = lastActiveMembers.get(group);
+        ID lastMember = getLastActiveMember(group);
         if (lastMember != null && !bots.contains(lastMember)) {
             Log.info("querying members from: " + lastMember + ", group: " + group);
-            messenger.sendContent(sender, lastMember, command, 1);
+            messenger.sendContent(command, sender, lastMember, 1);
         }
         return true;
     }
 
     protected boolean queryMembersFromAdministrators(ID sender, QueryCommand command) {
-        ClientFacebook facebook = (ClientFacebook) getFacebook();
+        CommonFacebook facebook = getFacebook();
         CommonMessenger messenger = getMessenger();
         ID group = command.getGroup();
         assert group != null : "group command error: " + command;
@@ -209,7 +185,7 @@ public abstract class ClientArchivist extends CommonArchivist {
                 Log.warning("ignore cycled querying: " + sender + ", group: " + group);
                 continue;
             }
-            pair = messenger.sendContent(sender, receiver, command, 1);
+            pair = messenger.sendContent(command, sender, receiver, 1);
             if (pair != null && pair.second != null) {
                 success += 1;
             }
@@ -218,10 +194,10 @@ public abstract class ClientArchivist extends CommonArchivist {
             // failed
             return false;
         }
-        ID lastMember = lastActiveMembers.get(group);
+        ID lastMember = getLastActiveMember(group);
         if (lastMember != null && !admins.contains(lastMember)) {
             Log.info("querying members from: " + lastMember + ", group: " + group);
-            messenger.sendContent(sender, lastMember, command, 1);
+            messenger.sendContent(command, sender, lastMember, 1);
         }
         return true;
     }
@@ -242,15 +218,15 @@ public abstract class ClientArchivist extends CommonArchivist {
         Pair<InstantMessage, ReliableMessage> pair;
         // querying members from owner
         Log.info("querying members from owner: " + owner + ", group: " + group);
-        pair = messenger.sendContent(sender, owner, command, 1);
+        pair = messenger.sendContent(command, sender, owner, 1);
         if (pair == null || pair.second == null) {
             // failed
             return false;
         }
-        ID lastMember = lastActiveMembers.get(group);
+        ID lastMember = getLastActiveMember(group);
         if (lastMember != null && !lastMember.equals(owner)) {
             Log.info("querying members from: " + lastMember + ", group: " + group);
-            messenger.sendContent(sender, lastMember, command, 1);
+            messenger.sendContent(command, sender, lastMember, 1);
         }
         return true;
     }

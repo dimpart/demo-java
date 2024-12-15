@@ -72,7 +72,7 @@ public class HandshakeCommandProcessor extends BaseCommandProcessor {
         // handle handshake command with title & session key
         String title = command.getTitle();
         String newKey = command.getSessionKey();
-        String oldKey = session.getKey();
+        String oldKey = session.getSessionKey();
         assert newKey != null : "new session key should not be empty: " + command;
         if (title.equals("DIM?")) {
             // S -> C: station ask client to handshake again
@@ -86,23 +86,23 @@ public class HandshakeCommandProcessor extends BaseCommandProcessor {
             } else {
                 // connection changed?
                 // erase session key to handshake again
-                session.setKey(null);
+                session.setSessionKey(null);
             }
         } else if (title.equals("DIM!")) {
             // S -> C: handshake accepted by station
             if (oldKey == null) {
                 // normal handshake response,
                 // update session key to change state to 'running'
-                session.setKey(newKey);
+                session.setSessionKey(newKey);
             } else if (oldKey.equals(newKey)) {
                 // duplicated handshake response?
                 Log.warning("duplicated handshake response");
                 // set it again here to invoke the flutter channel
-                session.setKey(newKey);
+                session.setSessionKey(newKey);
             } else {
                 // FIXME: handshake error
                 // erase session key to handshake again
-                session.setKey(null);
+                session.setSessionKey(null);
             }
         } else {
             // C -> S: Hello world!

@@ -40,18 +40,22 @@ import chat.dim.mkm.Group;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
+import chat.dim.protocol.Envelope;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
+import chat.dim.protocol.ReceiptCommand;
+import chat.dim.utils.Log;
 
 public class GroupDelegate extends TwinsHelper implements Group.DataSource {
 
     public GroupDelegate(CommonFacebook facebook, CommonMessenger messenger) {
         super(facebook, messenger);
+        GroupBotsManager.getInstance().setMessenger(messenger);
     }
 
     @Override
-    public CommonFacebook getFacebook() {
-        return (CommonFacebook) super.getFacebook();
+    public ClientFacebook getFacebook() {
+        return (ClientFacebook) super.getFacebook();
     }
 
     @Override
@@ -60,13 +64,17 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     }
 
     public String buildGroupName(List<ID> members) {
-        assert members.size() > 0 : "members should not be empty here";
         CommonFacebook facebook = getFacebook();
-        StringBuilder text = new StringBuilder(facebook.getName(members.get(0)));
+        if (members == null || members.isEmpty() || facebook == null) {
+            assert false : "members should not be empty here";
+            return null;
+        }
+        StringBuilder text = new StringBuilder();
+        text.append(facebook.getName(members.get(0)));
         String nickname;
         for (int i = 1; i < members.size(); ++i) {
             nickname = facebook.getName(members.get(i));
-            if (nickname.isEmpty()) {
+            if (nickname == null || nickname.isEmpty()) {
                 continue;
             }
             text.append(", ").append(nickname);
@@ -84,23 +92,23 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     @Override
     public Meta getMeta(ID identifier) {
         CommonFacebook facebook = getFacebook();
-        return facebook.getMeta(identifier);
+        return facebook == null ? null : facebook.getMeta(identifier);
     }
 
     @Override
     public List<Document> getDocuments(ID identifier) {
         CommonFacebook facebook = getFacebook();
-        return facebook.getDocuments(identifier);
+        return facebook == null ? null : facebook.getDocuments(identifier);
     }
 
     public Bulletin getBulletin(ID group) {
         CommonFacebook facebook = getFacebook();
-        return facebook.getBulletin(group);
+        return facebook == null ? null : facebook.getBulletin(group);
     }
 
     public boolean saveDocument(Document doc) {
         CommonFacebook facebook = getFacebook();
-        return facebook.saveDocument(doc);
+        return facebook != null && facebook.saveDocument(doc);
     }
 
     //
@@ -110,44 +118,63 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     @Override
     public ID getFounder(ID group) {
         CommonFacebook facebook = getFacebook();
-        return facebook.getFounder(group);
+        return facebook == null ? null : facebook.getFounder(group);
     }
 
     @Override
     public ID getOwner(ID group) {
         CommonFacebook facebook = getFacebook();
-        return facebook.getOwner(group);
+        return facebook == null ? null : facebook.getOwner(group);
     }
 
     @Override
-    public List<ID> getAssistants(ID group) {
+    public List<ID> getMembers(ID identifier) {
         CommonFacebook facebook = getFacebook();
-        return facebook.getAssistants(group);
-    }
-
-    @Override
-    public List<ID> getMembers(ID group) {
-        CommonFacebook facebook = getFacebook();
-        return facebook.getMembers(group);
+        return facebook == null ? null : facebook.getMembers(identifier);
     }
 
     public boolean saveMembers(List<ID> newMembers, ID group) {
-        ClientFacebook facebook = (ClientFacebook) getFacebook();
-        return facebook.saveMembers(newMembers, group);
+        ClientFacebook facebook = getFacebook();
+        return facebook != null && facebook.saveMembers(newMembers, group);
+    }
+
+    //
+    //  Group Assistants
+    //
+
+    @Override
+    public List<ID> getAssistants(ID identifier) {
+        GroupBotsManager manager = GroupBotsManager.getInstance();
+        return manager.getAssistants(identifier);
+    }
+
+    public ID getFastestAssistant(ID identifier) {
+        GroupBotsManager manager = GroupBotsManager.getInstance();
+        return manager.getFastestAssistant(identifier);
+    }
+
+    public void setCommonAssistants(List<ID> bots) {
+        GroupBotsManager manager = GroupBotsManager.getInstance();
+        manager.setCommonAssistants(bots);
+    }
+
+    public boolean updateRespondTime(ReceiptCommand content, Envelope envelope) {
+        GroupBotsManager manager = GroupBotsManager.getInstance();
+        return manager.updateRespondTime(content, envelope);
     }
 
     //
     //  Administrators
     //
 
-    public List<ID> getAdministrators(ID group) {
-        ClientFacebook facebook = (ClientFacebook) getFacebook();
-        return facebook.getAdministrators(group);
+    public List<ID> getAdministrators(ID identifier) {
+        ClientFacebook facebook = getFacebook();
+        return facebook == null ? null : facebook.getAdministrators(identifier);
     }
 
-    public boolean saveAdministrators(List<ID> newAdmins, ID group) {
-        ClientFacebook facebook = (ClientFacebook) getFacebook();
-        return facebook.saveAdministrators(newAdmins, group);
+    public boolean saveAdministrators(List<ID> admins, ID group) {
+        ClientFacebook facebook = getFacebook();
+        return facebook != null && facebook.saveAdministrators(admins, group);
     }
 
     //
@@ -155,7 +182,6 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     //
 
     public boolean isFounder(ID user, ID group) {
-        assert user.isUser() && group.isGroup() : "ID error: " + user + ", " + group;
         ID founder = getFounder(group);
         if (founder != null) {
             return founder.equals(user);
@@ -164,14 +190,13 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
         Meta gMeta = getMeta(group);
         Meta mMeta = getMeta(user);
         if (gMeta == null || mMeta == null) {
-            assert false : "failed to get meta for group: " + group + ", user: " + user;
+            Log.error("failed to get meta: " + group + ", " + user);
             return false;
         }
-        return gMeta.matchPublicKey(gMeta.getPublicKey());
+        return gMeta.matchPublicKey(mMeta.getPublicKey());
     }
 
     public boolean isOwner(ID user, ID group) {
-        assert user.isUser() && group.isGroup() : "ID error: " + user + ", " + group;
         ID owner = getOwner(group);
         if (owner != null) {
             return owner.equals(user);
@@ -180,25 +205,22 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
             // this is a polylogue
             return isFounder(user, group);
         }
-        throw new IllegalArgumentException("only polylogue so far");
+        throw new IllegalArgumentException("only Polylogue so far");
     }
 
     public boolean isMember(ID user, ID group) {
-        assert user.isUser() && group.isGroup() : "ID error: " + user + ", " + group;
         List<ID> members = getMembers(group);
         return members != null && members.contains(user);
     }
 
-    public boolean isAssistant(ID bot, ID group) {
-        assert bot.isUser() && group.isGroup() : "ID error: " + bot + ", " + group;
-        List<ID> assistants = getAssistants(group);
-        return assistants != null && assistants.contains(bot);
-    }
-
     public boolean isAdministrator(ID user, ID group) {
-        assert user.isUser() && group.isGroup() : "ID error: " + user + ", " + group;
         List<ID> admins = getAdministrators(group);
         return admins != null && admins.contains(user);
+    }
+
+    public boolean isAssistant(ID user, ID group) {
+        List<ID> bots = getAssistants(group);
+        return bots != null && bots.contains(user);
     }
 
 }

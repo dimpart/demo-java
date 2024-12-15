@@ -49,22 +49,43 @@ import chat.dim.protocol.Visa;
  */
 public abstract class CommonFacebook extends Facebook {
 
+    private final AccountDBI database;
+    private CommonArchivist archivist;
+    private EntityChecker checker;
+
     private User current;
 
-    public CommonFacebook() {
+    public CommonFacebook(AccountDBI database) {
         super();
+        this.database = database;
+        archivist = null;
+        checker = null;
+        // current user
         current = null;
     }
 
-    public abstract EntityChecker getEntityChecker();
+    public AccountDBI getDatabase() {
+        return database;
+    }
+
+    public EntityChecker getEntityChecker() {
+        return checker;
+    }
+    public void setEntityChecker(EntityChecker checker) {
+        this.checker = checker;
+    }
 
     @Override
-    public abstract CommonArchivist getArchivist();
-
-    protected AccountDBI getDatabase() {
-        CommonArchivist archivist = getArchivist();
-        return archivist.getDatabase();
+    public CommonArchivist getArchivist() {
+        return archivist;
     }
+    public void setArchivist(CommonArchivist archivist) {
+        this.archivist = archivist;
+    }
+
+    //
+    //  Current User
+    //
 
     public User getCurrentUser() {
         // Get current user (for signing and sending message)
@@ -212,5 +233,14 @@ public abstract class CommonFacebook extends Facebook {
         AccountDBI db = getDatabase();
         return db.getPrivateKeyForVisaSignature(user);
     }
+
+    //
+    //  Organizational Structure
+    //
+
+    public abstract List<ID> getAdministrators(ID group);
+    public abstract boolean saveAdministrators(List<ID> members, ID group);
+
+    public abstract boolean saveMembers(List<ID> newMembers, ID group);
 
 }

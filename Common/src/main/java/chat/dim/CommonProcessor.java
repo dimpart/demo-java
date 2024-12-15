@@ -30,31 +30,33 @@
  */
 package chat.dim;
 
+import java.lang.ref.WeakReference;
 import java.util.Date;
 import java.util.List;
 
-import chat.dim.core.TwinsHelper;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 
 public abstract class CommonProcessor extends MessageProcessor {
 
-    private final TwinsHelper twins;
+    private final WeakReference<CommonFacebook> barrack;
+    private final WeakReference<CommonMessenger> transceiver;
 
     public CommonProcessor(CommonFacebook facebook, CommonMessenger messenger) {
         super();
-        twins = new TwinsHelper(facebook, messenger);
+        barrack = new WeakReference<>(facebook);
+        transceiver = new WeakReference<>(messenger);
     }
 
     @Override
     protected CommonFacebook getFacebook() {
-        return (CommonFacebook) twins.getFacebook();
+        return barrack.get();
     }
 
     @Override
     protected CommonMessenger getMessenger() {
-        return (CommonMessenger) twins.getMessenger();
+        return transceiver.get();
     }
 
     private boolean checkVisaTime(Content content, ReliableMessage rMsg) {

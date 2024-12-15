@@ -33,7 +33,8 @@ package chat.dim.cpu.group;
 import java.util.Date;
 import java.util.List;
 
-import chat.dim.CommonArchivist;
+import chat.dim.CommonFacebook;
+import chat.dim.EntityChecker;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
@@ -98,8 +99,9 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
         Date queryTime = command.getLastTime();
         if (queryTime != null) {
             // check last group history time
-            CommonArchivist archivist = getFacebook().getArchivist();
-            Date lastTime = archivist.getLastGroupHistoryTime(group);
+            CommonFacebook facebook = getFacebook();
+            EntityChecker checker = facebook.getEntityChecker();
+            Date lastTime = checker.getLastGroupHistoryTime(group);
             if (lastTime == null) {
                 assert false : "group history error: " + group;
             } else if (!lastTime.after(queryTime)) {

@@ -30,11 +30,11 @@
  */
 package chat.dim;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
 import chat.dim.compat.Compatible;
-import chat.dim.core.TwinsHelper;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.msg.InstantMessagePacker;
 import chat.dim.msg.MessageHelper;
@@ -49,36 +49,38 @@ import chat.dim.utils.Log;
 
 public abstract class CommonPacker extends MessagePacker {
 
-    private final TwinsHelper twins;
+    private final WeakReference<CommonFacebook> barrack;
+    private final WeakReference<CommonMessenger> transceiver;
 
     public CommonPacker(CommonFacebook facebook, CommonMessenger messenger) {
         super();
-        twins = new TwinsHelper(facebook, messenger);
+        barrack = new WeakReference<>(facebook);
+        transceiver = new WeakReference<>(messenger);
     }
 
     @Override
     protected CommonFacebook getFacebook() {
-        return (CommonFacebook) twins.getFacebook();
+        return barrack.get();
     }
 
     @Override
     protected CommonMessenger getMessenger() {
-        return (CommonMessenger) twins.getMessenger();
+        return transceiver.get();
     }
 
     @Override
     protected InstantMessagePacker createInstantMessagePacker() {
-        return new InstantMessagePacker(twins.getMessenger());
+        return new InstantMessagePacker(getMessenger());
     }
 
     @Override
     protected SecureMessagePacker createSecureMessagePacker() {
-        return new SecureMessagePacker(twins.getMessenger());
+        return new SecureMessagePacker(getMessenger());
     }
 
     @Override
     protected ReliableMessagePacker createReliableMessagePacker() {
-        return new ReliableMessagePacker(twins.getMessenger());
+        return new ReliableMessagePacker(getMessenger());
     }
 
     /**

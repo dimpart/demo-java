@@ -39,25 +39,16 @@ import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Command;
+import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.utils.Log;
 
-public class AdminManager {
-
-    protected final GroupDelegate delegate;
+public class AdminManager extends TripletsHelper {
 
     public AdminManager(GroupDelegate dataSource) {
-        super();
-        delegate = dataSource;
-    }
-
-    protected CommonFacebook getFacebook() {
-        return delegate.getFacebook();
-    }
-    protected CommonMessenger getMessenger() {
-        return delegate.getMessenger();
+        super(dataSource);
     }
 
     /**
@@ -68,7 +59,7 @@ public class AdminManager {
      * @param newAdmins - administrator list
      * @return false on error
      */
-    public boolean updateAdministrators(ID group, List<ID> newAdmins) {
+    public boolean updateAdministrators(List<ID> newAdmins, ID group) {
         assert group.isGroup() : "group ID error: " + group;
         CommonFacebook facebook = getFacebook();
         assert facebook != null : "facebook not ready";
@@ -97,18 +88,27 @@ public class AdminManager {
         //
         //  2. update document
         //
-        Bulletin doc = delegate.getBulletin(group);
-        if (doc == null) {
+        Bulletin bulletin = delegate.getBulletin(group);
+        if (bulletin == null) {
             // TODO: create new one?
             assert false : "failed to get group document: " + group + ", owner: " + me;
             return false;
+        } else {
+            // clone for modifying
+            Document doc = Document.parse(bulletin.copyMap(false));
+            if (doc instanceof Bulletin)  {
+                bulletin = (Bulletin) doc;
+            } else {
+                assert false : "bulletin error: " + bulletin + ", " + group;
+                return false;
+            }
         }
-        doc.setProperty("administrators", ID.revert(newAdmins));
-        byte[] signature = doc.sign(sKey);
+        bulletin.setProperty("administrators", ID.revert(newAdmins));
+        byte[] signature = bulletin.sign(sKey);
         if (signature == null) {
             assert false : "failed to sign document for group: " + group + ", owner: " + me;
             return false;
-        } else if (!delegate.saveDocument(doc)) {
+        } else if (!delegate.saveDocument(bulletin)) {
             assert false : "failed to save document for group: " + group;
             return false;
         } else {
@@ -118,13 +118,13 @@ public class AdminManager {
         //
         //  3. broadcast bulletin document
         //
-        return broadcastDocument(doc);
+        return broadcastGroupDocument(bulletin);
     }
 
     /**
      *  Broadcast group document
      */
-    public boolean broadcastDocument(Bulletin doc) {
+    public boolean broadcastGroupDocument(Bulletin doc) {
         CommonFacebook facebook = getFacebook();
         CommonMessenger messenger = getMessenger();
         assert facebook != null && messenger != null : "facebook messenger not ready: " + facebook + ", " + messenger;
@@ -145,7 +145,7 @@ public class AdminManager {
         ID group = doc.getIdentifier();
         Meta meta = facebook.getMeta(group);
         Command command = DocumentCommand.response(group, meta, doc);
-        messenger.sendContent(me, Station.ANY, command, 1);
+        messenger.sendContent(command, me, Station.ANY, 1);
 
         //
         //  2. check group bots
@@ -158,7 +158,7 @@ public class AdminManager {
                     assert false : "should not be a bot here: " + me;
                     continue;
                 }
-                messenger.sendContent(me, item, command, 1);
+                messenger.sendContent(command, me, item, 1);
             }
             return true;
         }
@@ -176,7 +176,7 @@ public class AdminManager {
                 Log.info("skip cycled message: " + item + ", " + group);
                 continue;
             }
-            messenger.sendContent(me, item, command, 1);
+            messenger.sendContent(command, me, item, 1);
         }
         return true;
     }

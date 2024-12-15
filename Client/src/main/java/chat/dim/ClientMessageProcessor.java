@@ -33,9 +33,10 @@ package chat.dim;
 import java.util.Date;
 import java.util.List;
 
-import chat.dim.core.ContentProcessor;
+import chat.dim.core.ContentProcessorFactory;
 import chat.dim.cpu.ClientContentProcessorCreator;
 import chat.dim.mkm.User;
+import chat.dim.msg.ContentProcessor;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.HandshakeCommand;
@@ -44,15 +45,29 @@ import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.TextContent;
 
-public class ClientMessageProcessor extends MessageProcessor {
+public class ClientMessageProcessor extends CommonProcessor {
 
-    public ClientMessageProcessor(Facebook facebook, Messenger messenger) {
+    public ClientMessageProcessor(ClientFacebook facebook, ClientMessenger messenger) {
         super(facebook, messenger);
     }
 
     @Override
-    protected CommonMessenger getMessenger() {
-        return (CommonMessenger) super.getMessenger();
+    protected ClientFacebook getFacebook() {
+        return (ClientFacebook) super.getFacebook();
+    }
+
+    @Override
+    protected ClientMessenger getMessenger() {
+        return (ClientMessenger) super.getMessenger();
+    }
+
+    @Override
+    protected ContentProcessor.Factory createFactory() {
+        return new ContentProcessorFactory(createCreator());
+    }
+
+    protected ContentProcessor.Creator createCreator() {
+        return new ClientContentProcessorCreator(getFacebook(), getMessenger());
     }
 
     private void checkGroupTimes(Content content, ReliableMessage rMsg) {
@@ -60,8 +75,12 @@ public class ClientMessageProcessor extends MessageProcessor {
         if (group == null) {
             return;
         }
-        Facebook facebook = getFacebook();
-        ClientArchivist archivist = (ClientArchivist) facebook.getArchivist();
+        ClientFacebook facebook = getFacebook();
+        EntityChecker checker = facebook.getEntityChecker();
+        if (checker == null) {
+            assert false : "should not happen";
+            return;
+        }
         Date now = new Date();
         boolean docUpdated = false;
         boolean memUpdated = false;
@@ -72,7 +91,7 @@ public class ClientMessageProcessor extends MessageProcessor {
                 // calibrate the clock
                 lastDocumentTime = now;
             }
-            docUpdated = archivist.setLastDocumentTime(group, lastDocumentTime);
+            docUpdated = checker.setLastDocumentTime(group, lastDocumentTime);
         }
         // check group history time
         Date lastHistoryTime = rMsg.getDateTime("GHT", null);
@@ -81,14 +100,14 @@ public class ClientMessageProcessor extends MessageProcessor {
                 // calibrate the clock
                 lastHistoryTime = now;
             }
-            memUpdated = archivist.setLastGroupHistoryTime(group, lastHistoryTime);
+            memUpdated = checker.setLastGroupHistoryTime(group, lastHistoryTime);
         }
         // check whether needs update
         if (docUpdated) {
             facebook.getDocuments(group);
         }
         if (memUpdated) {
-            archivist.setLastActiveMember(group, rMsg.getSender());
+            checker.setLastActiveMember(group, rMsg.getSender());
             facebook.getMembers(group);
         }
     }
@@ -140,14 +159,10 @@ public class ClientMessageProcessor extends MessageProcessor {
                 }
             }
             // normal response
-            messenger.sendContent(receiver, sender, res, 1);
+            messenger.sendContent(res, receiver, sender, 1);
         }
         // DON'T respond to station directly
         return null;
     }
 
-    @Override
-    protected ContentProcessor.Creator createCreator() {
-        return new ClientContentProcessorCreator(getFacebook(), getMessenger());
-    }
 }

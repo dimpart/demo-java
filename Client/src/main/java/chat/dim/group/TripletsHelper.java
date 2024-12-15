@@ -2,12 +2,12 @@
  *
  *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
- *                                Written in 2022 by Moky <albert.moky@gmail.com>
+ *                                Written in 2024 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 Albert Moky
+ * Copyright (c) 2024 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,32 +28,38 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.cpu;
+package chat.dim.group;
 
-import java.util.List;
+import chat.dim.CommonArchivist;
+import chat.dim.CommonFacebook;
+import chat.dim.CommonMessenger;
+import chat.dim.dbi.AccountDBI;
 
-import chat.dim.Facebook;
-import chat.dim.Messenger;
-import chat.dim.group.GroupDelegate;
-import chat.dim.group.SharedGroupManager;
-import chat.dim.protocol.Content;
-import chat.dim.protocol.ReceiptCommand;
-import chat.dim.protocol.ReliableMessage;
 
-public class ReceiptCommandProcessor extends BaseCommandProcessor {
-
-    public ReceiptCommandProcessor(Facebook facebook, Messenger messenger) {
-        super(facebook, messenger);
+abstract class TripletsHelper {
+    protected TripletsHelper(GroupDelegate dataSource) {
+        assert dataSource != null : "Group delegate should not empty";
+        delegate = dataSource;
     }
 
-    @Override
-    public List<Content> process(Content content, ReliableMessage rMsg) {
-        //assert content instanceof ReceiptCommand : "receipt command error: " + content;
-        if (content instanceof ReceiptCommand) {
-            GroupDelegate delegate = SharedGroupManager.getInstance().getDelegate();
-            delegate.updateRespondTime((ReceiptCommand) content, rMsg.getEnvelope());
-        }
-        // no need to response receipt command
-        return null;
+    protected final GroupDelegate delegate;
+
+    protected CommonFacebook getFacebook() {
+        return delegate.getFacebook();
     }
+
+    protected CommonMessenger getMessenger() {
+        return delegate.getMessenger();
+    }
+
+    protected CommonArchivist getArchivist() {
+        CommonFacebook facebook = getFacebook();
+        return facebook == null ? null : facebook.getArchivist();
+    }
+
+    protected AccountDBI getDatabase() {
+        CommonArchivist archivist = getArchivist();
+        return archivist == null ? null : archivist.getDatabase();
+    }
+
 }

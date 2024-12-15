@@ -33,10 +33,8 @@ package chat.dim.group;
 import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.Register;
-import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
@@ -51,21 +49,19 @@ import chat.dim.protocol.MetaCommand;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.InviteCommand;
 import chat.dim.protocol.group.ResetCommand;
+import chat.dim.type.Copier;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
-public class GroupManager {
-
-    protected final GroupDelegate delegate;
+public class GroupManager extends TripletsHelper {
 
     protected final GroupPacker packer;
 
-    protected final GroupHelper helper;
+    protected final GroupCommandHelper helper;
     protected final GroupHistoryBuilder builder;
 
     public GroupManager(GroupDelegate dataSource) {
-        super();
-        delegate = dataSource;
+        super(dataSource);
         packer = createPacker();
         helper = createHelper();
         builder = createBuilder();
@@ -77,24 +73,13 @@ public class GroupManager {
     }
 
     // override for customized helper
-    protected GroupHelper createHelper() {
-        return new GroupHelper(delegate);
+    protected GroupCommandHelper createHelper() {
+        return new GroupCommandHelper(delegate);
     }
 
     // override for customized builder
     protected GroupHistoryBuilder createBuilder() {
         return new GroupHistoryBuilder(delegate);
-    }
-
-    protected CommonFacebook getFacebook() {
-        return delegate.getFacebook();
-    }
-    protected CommonMessenger getMessenger() {
-        return delegate.getMessenger();
-    }
-
-    protected AccountDBI getDatabase() {
-        return delegate.getFacebook().getArchivist().getDatabase();
     }
 
     /**
@@ -159,7 +144,7 @@ public class GroupManager {
         //
         //  4. create & broadcast 'reset' group command with new members
         //
-        if (resetMembers(group, members)) {
+        if (resetMembers(members, group)) {
             Log.info("created group " + group + " with " + members.size() + " members");
         } else {
             Log.error("failed to create group " + group + " with " + members.size() + " members");
@@ -187,7 +172,7 @@ public class GroupManager {
      * @param newMembers - new member list
      * @return false on error
      */
-    public boolean resetMembers(ID group, List<ID> newMembers) {
+    public boolean resetMembers(List<ID> newMembers, ID group) {
         assert group.isGroup() && newMembers.size() > 0 : "params error: " + group + ", " + newMembers;
 
         //
@@ -282,7 +267,7 @@ public class GroupManager {
      * @param newMembers - inviting member list
      * @return false on error
      */
-    public boolean inviteMembers(ID group, List<ID> newMembers) {
+    public boolean inviteMembers(List<ID> newMembers, ID group) {
         assert group.isGroup() && newMembers.size() > 0 : "params error: " + group + ", " + newMembers;
 
         //
@@ -308,13 +293,13 @@ public class GroupManager {
         if (canReset) {
             // You are the owner/admin, then
             // append new members and 'reset' the group
-            List<ID> members = new ArrayList<>(oldMembers);
+            List<ID> members = Copier.copyList(oldMembers);
             for (ID item : newMembers) {
                 if (!members.contains(item)) {
                     members.add(item);
                 }
             }
-            return resetMembers(group, members);
+            return resetMembers(members, group);
         } else if (!isMember) {
             assert false : "cannot invite member into group: " + group;
             return false;
@@ -402,7 +387,7 @@ public class GroupManager {
         //
         if (isMember) {
             Log.warning("quitting group: " + group + ", " + me);
-            members = new ArrayList<>(members);
+            members = Copier.copyList(members);
             members.remove(me);
             boolean ok = delegate.saveMembers(members, group);
             assert ok : "failed to save members for group: " + group;
@@ -457,7 +442,7 @@ public class GroupManager {
                 Log.info("skip cycled message: " + me + " => " + receiver);
                 continue;
             }
-            messenger.sendContent(me, receiver, content, 1);
+            messenger.sendContent(content, me, receiver, 1);
         }
         return true;
     }

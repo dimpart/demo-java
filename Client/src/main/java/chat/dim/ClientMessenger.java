@@ -30,27 +30,33 @@
  */
 package chat.dim;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
+import chat.dim.msg.MessageHelper;
 import chat.dim.network.ClientSession;
+import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.DocumentCommand;
+import chat.dim.protocol.ContentType;
+import chat.dim.protocol.EntityType;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.LoginCommand;
-import chat.dim.protocol.Meta;
+import chat.dim.protocol.ReceiptCommand;
+import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.ReportCommand;
+import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
 import chat.dim.utils.Log;
 
 /**
  *  Client Messenger for Handshake & Broadcast Report
  */
-public class ClientMessenger extends CommonMessenger {
+public abstract class ClientMessenger extends CommonMessenger {
 
     public ClientMessenger(Session session, CommonFacebook facebook, CipherKeyDelegate database) {
         super(session, facebook, database);
@@ -61,9 +67,121 @@ public class ClientMessenger extends CommonMessenger {
         return (ClientSession) super.getSession();
     }
 
-    protected ClientArchivist getArchivist() {
+    protected CommonArchivist getArchivist() {
         CommonFacebook facebook = getFacebook();
-        return (ClientArchivist) facebook.getArchivist();
+        return facebook.getArchivist();
+    }
+
+    @Override
+    public List<ReliableMessage> processReliableMessage(ReliableMessage rMsg) {
+        List<ReliableMessage> responses = super.processReliableMessage(rMsg);
+        if (responses == null || responses.isEmpty()) {
+            if (needsReceipt(rMsg)) {
+                ReliableMessage res = buildReceipt(rMsg.getEnvelope());
+                if (res != null) {
+                    responses = new ArrayList<>();
+                    responses.add(res);
+                }
+            }
+        }
+        return responses;
+    }
+
+    protected ReliableMessage buildReceipt(Envelope originalEnvelope) {
+        User user = getFacebook().getCurrentUser();
+        if (user == null) {
+            assert false : "failed to get current user";
+            return null;
+        }
+        ID me = user.getIdentifier();
+        ID to = originalEnvelope.getSender();
+        Content res = ReceiptCommand.create("Message received.", originalEnvelope, null);
+        Envelope env = Envelope.create(me, to, null);
+        InstantMessage iMsg = InstantMessage.create(env, res);
+        SecureMessage sMsg = encryptMessage(iMsg);
+        if (sMsg == null) {
+            assert false : "failed to encrypt message: " + me + " -> " + to;
+            return null;
+        }
+        ReliableMessage rMsg = signMessage(sMsg);
+        if (rMsg == null) {
+            assert false : "failed to sign message: " + me + " -> " + to;
+        }
+        return rMsg;
+    }
+
+    protected boolean needsReceipt(ReliableMessage rMsg) {
+        if (ContentType.COMMAND.equals(rMsg.getType())) {
+            // filter for looping message (receipt for receipt)
+            return false;
+        }
+        ID sender = rMsg.getSender();
+        /*/
+        ID receiver = rMsg.getReceiver();
+        if (EntityType.STATION.equals(receiver.getType()) || EntityType.BOT.equals(receiver.getType())) {
+            if (EntityType.STATION.equals(sender.getType()) || EntityType.BOT.equals(sender.getType())) {
+                // message between bots
+                return false;
+            }
+        }
+        /*/
+        boolean allow = EntityType.USER.equals(sender.getType()); // || EntityType.USER.equals(receiver.getType());
+        if (!allow) {
+            // message between bots
+            return false;
+        }
+        /*/
+        User user = getFacebook().getCurrentUser();
+        if (!user.getIdentifier().equals(receiver)) {
+            // forward message
+            return true;
+        }
+        /*/
+        // TODO: other condition?
+        return true;
+    }
+
+    @Override
+    public ReliableMessage sendInstantMessage(InstantMessage iMsg, int priority) {
+        ClientSession session = getSession();
+        if (session == null || !session.isReady()) {
+            // not login yet
+            Content content = iMsg.getContent();
+            Command command;
+            if (content instanceof Command) {
+                command = (Command) content;
+            } else {
+                Log.warning("not handshake yet, suspend message: " + content);
+                // TODO: suspend instant message
+                return null;
+            }
+            if (HandshakeCommand.HANDSHAKE.equals(command.getCmd())) {
+                // NOTICE: only handshake message can go out now
+                iMsg.put("pass", "handshaking");
+            } else {
+                Log.warning("not handshake yet, drop message: " + content);
+                // TODO: suspend instant message
+                return null;
+            }
+        }
+        return super.sendInstantMessage(iMsg, priority);
+    }
+
+    @Override
+    public boolean sendReliableMessage(ReliableMessage rMsg, int priority) {
+        Object passport = rMsg.remove("pass");
+        ClientSession session = getSession();
+        if (session != null && session.isReady()) {
+            // OK, any message can go out
+            assert passport == null : "should not happen";
+        } else if ("handshaking".equals(passport)) {
+            Log.info("not login yet, let the handshake message go out only");
+        } else {
+            Log.error("not handshake yet, suspend message: " + rMsg.getReceiver());
+            // TODO: suspend reliable message
+            return false;
+        }
+        return super.sendReliableMessage(rMsg, priority);
     }
 
     /**
@@ -87,13 +205,15 @@ public class ClientMessenger extends CommonMessenger {
             content.setGroup(Station.EVERY);
             // create instant message with meta & visa
             InstantMessage iMsg = InstantMessage.create(env, content);
-            iMsg.setMap("meta", user.getMeta());
-            iMsg.setMap("visa", user.getVisa());
+            MessageHelper.setMeta(user.getMeta(), iMsg);
+            MessageHelper.setVisa(user.getVisa(), iMsg);
+            //iMsg.setMap("meta", user.getMeta());
+            //iMsg.setMap("visa", user.getVisa());
             sendInstantMessage(iMsg, -1);
         } else {
             // handshake again
             Content content = HandshakeCommand.restart(sessionKey);
-            sendContent(null, sid, content, -1);
+            sendContent(content, null, sid, -1);
         }
     }
 
@@ -101,6 +221,10 @@ public class ClientMessenger extends CommonMessenger {
      *  Callback for handshake success
      */
     public void handshakeSuccess() {
+        // change the flag of current session
+        ClientSession session = getSession();
+        Log.info("handshake success, change session accepted: " + session.isAccepted() + " -> true");
+        session.setAccepted(true);
         // broadcast current documents after handshake success
         broadcastDocument(false);
     }
@@ -118,10 +242,7 @@ public class ClientMessenger extends CommonMessenger {
             return;
         }
         ID me = user.getIdentifier();
-        Meta meta = user.getMeta();
-        DocumentCommand command = DocumentCommand.response(me, meta, visa);
-
-        ClientArchivist archivist = getArchivist();
+        EntityChecker checker = facebook.getEntityChecker();
         //
         //  send to all contacts
         //
@@ -129,24 +250,12 @@ public class ClientMessenger extends CommonMessenger {
         if (contacts == null) {
             Log.warning("contacts not found: " + me);
         } else for (ID item : contacts) {
-            if (archivist.isDocumentResponseExpired(item, updated)) {
-                Log.info("sending visa to " + item);
-                sendContent(me, item, command, 1);
-            } else {
-                // not expired yet
-                Log.debug("visa response not expired yet: " + item);
-            }
+            checker.sendVisa(visa, item, updated);
         }
         //
         //  broadcast to 'everyone@everywhere'
         //
-        if (archivist.isDocumentResponseExpired(ID.EVERYONE, updated)) {
-            Log.info("sending visa to " + ID.EVERYONE);
-            sendContent(me, ID.EVERYONE, command, 1);
-        } else {
-            // not expired yet
-            Log.debug("visa response not expired yet: " + ID.EVERYONE);
-        }
+        checker.sendVisa(visa, ID.EVERYONE, updated);
     }
 
     /**
@@ -160,7 +269,7 @@ public class ClientMessenger extends CommonMessenger {
         content.setAgent(userAgent);
         content.setStation(station);
         // broadcast to 'everyone@everywhere'
-        sendContent(sender, ID.EVERYONE, content, 1);
+        sendContent(content, sender, ID.EVERYONE, 1);
     }
 
     /**
@@ -168,7 +277,7 @@ public class ClientMessenger extends CommonMessenger {
      */
     public void reportOnline(ID sender) {
         Content content = new ReportCommand(ReportCommand.ONLINE);
-        sendContent(sender, Station.ANY, content, 1);
+        sendContent(content, sender, Station.ANY, 1);
     }
 
     /**
@@ -176,7 +285,7 @@ public class ClientMessenger extends CommonMessenger {
      */
     public void reportOffline(ID sender) {
         Content content = new ReportCommand(ReportCommand.OFFLINE);
-        sendContent(sender, Station.ANY, content, 1);
+        sendContent(content, sender, Station.ANY, 1);
     }
 
 }

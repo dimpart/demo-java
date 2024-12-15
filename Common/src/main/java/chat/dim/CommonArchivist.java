@@ -30,6 +30,7 @@
  */
 package chat.dim;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,9 +53,25 @@ import chat.dim.protocol.Visa;
 
 public abstract class CommonArchivist implements Archivist {
 
-    public abstract AccountDBI getDatabase();
+    private final WeakReference<CommonFacebook> barrack;
 
-    protected abstract Facebook getFacebook();
+    public CommonArchivist(CommonFacebook facebook) {
+        super();
+        barrack = new WeakReference<>(facebook);
+    }
+
+    protected CommonFacebook getFacebook() {
+        return barrack.get();
+    }
+
+    public AccountDBI getDatabase() {
+        CommonFacebook facebook = getFacebook();
+        if (facebook == null) {
+            assert false : "should not happen";
+            return null;
+        }
+        return facebook.getDatabase();
+    }
 
     @Override
     public User createUser(ID identifier) {

@@ -33,7 +33,6 @@ package chat.dim.group;
 import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.mkm.DocumentHelper;
 import chat.dim.mkm.User;
@@ -54,27 +53,18 @@ import chat.dim.protocol.group.ResignCommand;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
-public class GroupHistoryBuilder {
+public class GroupHistoryBuilder extends TripletsHelper {
 
-    protected final GroupDelegate delegate;
-    protected final GroupHelper helper;
+    protected final GroupCommandHelper helper;
 
     public GroupHistoryBuilder(GroupDelegate dataSource) {
-        super();
-        delegate = dataSource;
+        super(dataSource);
         helper = createHelper();
     }
 
     // override for customized helper
-    protected GroupHelper createHelper() {
-        return new GroupHelper(delegate);
-    }
-
-    protected CommonFacebook getFacebook() {
-        return delegate.getFacebook();
-    }
-    protected CommonMessenger getMessenger() {
-        return delegate.getMessenger();
+    protected GroupCommandHelper createHelper() {
+        return new GroupCommandHelper(delegate);
     }
 
     /**

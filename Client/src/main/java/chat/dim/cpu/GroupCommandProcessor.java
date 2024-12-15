@@ -34,7 +34,7 @@ import java.util.List;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
-import chat.dim.group.GroupHelper;
+import chat.dim.group.GroupCommandHelper;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ForwardContent;
 import chat.dim.protocol.GroupCommand;
@@ -119,7 +119,7 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
             return null;
         }
         List<Content> errors;
-        List<ID> members = GroupHelper.getCommandMembers(content);
+        List<ID> members = GroupCommandHelper.getCommandMembers(content);
         if (/*members == null || */members.isEmpty()) {
             errors = respondReceipt("Command error.", rMsg.getEnvelope(), content, newMap(
                     "template", "Group members empty: ${ID}",
@@ -169,7 +169,7 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
         }
         Content content = ForwardContent.create(messages);
         Pair<InstantMessage, ReliableMessage> result;
-        result = getMessenger().sendContent(null, receiver, content, 1);
+        result = getMessenger().sendContent(content, null, receiver, 1);
         return result.second != null;
     }
 

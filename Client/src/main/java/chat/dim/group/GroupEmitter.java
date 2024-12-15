@@ -33,20 +33,21 @@ package chat.dim.group;
 import java.util.Date;
 import java.util.List;
 
-import chat.dim.CommonArchivist;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
+import chat.dim.EntityChecker;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.FileContent;
 import chat.dim.protocol.ForwardContent;
+import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
-public class GroupEmitter {
+public class GroupEmitter extends TripletsHelper {
 
     // NOTICE: group assistants (bots) can help the members to redirect messages
     //
@@ -72,12 +73,10 @@ public class GroupEmitter {
     //
     public static int SECRET_GROUP_LIMIT = 16;
 
-    protected final GroupDelegate delegate;
     protected final GroupPacker packer;
 
     public GroupEmitter(GroupDelegate dataSource) {
-        super();
-        delegate = dataSource;
+        super(dataSource);
         packer = createPacker();
     }
 
@@ -86,19 +85,16 @@ public class GroupEmitter {
         return new GroupPacker(delegate);
     }
 
-    protected CommonFacebook getFacebook() {
-        return delegate.getFacebook();
-    }
-    protected CommonMessenger getMessenger() {
-        return delegate.getMessenger();
-    }
-
-    private void attachGroupTimes(ID group, InstantMessage iMsg) {
+    private boolean attachGroupTimes(ID group, InstantMessage iMsg) {
+        if (iMsg.getContent() instanceof GroupCommand) {
+            // no need to attach times for group command
+            return false;
+        }
         CommonFacebook facebook = getFacebook();
         Bulletin doc = facebook.getBulletin(group);
         if (doc == null) {
             assert false : "failed to get bulletin document for group: " + group;
-            return;
+            return false;
         }
         // attach group document time
         Date lastDocumentTime = doc.getTime();
@@ -108,27 +104,32 @@ public class GroupEmitter {
             iMsg.setDateTime("GDT", lastDocumentTime);
         }
         // attach group history time
-        CommonArchivist archivist = facebook.getArchivist();
-        Date lastHistoryTime = archivist.getLastGroupHistoryTime(group);
+        EntityChecker checker = facebook.getEntityChecker();
+        Date lastHistoryTime = checker.getLastGroupHistoryTime(group);
         if (lastHistoryTime == null) {
             assert false : "failed to get history time: " + group;
         } else {
             iMsg.setDateTime("GHT", lastHistoryTime);
         }
+        return true;
     }
 
     public ReliableMessage sendInstantMessage(InstantMessage iMsg, int priority) {
+        //
+        //  0. check group
+        //
         Content content = iMsg.getContent();
         ID group = content.getGroup();
         if (group == null) {
             assert false : "not a group message: " + iMsg;
             return null;
+        } else {
+            // attach group document & history times
+            // for the receiver to check whether group info synchronized
+            boolean ok = attachGroupTimes(group, iMsg);
+            assert ok || content instanceof GroupCommand : "failed to attach group times: " + group;
         }
         assert iMsg.getReceiver().equals(group) : "group message error: " + iMsg;
-
-        // attach group document & history times
-        // for the receiver to check whether group info synchronized
-        attachGroupTimes(group, iMsg);
 
         // TODO: if it's a file message
         //       please upload the file data first
@@ -138,11 +139,10 @@ public class GroupEmitter {
         //
         //  1. check group bots
         //
-        List<ID> bots = delegate.getAssistants(group);
-        if (bots != null && bots.size() > 0) {
+        ID prime = delegate.getFastestAssistant(group);
+        if (prime != null) {
             // group bots found, forward this message to any bot to let it split for me;
             // this can reduce my jobs.
-            ID prime = bots.get(0);
             return forwardMessage(prime, group, iMsg, priority);
         }
 
@@ -209,7 +209,7 @@ public class GroupEmitter {
         //  2. forward the group message to any bot
         //
         Content content = ForwardContent.create(rMsg);
-        Pair<InstantMessage, ReliableMessage> pair = messenger.sendContent(null, bot, content, priority);
+        Pair<InstantMessage, ReliableMessage> pair = messenger.sendContent(content, null, bot, priority);
         if (pair == null || pair.second == null) {
             assert false : "failed to forward message for group: " + group + ", bot: " + bot;
             return null;

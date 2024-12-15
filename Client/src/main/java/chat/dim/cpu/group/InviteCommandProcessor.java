@@ -79,6 +79,13 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
             return pair1.second;
         }
 
+        User user = getFacebook().getCurrentUser();
+        if (user == null) {
+            assert false : "failed to get current user";
+            return null;
+        }
+        ID me = user.getIdentifier();
+
         // 1. check group
         Triplet<ID, List<ID>, List<Content>> trip = checkGroupMembers(command, rMsg);
         ID owner = trip.first;
@@ -106,13 +113,6 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
             ));
         }
         boolean canReset = isOwner || isAdmin;
-
-        User user = getFacebook().getCurrentUser();
-        if (user == null) {
-            assert false : "failed to get current user";
-            return null;
-        }
-        ID me = user.getIdentifier();
 
         // 3. do invite
         Pair<List<ID>, List<ID>> memPair = calculateInvited(members, inviteList);

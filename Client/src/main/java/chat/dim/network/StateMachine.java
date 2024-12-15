@@ -95,7 +95,7 @@ public class StateMachine extends AutoMachine<StateMachine, StateTransition, Ses
 
     public String getSessionKey() {
         ClientSession session = getSession();
-        return session == null ? null : session.getKey();
+        return session == null ? null : session.getSessionKey();
     }
 
     public ID getSessionID() {

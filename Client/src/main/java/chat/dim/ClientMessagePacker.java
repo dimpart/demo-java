@@ -35,28 +35,43 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import chat.dim.core.TwinsHelper;
+import chat.dim.crypto.SymmetricKey;
+import chat.dim.mkm.User;
+import chat.dim.protocol.Content;
+import chat.dim.protocol.ContentType;
+import chat.dim.protocol.FileContent;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
+import chat.dim.protocol.TextContent;
+import chat.dim.protocol.Visa;
 import chat.dim.utils.Log;
 
 public abstract class ClientMessagePacker extends CommonPacker {
 
-    public ClientMessagePacker(Facebook facebook, Messenger messenger) {
+    public ClientMessagePacker(ClientFacebook facebook, ClientMessenger messenger) {
         super(facebook, messenger);
     }
 
     @Override
     protected ClientFacebook getFacebook() {
-        Facebook facebook = super.getFacebook();
-        assert facebook instanceof ClientFacebook : "facebook error: " + facebook;
-        return (ClientFacebook) facebook;
+        return (ClientFacebook) super.getFacebook();
+    }
+
+    @Override
+    protected ClientMessenger getMessenger() {
+        return (ClientMessenger) super.getMessenger();
     }
 
     // for checking whether group's ready
     protected List<ID> getMembers(ID group) {
         Facebook facebook = getFacebook();
+        if (facebook == null) {
+            assert false : "failed to get facebook";
+            return null;
+        }
         return facebook.getMembers(group);
     }
 
@@ -153,6 +168,109 @@ public abstract class ClientMessagePacker extends CommonPacker {
             return null;
         }
         return super.verifyMessage(rMsg);
+    }
+
+    @Override
+    public InstantMessage decryptMessage(SecureMessage sMsg) {
+        InstantMessage iMsg;
+        try {
+            iMsg = super.decryptMessage(sMsg);
+        } catch (Exception e) {
+            String errMsg = e.toString();
+            if (errMsg.contains("failed to decrypt message key")) {
+                // Exception from 'SecureMessagePacker::decrypt(sMsg, receiver)'
+                Log.warning("decrypt message error: " + e);
+                // visa.key changed?
+                // push my newest visa to the sender
+                iMsg = null;
+            } else if (errMsg.contains("receiver error")) {
+                // Exception from 'MessagePacker::decryptMessage(sMsg)'
+                Log.error("decrypt message error: " + e);
+                // not for you?
+                // just ignore it
+                return null;
+            } else {
+                throw e;
+            }
+        }
+        if (iMsg == null) {
+            // failed to decrypt message, visa.key changed?
+            // 1. push new visa document to this message sender
+            boolean ok = pushVisa(sMsg.getSender());
+            assert ok : "failed to push visa: " + sMsg.getSender();
+            // 2. build 'failed' message
+            iMsg = getFailedMessage(sMsg);
+        } else {
+            Content content = iMsg.getContent();
+            if (content instanceof FileContent) {
+                FileContent file = (FileContent) content;
+                if (file.getPassword() == null && file.getURL() != null) {
+                    // now received file content with remote data,
+                    // which must be encrypted before upload to CDN;
+                    // so keep the password here for decrypting after downloaded.
+                    Messenger messenger = getMessenger();
+                    SymmetricKey key = messenger.getDecryptKey(sMsg);
+                    assert key != null : "failed to get msg key: " + sMsg.getSender()
+                            + " => " + sMsg.getReceiver() + ", " + sMsg.get("group");
+                    // keep password to decrypt data after downloaded
+                    file.setPassword(key);
+                }
+            }
+        }
+        return iMsg;
+    }
+
+    protected boolean pushVisa(ID contact) {
+        // visa.key not updated?
+        ClientFacebook facebook = getFacebook();
+        if (facebook == null) {
+            assert false : "failed to get facebook";
+            return false;
+        }
+        User user = facebook.getCurrentUser();
+        if (user == null) {
+            assert false : "failed to get current user";
+            return false;
+        }
+        Visa visa = user.getVisa();
+        if (visa == null || !visa.isValid()) {
+            // FIXME: user visa not found?
+            throw new NullPointerException("user visa error: " + user);
+        }
+        EntityChecker checker = facebook.getEntityChecker();
+        if (checker == null) {
+            assert false : "failed to get entity checker";
+            return false;
+        }
+        return checker.sendVisa(visa, contact, false);
+    }
+
+    protected InstantMessage getFailedMessage(SecureMessage sMsg) {
+        ID sender = sMsg.getSender();
+        ID group = sMsg.getGroup();
+        int type = sMsg.getType();
+        if (ContentType.COMMAND.equals(type) || ContentType.HISTORY.equals(type)) {
+            Log.warning("ignore message unable to decrypt: " + type + ", from " + sender);
+            return null;
+        }
+        // create text content
+        Content content = TextContent.create("Failed to decrypt message.");
+        content.putAll(TwinsHelper.newMap(
+                "template", "Failed to decrypt message (type=${type}) from \"${sender}\".",
+                "replacements", TwinsHelper.newMap(
+                        "type", type,
+                        "sender", sender.toString(),
+                        "group", group == null ? null : group.toString()
+                )
+        ));
+        if (group != null) {
+            content.setGroup(group);
+        }
+        // pack instant message
+        Map<String, Object> info = sMsg.copyMap(false);
+        info.remove("data");
+        info.put("content", content.toMap());
+        return InstantMessage.parse(info);
     }
 
 }

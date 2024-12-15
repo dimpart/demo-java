@@ -34,6 +34,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import chat.dim.Messenger;
@@ -76,6 +77,8 @@ public class ClientSession extends BaseSession {
     private final StateMachine fsm;
 
     private String key;
+    private boolean accepted;
+
     private Thread thread;
 
     public ClientSession(Station server, SessionDBI sdb) {
@@ -83,6 +86,7 @@ public class ClientSession extends BaseSession {
         station = server;
         fsm = new StateMachine(this);
         key = null;
+        accepted = false;
         thread = null;
     }
 
@@ -104,11 +108,40 @@ public class ClientSession extends BaseSession {
     }
 
     @Override
-    public String getKey() {
+    public boolean setActive(boolean flag, Date when) {
+        if (!flag) {
+            accepted = false;
+        }
+        return super.setActive(flag, when);
+    }
+
+    public boolean isAccepted() {
+        return accepted;
+    }
+    public void setAccepted(boolean flag) {
+        accepted = flag;
+    }
+
+    public boolean isReady() {
+        //return isActive() && isAccepted() && getIdentifier() != null && getSessionKey() != null;
+        if (!isActive() || !isAccepted()) {
+            return false;
+        } else if (getIdentifier() == null) {
+            return false;
+        } else if (getSessionKey() != null) {
+            return true;
+        }
+        // TODO: check fsm running
+        fsm.resume();;
+        return false;
+    }
+
+    @Override
+    public String getSessionKey() {
         return key;
     }
 
-    public void setKey(String sessionKey) {
+    public void setSessionKey(String sessionKey) {
         key = sessionKey;
     }
 

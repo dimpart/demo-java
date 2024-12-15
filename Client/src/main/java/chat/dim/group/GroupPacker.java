@@ -44,17 +44,10 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.utils.Log;
 
-public class GroupPacker {
-
-    protected final GroupDelegate delegate;
+public class GroupPacker extends TripletsHelper {
 
     public GroupPacker(GroupDelegate dataSource) {
-        super();
-        delegate = dataSource;
-    }
-
-    protected Messenger getMessenger() {
-        return delegate.getMessenger();
+        super(dataSource);
     }
 
     /**

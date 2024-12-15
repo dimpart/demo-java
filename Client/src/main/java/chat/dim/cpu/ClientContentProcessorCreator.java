@@ -32,7 +32,6 @@ package chat.dim.cpu;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
-import chat.dim.core.ContentProcessor;
 import chat.dim.cpu.group.ExpelCommandProcessor;
 import chat.dim.cpu.group.InviteCommandProcessor;
 import chat.dim.cpu.group.JoinCommandProcessor;
@@ -40,6 +39,7 @@ import chat.dim.cpu.group.QueryCommandProcessor;
 import chat.dim.cpu.group.QuitCommandProcessor;
 import chat.dim.cpu.group.ResetCommandProcessor;
 import chat.dim.cpu.group.ResignCommandProcessor;
+import chat.dim.msg.ContentProcessor;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.ContentType;
@@ -68,7 +68,7 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
     }
 
     @Override
-    public ContentProcessor createCommandProcessor(int type, String name) {
+    public ContentProcessor createContentProcessor(int type, String name) {
         switch (name) {
             case Command.RECEIPT:
                 return new ReceiptCommandProcessor(getFacebook(), getMessenger());
@@ -99,6 +99,6 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
                 return new ResignCommandProcessor(getFacebook(), getMessenger());
         }
         // others
-        return super.createCommandProcessor(type, name);
+        return super.createContentProcessor(type, name);
     }
 }
