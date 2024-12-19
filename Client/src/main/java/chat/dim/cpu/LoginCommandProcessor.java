@@ -58,7 +58,7 @@ public class LoginCommandProcessor extends BaseCommandProcessor {
     }
 
     @Override
-    public List<Content> process(Content content, ReliableMessage rMsg) {
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
         assert content instanceof LoginCommand : "login command error: " + content;
         LoginCommand command = (LoginCommand) content;
         ID sender = command.getIdentifier();

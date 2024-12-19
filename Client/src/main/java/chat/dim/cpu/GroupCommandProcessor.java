@@ -77,7 +77,7 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
     }
 
     @Override
-    public List<Content> process(Content content, ReliableMessage rMsg) {
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
         assert content instanceof GroupCommand : "group command error: " + content;
         GroupCommand command = (GroupCommand) content;
         return respondReceipt("Command not support.", rMsg.getEnvelope(), command, newMap(

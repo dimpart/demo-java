@@ -61,7 +61,7 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
     }
 
     @Override
-    public List<Content> process(Content content, ReliableMessage rMsg) {
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
         assert content instanceof InviteCommand : "invite command error: " + content;
         GroupCommand command = (GroupCommand) content;
 

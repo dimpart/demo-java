@@ -60,7 +60,7 @@ public class JoinCommandProcessor extends GroupCommandProcessor {
     }
 
     @Override
-    public List<Content> process(Content content, ReliableMessage rMsg) {
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
         assert content instanceof JoinCommand : "join command error: " + content;
         GroupCommand command = (GroupCommand) content;
 

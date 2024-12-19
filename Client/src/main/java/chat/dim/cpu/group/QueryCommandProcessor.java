@@ -59,7 +59,7 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
     }
 
     @Override
-    public List<Content> process(Content content, ReliableMessage rMsg) {
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
         assert content instanceof QueryCommand : "query command error: " + content;
         QueryCommand command = (QueryCommand) content;
 

@@ -55,7 +55,7 @@ public class HandshakeCommandProcessor extends BaseCommandProcessor {
     }
 
     @Override
-    public List<Content> process(Content content, ReliableMessage rMsg) {
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
         assert content instanceof HandshakeCommand : "handshake command error: " + content;
         HandshakeCommand command = (HandshakeCommand) content;
         ClientMessenger messenger = getMessenger();

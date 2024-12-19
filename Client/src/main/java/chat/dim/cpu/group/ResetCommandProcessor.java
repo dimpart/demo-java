@@ -63,7 +63,7 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
     }
 
     @Override
-    public List<Content> process(Content content, ReliableMessage rMsg) {
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
         assert content instanceof ResetCommand : "reset command error: " + content;
         ResetCommand command = (ResetCommand) content;
 

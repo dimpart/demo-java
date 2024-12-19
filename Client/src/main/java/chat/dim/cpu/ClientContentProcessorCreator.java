@@ -68,7 +68,7 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
     }
 
     @Override
-    public ContentProcessor createContentProcessor(int type, String name) {
+    public ContentProcessor createCommandProcessor(int type, String name) {
         switch (name) {
             case Command.RECEIPT:
                 return new ReceiptCommandProcessor(getFacebook(), getMessenger());
@@ -99,6 +99,6 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
                 return new ResignCommandProcessor(getFacebook(), getMessenger());
         }
         // others
-        return super.createContentProcessor(type, name);
+        return super.createCommandProcessor(type, name);
     }
 }

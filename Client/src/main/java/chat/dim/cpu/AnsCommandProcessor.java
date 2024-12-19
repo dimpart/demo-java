@@ -48,7 +48,7 @@ public class AnsCommandProcessor extends BaseCommandProcessor {
     }
 
     @Override
-    public List<Content> process(Content content, ReliableMessage rMsg) {
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
         assert content instanceof AnsCommand : "ans command error: " + content;
         AnsCommand command = (AnsCommand) content;
         Map<String, String> records = command.getRecords();

@@ -47,7 +47,7 @@ public class ReceiptCommandProcessor extends BaseCommandProcessor {
     }
 
     @Override
-    public List<Content> process(Content content, ReliableMessage rMsg) {
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
         //assert content instanceof ReceiptCommand : "receipt command error: " + content;
         if (content instanceof ReceiptCommand) {
             GroupDelegate delegate = SharedGroupManager.getInstance().getDelegate();

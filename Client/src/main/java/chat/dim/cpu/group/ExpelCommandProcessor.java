@@ -51,7 +51,7 @@ public class ExpelCommandProcessor extends GroupCommandProcessor {
     }
 
     @Override
-    public List<Content> process(Content content, ReliableMessage rMsg) {
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
         assert content instanceof ExpelCommand : "expel command error: " + content;
 
         assert false : "'expel' group command is deprecated, use 'reset' instead.";
