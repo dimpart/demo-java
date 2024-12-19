@@ -36,6 +36,7 @@ import java.util.Locale;
 
 import chat.dim.dbi.SessionDBI;
 import chat.dim.mkm.Station;
+import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
 import chat.dim.network.SessionState;
 import chat.dim.network.StateMachine;
@@ -43,23 +44,25 @@ import chat.dim.port.Porter;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.skywalker.Runner;
+import chat.dim.type.Duration;
 import chat.dim.utils.Log;
 
 public abstract class Terminal extends Runner implements SessionState.Delegate {
+
+    static Duration ACTIVE_INTERVAL = Duration.ofSeconds(60);
 
     public final ClientFacebook facebook;
     public final SessionDBI database;
 
     private ClientMessenger messenger;
-    private Date lastTime;
+    private Date lastOnlineTime;
 
     public Terminal(ClientFacebook barrack, SessionDBI sdb) {
-        super(Runner.INTERVAL_SLOW);
+        super(ACTIVE_INTERVAL);
         facebook = barrack;
         database = sdb;
         messenger = null;
-        // last online time
-        lastTime = null;
+        lastOnlineTime = null;
     }
 
     // "zh-CN"
@@ -129,8 +132,9 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
                 // current session is active
                 Station station = session.getStation();
                 Log.debug("current station: " + station);
-                if (station.getHost().equals(host) && station.getPort() == port) {
+                if (station.getPort() == port == station.getHost().equals(host)) {
                     // same target
+                    Log.warning("active session connected to " + host + ":" + port);
                     return old;
                 }
             }
@@ -150,6 +154,13 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         transceiver.setProcessor(createProcessor(facebook, transceiver));
         // set weak reference to messenger
         session.setMessenger(transceiver);
+        // login with current user
+        User user = facebook.getCurrentUser();
+        if (user != null) {
+            session.setIdentifier(user.getIdentifier());
+        } else {
+            assert false : "failed to get current user";
+        }
         return transceiver;
     }
     protected Station createStation(String host, int port) {
@@ -157,11 +168,11 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         station.setDataSource(facebook);
         return station;
     }
-    protected abstract ClientSession createSession(Station station);/*/ {
+    protected ClientSession createSession(Station station) {
         ClientSession session = new ClientSession(station, database);
         session.start(this);
         return session;
-    }/*/
+    }
     protected abstract Packer createPacker(ClientFacebook facebook, ClientMessenger messenger);
     protected abstract Processor createProcessor(ClientFacebook facebook, ClientMessenger messenger);
     protected abstract ClientMessenger createMessenger(ClientSession session, CommonFacebook facebook);
@@ -228,11 +239,11 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
     @Override
     public void finish() {
         // stop session in messenger
-        Messenger transceiver = messenger;
+        ClientMessenger transceiver = messenger;
         if (transceiver != null) {
-            ClientSession session = getSession();
-            session.stop();
             messenger = null;
+            ClientSession session = transceiver.getSession();
+            session.stop();
         }
         super.finish();
     }
@@ -244,55 +255,66 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
 
     @Override
     public boolean process() {
-        // check timeout
-        Date now = new Date();
-        if (!isExpired(lastTime, now)) {
-            // not expired yet
-            return false;
-        }
-        // check session state
+        //
+        //  1. check connection
+        //
         ClientMessenger messenger = getMessenger();
         if (messenger == null) {
             // not connect
             return false;
         }
         ClientSession session = messenger.getSession();
-        ID uid = session.getIdentifier();
         SessionState state = session.getState();
-        if (uid == null || !state.equals(SessionState.Order.RUNNING)) {
+        if (state == null || !state.equals(SessionState.Order.RUNNING)) {
             // handshake not accepted
             return false;
+        } else if (!session.isReady()) {
+            // session not ready
+            return false;
         }
-        // report every 5 minutes to keep user online
+        //
+        //  2. check timeout
+        //
+        Date now = new Date();
+        if (needsKeepOnline(lastOnlineTime, now)) {
+            // update last online time
+            lastOnlineTime = now;
+        } else {
+            // not expired yet
+            return false;
+        }
+        //
+        //  3. try to report every 5 minutes to keep user online
+        //
         try {
-            keepOnline(uid, messenger);
+            keepOnline();
         } catch (Exception e) {
             e.printStackTrace();
         }
-        // update last online time
-        lastTime = now;
         return false;
     }
 
-    protected boolean isExpired(Date last, Date now) {
-        // keep online every 5 minutes
+    protected boolean needsKeepOnline(Date last, Date now) {
         if (last == null) {
+            // not login yet
             return false;
         }
-        long expired = last.getTime() + 300 * 1000;
-        return now.getTime() < expired;
+        return Duration.ofMinutes(5).addTo(last).before(now);
     }
 
-    protected void keepOnline(ID uid, ClientMessenger messenger) {
-        if (EntityType.STATION.equals(uid.getType())) {
+    protected void keepOnline() {
+        User user = facebook.getCurrentUser();
+        if (user == null) {
+            assert false : "failed to get current user";
+        } else if (EntityType.STATION.equals(user.getType())) {
             // a station won't login to another station, if here is a station,
             // it must be a station bridge for roaming messages, we just send
             // report command to the target station to keep session online.
-            messenger.reportOnline(uid);
+            messenger.reportOnline(user.getIdentifier());
         } else {
             // send login command to everyone to provide more information.
             // this command can keep the user online too.
-            messenger.broadcastLogin(uid, getUserAgent());
+            messenger.broadcastLogin(user.getIdentifier(), getUserAgent());
         }
     }
 
@@ -310,7 +332,11 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
         // called after state changed
         ClientMessenger messenger = getMessenger();
         SessionState current = ctx.getCurrentState();
-        if (current == null) {
+        if (current == null || current.equals(SessionState.Order.ERROR)) {
+            lastOnlineTime = null;
+            return;
+        } else if (messenger == null) {
+            assert false : "messenger lost";
             return;
         }
         if (current.equals(SessionState.Order.DEFAULT) ||
@@ -322,11 +348,7 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
                 return;
             }
             Log.info("connect for user: " + user);
-            ClientSession session = getSession();
-            if (session == null) {
-                Log.warning("session not found");
-                return;
-            }
+            ClientSession session = messenger.getSession();
             SocketAddress remote = session.getRemoteAddress();
             if (remote == null) {
                 Log.warning("failed to get remote address: " + session);
@@ -345,7 +367,7 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
             // broadcast current meta & visa document to all stations
             messenger.handshakeSuccess();
             // update last online time
-            lastTime = now;
+            lastOnlineTime = now;
         }
     }
 

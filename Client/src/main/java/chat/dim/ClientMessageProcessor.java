@@ -132,24 +132,20 @@ public class ClientMessageProcessor extends CommonMessageProcessor {
         receiver = user.getIdentifier();
         CommonMessenger messenger = getMessenger();
         // check responses
+        int sty = sender.getType();
+        boolean fromBots = EntityType.STATION.equals(sty) && EntityType.BOT.equals(sty);
         for (Content res : responses) {
             if (res == null) {
                 // should not happen
                 continue;
             } else if (res instanceof ReceiptCommand) {
-                if (EntityType.STATION.equals(sender.getType())) {
-                    // no need to respond receipt to station
-                    continue;
-                } else if (EntityType.BOT.equals(sender.getType())) {
-                    // no need to respond receipt to a bot
+                if (fromBots) {
+                    // no need to respond receipt to station/bot
                     continue;
                 }
             } else if (res  instanceof TextContent) {
-                if (EntityType.STATION.equals(sender.getType())) {
-                    // no need to respond text message to station
-                    continue;
-                } else if (EntityType.BOT.equals(sender.getType())) {
-                    // no need to respond text message to a bot
+                if (fromBots) {
+                    // no need to respond text message to a station/bot
                     continue;
                 }
             }

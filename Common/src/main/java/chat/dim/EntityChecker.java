@@ -42,6 +42,7 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.Visa;
+import chat.dim.type.Duration;
 import chat.dim.type.Pair;
 import chat.dim.utils.FrequencyChecker;
 import chat.dim.utils.RecentTimeChecker;
@@ -49,10 +50,10 @@ import chat.dim.utils.RecentTimeChecker;
 public abstract class EntityChecker {
 
     // each query will be expired after 10 minutes
-    public static int QUERY_EXPIRES = 600 * 1000;  // milliseconds
+    public static Duration QUERY_EXPIRES = Duration.ofMinutes(10);
 
     // each respond will be expired after 10 minutes
-    public static final int RESPOND_EXPIRES = 600 * 1000;  // milliseconds
+    public static Duration RESPOND_EXPIRES = Duration.ofMinutes(10);
 
     // query checkers
     private final FrequencyChecker<ID> metaQueries;
@@ -87,17 +88,17 @@ public abstract class EntityChecker {
     }
 
     protected boolean isMetaQueryExpired(ID identifier) {
-        return metaQueries.isExpired(identifier, 0, false);
+        return metaQueries.isExpired(identifier, null, false);
     }
     protected boolean isDocumentQueryExpired(ID identifier) {
-        return docsQueries.isExpired(identifier, 0, false);
+        return docsQueries.isExpired(identifier, null, false);
     }
     protected boolean isMembersQueryExpired(ID identifier) {
-        return membersQueries.isExpired(identifier, 0, false);
+        return membersQueries.isExpired(identifier, null, false);
     }
 
     protected boolean isDocumentResponseExpired(ID identifier, boolean force) {
-        return documentResponses.isExpired(identifier, 0, force);
+        return documentResponses.isExpired(identifier, null, force);
     }
 
     public void setLastActiveMember(ID group, ID member) {

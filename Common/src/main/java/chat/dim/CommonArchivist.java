@@ -137,23 +137,23 @@ public class CommonArchivist implements Archivist {
 
     @Override
     public List<User> getLocalUsers() {
+        Facebook facebook = getFacebook();
         List<ID> array = database.getLocalUsers();
-        if (array == null) {
+        if (facebook == null || array == null) {
             return null;
         }
-        List<User> localUsers = new ArrayList<>();
+        List<User> allUsers = new ArrayList<>();
         User user;
-        Facebook facebook = getFacebook();
         for (ID item : array) {
             assert facebook.getPrivateKeyForSignature(item) != null : "private key not found: " + item;
             user = facebook.getUser(item);
             if (user != null) {
-                localUsers.add(user);
+                allUsers.add(user);
             } else {
                 assert false : "failed to create user: " + item;
             }
         }
-        return localUsers;
+        return allUsers;
     }
 
 }

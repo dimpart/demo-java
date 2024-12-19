@@ -30,47 +30,50 @@
  */
 package chat.dim.utils;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import chat.dim.type.Duration;
+
 /**
  *  Frequency checker for duplicated queries
  */
 public class FrequencyChecker <K> {
 
-    private final long expires;
-    private final Map<K, Long> records = new HashMap<>();
+    private final Duration expires;
+    private final Map<K, Date> records = new HashMap<>();
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public FrequencyChecker(long lifeSpan) {
+    public FrequencyChecker(Duration lifeSpan) {
         super();
         expires = lifeSpan;
     }
 
-    private boolean forceExpired(K key, long now) {
-        records.put(key, now + expires);
-        return true;
-    }
-    private boolean checkExpired(K key, long now) {
-        Long expired = records.get(key);
-        if (expired != null && expired > now) {
+    private boolean checkExpired(K key, Date now) {
+        Date expired = records.get(key);
+        if (expired != null && expired.after(now)) {
             // record exists and not expired yet
             return false;
         }
-        records.put(key, now + expires);
+        records.put(key, expires.addTo(now));
         return true;
     }
 
-    public boolean isExpired(K key, long now, boolean force) {
+    private boolean forceExpired(K key, Date now) {
+        records.put(key, expires.addTo(now));
+        return true;
+    }
+    public boolean isExpired(K key, Date now, boolean force) {
         boolean expired;
         Lock writeLock = lock.writeLock();
         writeLock.lock();
         try {
-            if (now <= 0) {
-                now = System.currentTimeMillis();
+            if (now == null) {
+                now = new Date();
             }
             // if force == true:
             //     ignore last updated time, force to update now

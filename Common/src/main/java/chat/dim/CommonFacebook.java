@@ -43,6 +43,7 @@ import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.Visa;
+import chat.dim.utils.Log;
 
 /**
  *  Common Facebook with Database
@@ -163,24 +164,81 @@ public abstract class CommonFacebook extends Facebook {
 
     @Override
     public boolean saveMeta(Meta meta, ID identifier) {
+        //
+        //  1. check valid
+        //
+        boolean valid = meta.isValid() && meta.matchIdentifier(identifier);
+        if (!valid) {
+            assert false : "meta not valid: " + identifier;
+            Log.warning("meta not valid: " + identifier);
+            return false;
+        }
+        //
+        //  2. check duplicated
+        //
+        Meta old = getMeta(identifier);
+        if (old != null) {
+            Log.debug("meta duplicated: " + identifier);
+            return true;
+        }
+        //
+        //  3. save into database
+        //
         return database.saveMeta(meta, identifier);
     }
 
     @Override
     public boolean saveDocument(Document doc) {
+        //
+        //  1. check valid
+        //
+        boolean valid = checkDocumentValid(doc);
+        if (!valid) {
+            assert false : "document not valid: " + doc.getIdentifier();
+            Log.warning("document not valid: " + doc.getIdentifier());
+            return false;
+        }
+        //
+        //  2. check expired
+        //
+        if (checkDocumentExpired(doc)) {
+            Log.info("drop expired document: " + doc.getIdentifier());
+            return false;
+        }
+        //
+        //  3. save into database
+        //
+        return database.saveDocument(doc);
+    }
+
+    protected boolean checkDocumentValid(Document doc) {
+        ID identifier = doc.getIdentifier();
         Date docTime = doc.getTime();
+        // check document time
         if (docTime == null) {
             assert false : "document error: " + doc;
+            Log.warning("document without time: " + identifier);
         } else {
             // calibrate the clock
             // make sure the document time is not in the far future
-            long current = System.currentTimeMillis() + 65536;
-            if (docTime.getTime() > current) {
+            long nearFuture = System.currentTimeMillis() + 65536;
+            if (docTime.getTime() > nearFuture) {
                 assert false : "document time error: " + docTime + ", " + doc;
+                Log.error("document time error: " + docTime + ", " + identifier);
                 return false;
             }
         }
-        return database.saveDocument(doc);
+        // OK
+        return doc.isValid();
+    }
+
+    protected boolean checkDocumentExpired(Document doc) {
+        ID identifier = doc.getIdentifier();
+        String type = doc.getType();
+        // check old documents with type
+        List<Document> documents = getDocuments(identifier);
+        Document old = DocumentHelper.lastDocument(documents, type);
+        return old != null && DocumentHelper.isExpired(doc, old);
     }
 
     //

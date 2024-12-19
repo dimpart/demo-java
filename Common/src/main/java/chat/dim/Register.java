@@ -236,7 +236,7 @@ public class Register {
                     res = null;
                 }
                 // TODO: other types of address
-                if (res == null && 4 < len && len < 64) {
+                if (res == null && 4 <= len && len <= 64) {
                     res = new UnknownAddress(address);
                 }
                 assert res != null : "invalid address: " + address;

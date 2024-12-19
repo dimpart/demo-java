@@ -48,6 +48,7 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.queue.MessageQueue;
 import chat.dim.queue.MessageWrapper;
 import chat.dim.skywalker.Runner;
+import chat.dim.socket.BaseChannel;
 import chat.dim.tcp.StreamChannel;
 import chat.dim.tcp.StreamHub;
 import chat.dim.utils.Log;
@@ -103,10 +104,18 @@ public class GateKeeper extends Runner implements Porter.Delegate {
                 e.printStackTrace();
             }
             StreamChannel channel = new StreamChannel(remote, local);
-            channel.setSocketChannel(sock);
+            setSocket(sock, channel);
             StreamServerHub hub = new StreamServerHub(delegate);
             hub.putChannel(channel);
             return hub;
+        }
+    }
+
+    protected static void setSocket(SocketChannel socket, BaseChannel<SocketChannel> channel) {
+        try {
+            channel.setSocket(socket);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

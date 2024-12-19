@@ -46,6 +46,7 @@ import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.LoginCommand;
+import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.ReportCommand;
@@ -189,7 +190,7 @@ public abstract class ClientMessenger extends CommonMessenger {
         ClientSession session = getSession();
         Station station = session.getStation();
         ID sid = station.getIdentifier();
-        if (sessionKey == null) {
+        if (sessionKey == null || sessionKey.isEmpty()) {
             // first handshake
             User user = facebook.getCurrentUser();
             assert user != null : "current user not found";
@@ -198,18 +199,25 @@ public abstract class ClientMessenger extends CommonMessenger {
             Content content = HandshakeCommand.start();
             // send first handshake command as broadcast message
             content.setGroup(Station.EVERY);
+            // update visa before first handshake
+            updateVisa();
+            Meta meta = user.getMeta();
+            Visa visa = user.getVisa();
             // create instant message with meta & visa
             InstantMessage iMsg = InstantMessage.create(env, content);
-            MessageHelper.setMeta(user.getMeta(), iMsg);
-            MessageHelper.setVisa(user.getVisa(), iMsg);
-            //iMsg.setMap("meta", user.getMeta());
-            //iMsg.setMap("visa", user.getVisa());
+            MessageHelper.setMeta(meta, iMsg);
+            MessageHelper.setVisa(visa, iMsg);
             sendInstantMessage(iMsg, -1);
         } else {
             // handshake again
             Content content = HandshakeCommand.restart(sessionKey);
             sendContent(content, null, sid, -1);
         }
+    }
+
+    protected void updateVisa() {
+        // TODO: update visa for first handshake
+        Log.warning("TODO: update visa for first handshake");
     }
 
     /**
@@ -222,6 +230,7 @@ public abstract class ClientMessenger extends CommonMessenger {
         session.setAccepted(true);
         // broadcast current documents after handshake success
         broadcastDocument(false);
+        // TODO: let a service bot to do this job
     }
 
     /**
