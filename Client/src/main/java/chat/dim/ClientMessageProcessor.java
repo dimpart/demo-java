@@ -34,8 +34,8 @@ import java.util.Date;
 import java.util.List;
 
 import chat.dim.cpu.ClientContentProcessorCreator;
+import chat.dim.dkd.ContentProcessor;
 import chat.dim.mkm.User;
-import chat.dim.msg.ContentProcessor;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.HandshakeCommand;

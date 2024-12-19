@@ -33,6 +33,9 @@ package chat.dim;
 import java.util.Date;
 
 import chat.dim.compat.Compatible;
+import chat.dim.core.CipherKeyDelegate;
+import chat.dim.core.Packer;
+import chat.dim.core.Processor;
 import chat.dim.crypto.SymmetricKey;
 import chat.dim.mkm.Entity;
 import chat.dim.mkm.User;

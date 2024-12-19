@@ -39,7 +39,7 @@ import chat.dim.cpu.group.QueryCommandProcessor;
 import chat.dim.cpu.group.QuitCommandProcessor;
 import chat.dim.cpu.group.ResetCommandProcessor;
 import chat.dim.cpu.group.ResignCommandProcessor;
-import chat.dim.msg.ContentProcessor;
+import chat.dim.dkd.ContentProcessor;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.ContentType;

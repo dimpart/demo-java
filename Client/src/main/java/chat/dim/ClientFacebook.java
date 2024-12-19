@@ -35,13 +35,11 @@ import java.util.List;
 
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.User;
-import chat.dim.protocol.Address;
 import chat.dim.protocol.BroadcastHelper;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
-import chat.dim.protocol.Meta;
 
 /**
  *  Client Facebook with Address Name Service
@@ -232,44 +230,5 @@ public abstract class ClientFacebook extends CommonFacebook {
     //  Address Name Service
     //
     public static AddressNameServer ans = null;
-
-    static void prepare() {
-        if (loaded) {
-            return;
-        }
-
-        // load plugins
-        Register.prepare();
-
-        identifierFactory = ID.getFactory();
-        ID.setFactory(new ID.Factory() {
-
-            @Override
-            public ID generateIdentifier(Meta meta, int type, String terminal) {
-                return identifierFactory.generateIdentifier(meta, type, terminal);
-            }
-
-            @Override
-            public ID createIdentifier(String name, Address address, String terminal) {
-                return identifierFactory.createIdentifier(name, address, terminal);
-            }
-
-            @Override
-            public ID parseIdentifier(String identifier) {
-                // try ANS record
-                ID id = ans.identifier(identifier);
-                if (id != null) {
-                    return id;
-                }
-                // parse by original factory
-                return identifierFactory.parseIdentifier(identifier);
-            }
-        });
-
-        loaded = true;
-    }
-    private static boolean loaded = false;
-
-    private static ID.Factory identifierFactory;
 
 }

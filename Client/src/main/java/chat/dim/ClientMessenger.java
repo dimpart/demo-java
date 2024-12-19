@@ -33,6 +33,7 @@ package chat.dim;
 import java.util.ArrayList;
 import java.util.List;
 
+import chat.dim.core.CipherKeyDelegate;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.msg.MessageHelper;

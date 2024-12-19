@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import chat.dim.core.TwinsHelper;
 import chat.dim.crypto.SymmetricKey;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;

@@ -2,12 +2,12 @@
  *
  *  Ming-Ke-Ming : Decentralized User Identity Authentication
  *
- *                                Written in 2022 by Moky <albert.moky@gmail.com>
+ *                                Written in 2024 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 Albert Moky
+ * Copyright (c) 2024 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,11 +31,12 @@
 package chat.dim.compat;
 
 import chat.dim.core.Barrack;
-import chat.dim.mkm.IdentifierFactory;
+import chat.dim.mkm.BTCAddress;
+import chat.dim.mkm.BaseAddressFactory;
+import chat.dim.mkm.ETHAddress;
 import chat.dim.protocol.Address;
-import chat.dim.protocol.ID;
 
-public final class EntityIDFactory extends IdentifierFactory {
+public class CompatibleAddressFactory extends BaseAddressFactory {
 
     /**
      * Call it when received 'UIApplicationDidReceiveMemoryWarningNotification',
@@ -45,40 +46,45 @@ public final class EntityIDFactory extends IdentifierFactory {
      */
     public int reduceMemory() {
         int finger = 0;
-        finger = Barrack.thanos(identifiers, finger);
+        finger = Barrack.thanos(addresses, finger);
         return finger >> 1;
     }
 
     @Override
-    protected ID newID(String identifier, String name, Address address, String terminal) {
-        return new EntityID(identifier, name, address, terminal);
+    public Address createAddress(String address) {
+        if (address == null) {
+            //throw new NullPointerException("address empty");
+            assert false : "address empty";
+            return null;
+        }
+        int len = address.length();
+        assert len > 0 : "address empty";
+        if (len == 8) {
+            // "anywhere"
+            if (Address.ANYWHERE.equalsIgnoreCase(address)) {
+                return Address.ANYWHERE;
+            }
+        } else if (len == 10) {
+            // "everywhere"
+            if (Address.EVERYWHERE.equalsIgnoreCase(address)) {
+                return Address.EVERYWHERE;
+            }
+        }
+        Address res;
+        if (26 <= len && len <= 35) {
+            res = BTCAddress.parse(address);
+        } else if (len == 42) {
+            res = ETHAddress.parse(address);
+        } else {
+            //throw new AssertionError("invalid address: " + address);
+            res = null;
+        }
+        // TODO: other types of address
+        if (res == null && 4 <= len && len <= 64) {
+            res = new UnknownAddress(address);
+        }
+        assert res != null : "invalid address: " + address;
+        return res;
     }
 
-    @Override
-    protected ID parse(String identifier) {
-        if (identifier == null) {
-            throw new NullPointerException("ID empty");
-        }
-        int size = identifier.length();
-        if (size < 4 || size > 64) {
-            assert false : "ID error: " + identifier;
-        } else if (size == 15) {
-            // "anyone@anywhere"
-            if (ID.ANYONE.equalsIgnoreCase(identifier)) {
-                return ID.ANYONE;
-            }
-        } else if (size == 19) {
-            // "everyone@everywhere"
-            // "stations@everywhere"
-            if (ID.EVERYONE.equalsIgnoreCase(identifier)) {
-                return ID.EVERYONE;
-            }
-        } else if (size == 13) {
-            // "moky@anywhere"
-            if (ID.FOUNDER.equalsIgnoreCase(identifier)) {
-                return ID.FOUNDER;
-            }
-        }
-        return super.parse(identifier);
-    }
 }

@@ -34,6 +34,8 @@ import java.net.SocketAddress;
 import java.util.Date;
 import java.util.Locale;
 
+import chat.dim.core.Packer;
+import chat.dim.core.Processor;
 import chat.dim.dbi.SessionDBI;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;

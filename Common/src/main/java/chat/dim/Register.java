@@ -34,36 +34,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import chat.dim.compat.CompatibleMetaFactory;
-import chat.dim.compat.EntityIDFactory;
-import chat.dim.compat.UnknownAddress;
-import chat.dim.core.CoreFactoryManager;
 import chat.dim.crypto.AsymmetricKey;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.crypto.PrivateKey;
 import chat.dim.crypto.SignKey;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.dbi.PrivateKeyDBI;
-import chat.dim.format.Base64;
-import chat.dim.format.DataCoder;
 import chat.dim.format.PortableNetworkFile;
-import chat.dim.mkm.BTCAddress;
-import chat.dim.mkm.BaseAddressFactory;
 import chat.dim.mkm.BaseBulletin;
 import chat.dim.mkm.BaseVisa;
-import chat.dim.mkm.ETHAddress;
-import chat.dim.protocol.Address;
-import chat.dim.protocol.AnsCommand;
-import chat.dim.protocol.BlockCommand;
 import chat.dim.protocol.Bulletin;
-import chat.dim.protocol.Command;
 import chat.dim.protocol.EntityType;
-import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
-import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.Meta;
-import chat.dim.protocol.MuteCommand;
-import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.Visa;
 
 public class Register {
@@ -190,142 +173,6 @@ public class Register {
         byte[] sig = doc.sign(privateKey);
         assert sig != null : "failed to sign bulletin: " + identifier;
         return doc;
-    }
-
-    /*
-     *  ID factory
-     */
-    static void registerEntityIDFactory() {
-
-        ID.setFactory(new EntityIDFactory());
-    }
-
-    /*
-     *  Address factory
-     */
-    static void registerCompatibleAddressFactory() {
-
-        Address.setFactory(new BaseAddressFactory() {
-            @Override
-            public Address createAddress(String address) {
-                if (address == null) {
-                    //throw new NullPointerException("address empty");
-                    assert false : "address empty";
-                    return null;
-                }
-                int len = address.length();
-                assert len > 0 : "address empty";
-                if (len == 8) {
-                    // "anywhere"
-                    if (Address.ANYWHERE.equalsIgnoreCase(address)) {
-                        return Address.ANYWHERE;
-                    }
-                } else if (len == 10) {
-                    // "everywhere"
-                    if (Address.EVERYWHERE.equalsIgnoreCase(address)) {
-                        return Address.EVERYWHERE;
-                    }
-                }
-                Address res;
-                if (26 <= len && len <= 35) {
-                    res = BTCAddress.parse(address);
-                } else if (len == 42) {
-                    res = ETHAddress.parse(address);
-                } else {
-                    //throw new AssertionError("invalid address: " + address);
-                    res = null;
-                }
-                // TODO: other types of address
-                if (res == null && 4 <= len && len <= 64) {
-                    res = new UnknownAddress(address);
-                }
-                assert res != null : "invalid address: " + address;
-                return res;
-            }
-        });
-    }
-
-    /*
-     *  Meta factories
-     */
-    static void registerCompatibleMetaFactories() {
-
-        Meta.Factory mkm = new CompatibleMetaFactory(Meta.MKM);
-        Meta.Factory btc = new CompatibleMetaFactory(Meta.BTC);
-        Meta.Factory eth = new CompatibleMetaFactory(Meta.ETH);
-
-        Meta.setFactory("1", mkm);
-        Meta.setFactory("2", btc);
-        Meta.setFactory("4", eth);
-
-        Meta.setFactory("mkm", mkm);
-        Meta.setFactory("btc", btc);
-        Meta.setFactory("eth", eth);
-
-        Meta.setFactory("MKM", mkm);
-        Meta.setFactory("BTC", btc);
-        Meta.setFactory("ETH", eth);
-    }
-
-    public static void prepare() {
-        if (loaded) {
-            return;
-        }
-
-        // load plugins
-        chat.dim.Plugins.registerPlugins();
-        registerEntityIDFactory();
-        registerCompatibleAddressFactory();
-        registerCompatibleMetaFactories();
-
-        // load message/content factories
-        registerAllFactories();
-
-        // fix base64 coder
-        Base64.coder = new DataCoder() {
-
-            @Override
-            public String encode(byte[] data) {
-                return java.util.Base64.getEncoder().encodeToString(data);
-            }
-
-            @Override
-            public byte[] decode(String string) {
-                string = string.replace(" ", "");
-                string = string.replace("\t", "");
-                string = string.replace("\r", "");
-                string = string.replace("\n", "");
-                return java.util.Base64.getDecoder().decode(string);
-            }
-        };
-
-        loaded = true;
-    }
-    private static boolean loaded = false;
-
-
-    /**
-     *  Register All Message/Content/Command Factories
-     */
-    public static void registerAllFactories() {
-        //
-        //  Register core factories
-        //
-        CoreFactoryManager man = CoreFactoryManager.getInstance();
-        man.registerAllFactories();
-
-        // Handshake
-        Command.setFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
-        // Login
-        Command.setFactory(LoginCommand.LOGIN, LoginCommand::new);
-        // Report
-        Command.setFactory(ReportCommand.REPORT, ReportCommand::new);
-        // Mute
-        Command.setFactory(MuteCommand.MUTE, MuteCommand::new);
-        // Block
-        Command.setFactory(BlockCommand.BLOCK, BlockCommand::new);
-        // ANS
-        Command.setFactory(AnsCommand.ANS, AnsCommand::new);
     }
 
 }

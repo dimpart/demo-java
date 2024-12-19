@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import chat.dim.core.TwinsHelper;
+import chat.dim.TwinsHelper;
 import chat.dim.mkm.Station;
 import chat.dim.protocol.ID;
 import chat.dim.type.Converter;

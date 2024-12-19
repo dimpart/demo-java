@@ -35,7 +35,7 @@ import java.util.List;
 import chat.dim.ClientFacebook;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
-import chat.dim.core.TwinsHelper;
+import chat.dim.TwinsHelper;
 import chat.dim.mkm.Group;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;

@@ -30,7 +30,7 @@
  */
 package chat.dim.dbi;
 
-import chat.dim.CipherKeyDelegate;
+import chat.dim.core.CipherKeyDelegate;
 
 /**
  *  Message DBI
