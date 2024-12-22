@@ -57,7 +57,7 @@ public class GroupCommandHelper extends TripletsHelper {
     public boolean saveGroupHistory(GroupCommand content, ReliableMessage rMsg, ID group) {
         assert group.equals(content.getGroup()) : "group ID error: " + group + ", " + content;
         if (isCommandExpired(content)) {
-            Log.warning("drop expired command: " + content.getCmd() + ", " + rMsg.getSender() + " => " + group);
+            Log.warning("drop expired command: " + content.getCommandName() + ", " + rMsg.getSender() + " => " + group);
             return false;
         }
         // check command time

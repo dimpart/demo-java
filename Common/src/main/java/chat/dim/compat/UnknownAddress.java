@@ -44,7 +44,7 @@ public final class UnknownAddress extends ConstantString implements Address {
     }
 
     @Override
-    public int getType() {
+    public int getNetwork() {
         return 0;
     }
 

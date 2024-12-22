@@ -83,7 +83,7 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
         return respondReceipt("Command not support.", rMsg.getEnvelope(), command, newMap(
                 "template", "Group command (name: ${command}) not support yet!",
                 "replacements", newMap(
-                        "command", command.getCmd()
+                        "command", command.getCommandName()
                 )
         ));
     }
@@ -100,7 +100,7 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
             errors = respondReceipt("Command expired.", rMsg.getEnvelope(), content, newMap(
                     "template", "Group command expired: ${cmd}, group: ${ID}.",
                     "replacements", newMap(
-                            "cmd", content.getCmd(),
+                            "cmd", content.getCommandName(),
                             "ID", group.toString()
                     )
             ));

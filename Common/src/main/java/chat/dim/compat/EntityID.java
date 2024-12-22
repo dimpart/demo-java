@@ -88,7 +88,7 @@ public final class EntityID extends ConstantString implements ID {
         }
         assert address != null : "ID.address should not be empty: " + this;
         // compatible with MKM 0.9.*
-        return NetworkID.getType(address.getType());
+        return NetworkID.getType(address.getNetwork());
     }
 
     @Override

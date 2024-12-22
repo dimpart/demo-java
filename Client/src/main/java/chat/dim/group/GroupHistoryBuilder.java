@@ -122,14 +122,14 @@ public class GroupHistoryBuilder extends TripletsHelper {
             } else if (item.first instanceof ResignCommand) {
                 // 'resign' command, comparing it with document time
                 if (DocumentHelper.isBefore(doc.getTime(), item.first.getTime())) {
-                    Log.warning("expired '" + item.first.getCmd() + "' command in group: "
+                    Log.warning("expired '" + item.first.getCommandName() + "' command in group: "
                             + group + ", sender: " + item.second.getSender());
                     continue;
                 }
             } else {
                 // 'invite', 'join', 'quit', comparing with 'reset' time
                 if (DocumentHelper.isBefore(reset.getTime(), item.first.getTime())) {
-                    Log.warning("expired '" + item.first.getCmd() + "' command in group: "
+                    Log.warning("expired '" + item.first.getCommandName() + "' command in group: "
                             + group + ", sender: " + item.second.getSender());
                     continue;
                 }

@@ -153,7 +153,7 @@ public abstract class ClientMessenger extends CommonMessenger {
                 // TODO: suspend instant message
                 return null;
             }
-            if (HandshakeCommand.HANDSHAKE.equals(command.getCmd())) {
+            if (HandshakeCommand.HANDSHAKE.equals(command.getCommandName())) {
                 // NOTICE: only handshake message can go out now
                 iMsg.put("pass", "handshaking");
             } else {

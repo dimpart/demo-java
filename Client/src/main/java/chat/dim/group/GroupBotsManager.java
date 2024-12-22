@@ -221,7 +221,6 @@ final class GroupBotsManager extends Runner {
         if (facebook == null || messenger == null) {
             return false;
         }
-        EntityChecker checker = facebook.getEntityChecker();
         //
         //  1. check session
         //
@@ -245,6 +244,7 @@ final class GroupBotsManager extends Runner {
             Log.error("failed to get current user: " + e);
             return false;
         }
+        EntityChecker checker = facebook.getEntityChecker();
         //
         //  3. check candidates
         //

@@ -91,7 +91,7 @@ public class HistoryCommandProcessor extends BaseCommandProcessor {
         return respondReceipt("Command not support.", rMsg.getEnvelope(), command, newMap(
                 "template", "History command (name: ${command}) not support yet!",
                 "replacements", newMap(
-                        "command", command.getCmd()
+                        "command", command.getCommandName()
                 )
         ));
     }

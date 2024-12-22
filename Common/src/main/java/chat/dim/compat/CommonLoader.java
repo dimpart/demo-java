@@ -25,8 +25,8 @@
  */
 package chat.dim.compat;
 
-import chat.dim.PluginLoader;
-import chat.dim.core.CoreLoader;
+import chat.dim.plugins.ExtensionLoader;
+import chat.dim.plugins.PluginLoader;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.BlockCommand;
 import chat.dim.protocol.Command;
@@ -35,7 +35,7 @@ import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.MuteCommand;
 import chat.dim.protocol.ReportCommand;
 
-public class CommonLoader extends CoreLoader {
+public class CommonLoader extends ExtensionLoader {
 
     private final PluginLoader pluginLoader;
 

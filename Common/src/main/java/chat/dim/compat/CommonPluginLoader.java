@@ -25,9 +25,9 @@
  */
 package chat.dim.compat;
 
-import chat.dim.PluginLoader;
 import chat.dim.format.Base64;
 import chat.dim.format.DataCoder;
+import chat.dim.plugins.PluginLoader;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
