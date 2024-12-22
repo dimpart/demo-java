@@ -1,9 +1,4 @@
 /* license: https://mit-license.org
- *
- *  Ming-Ke-Ming : Decentralized User Identity Authentication
- *
- *                                Written in 2024 by Moky <albert.moky@gmail.com>
- *
  * ==============================================================================
  * The MIT License (MIT)
  *
@@ -31,55 +26,17 @@
 package chat.dim.compat;
 
 import chat.dim.PluginLoader;
-import chat.dim.core.CoreLoader;
 import chat.dim.format.Base64;
 import chat.dim.format.DataCoder;
 import chat.dim.protocol.Address;
-import chat.dim.protocol.AnsCommand;
-import chat.dim.protocol.BlockCommand;
-import chat.dim.protocol.Command;
-import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
-import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.Meta;
-import chat.dim.protocol.MuteCommand;
-import chat.dim.protocol.ReportCommand;
 
-public class CommonPluginLoader {
+public class CommonPluginLoader extends PluginLoader {
 
-    private final CoreLoader coreLoader = new CoreLoader();
-    private final PluginLoader pluginLoader = new PluginLoader();
-
-    private boolean isLoaded = false;
-
-    /**
-     *  Register All Message/Content/Command Factories
-     */
-    public boolean load() {
-        if (isLoaded) {
-            // already loaded
-            return false;
-        } else {
-            isLoaded = true;
-        }
-
-        coreLoader.load();
-        pluginLoader.load();
-
-        fixBase64Coder();
-
-        registerEntityIDFactory();
-        registerCompatibleAddressFactory();
-        registerCompatibleMetaFactories();
-
-        registerCommandFactories();
-
-        // OK
-        return true;
-    }
-
-    private void fixBase64Coder() {
-
+    @Override
+    protected void registerBase64Coder() {
+        // Base64 coding
         Base64.coder = new DataCoder() {
 
             @Override
@@ -96,13 +53,13 @@ public class CommonPluginLoader {
                 return java.util.Base64.getDecoder().decode(string);
             }
         };
-
     }
 
     /**
      *  ID factory
      */
-    private void registerEntityIDFactory() {
+    @Override
+    protected void registerIDFactory() {
 
         ID.setFactory(new EntityIDFactory());
     }
@@ -110,7 +67,8 @@ public class CommonPluginLoader {
     /**
      *  Address factory
      */
-    private void registerCompatibleAddressFactory() {
+    @Override
+    protected void registerAddressFactory() {
 
         Address.setFactory(new CompatibleAddressFactory());
     }
@@ -118,7 +76,8 @@ public class CommonPluginLoader {
     /**
      *  Meta factories
      */
-    private void registerCompatibleMetaFactories() {
+    @Override
+    protected void registerMetaFactories() {
 
         Meta.Factory mkm = new CompatibleMetaFactory(Meta.MKM);
         Meta.Factory btc = new CompatibleMetaFactory(Meta.BTC);
@@ -135,25 +94,6 @@ public class CommonPluginLoader {
         Meta.setFactory("MKM", mkm);
         Meta.setFactory("BTC", btc);
         Meta.setFactory("ETH", eth);
-    }
-
-    /**
-     *  Command factories
-     */
-    private void registerCommandFactories() {
-
-        // Handshake
-        Command.setFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
-        // Login
-        Command.setFactory(LoginCommand.LOGIN, LoginCommand::new);
-        // Report
-        Command.setFactory(ReportCommand.REPORT, ReportCommand::new);
-        // Mute
-        Command.setFactory(MuteCommand.MUTE, MuteCommand::new);
-        // Block
-        Command.setFactory(BlockCommand.BLOCK, BlockCommand::new);
-        // ANS
-        Command.setFactory(AnsCommand.ANS, AnsCommand::new);
     }
 
 }

@@ -228,8 +228,18 @@ public abstract class CommonFacebook extends Facebook {
                 return false;
             }
         }
-        // OK
-        return doc.isValid();
+        // check valid
+        return doc.isValid() || verifyDocument(doc);
+    }
+
+    protected boolean verifyDocument(Document doc) {
+        ID identifier = doc.getIdentifier();
+        Meta meta = getMeta(identifier);
+        if (meta == null) {
+            Log.warning("failed to get meta: " + identifier);
+            return false;
+        }
+        return doc.verify(meta.getPublicKey());
     }
 
     protected boolean checkDocumentExpired(Document doc) {

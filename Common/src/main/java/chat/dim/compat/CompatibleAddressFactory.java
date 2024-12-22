@@ -58,8 +58,10 @@ public class CompatibleAddressFactory extends BaseAddressFactory {
             return null;
         }
         int len = address.length();
-        assert len > 0 : "address empty";
-        if (len == 8) {
+        if (len == 0) {
+            assert false : "address empty";
+            return null;
+        } else if (len == 8) {
             // "anywhere"
             if (Address.ANYWHERE.equalsIgnoreCase(address)) {
                 return Address.ANYWHERE;

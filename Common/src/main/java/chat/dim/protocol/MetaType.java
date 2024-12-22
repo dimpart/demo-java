@@ -112,11 +112,15 @@ public enum MetaType {
         } else if (type instanceof String) {
             // fixed values
             if (type.equals("MKM") || type.equals("mkm")) {
-                return 1;
+                return MKM.value;
             } else if (type.equals("BTC") || type.equals("btc")) {
-                return 2;
+                return BTC.value;
+            } else if (type.equals("ExBTC")) {
+                return ExBTC.value;
             } else if (type.equals("ETH") || type.equals("eth")) {
-                return 4;
+                return ETH.value;
+            } else if (type.equals("ExETH")) {
+                return ExETH.value;
             }
             // TODO: other algorithms
         } else if (type instanceof MetaType) {

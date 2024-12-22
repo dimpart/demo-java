@@ -61,6 +61,14 @@ public abstract class ClientFacebook extends CommonFacebook {
         // so we can trust that the group's meta & members MUST exist here.
         CommonArchivist archivist = getArchivist();
         List<User> users = archivist.getLocalUsers();
+        if (users == null || users.isEmpty()) {
+            assert false : "local users should not be empty";
+            return null;
+        } else if (receiver.isBroadcast()) {
+            // broadcast message can be decrypted by anyone, so
+            // just return current user here
+            return users.get(0);
+        }
         List<ID> members = getMembers(receiver);
         assert !members.isEmpty() : "members not found: " + receiver;
         for (User item : users) {

@@ -1,9 +1,4 @@
 /* license: https://mit-license.org
- *
- *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
- *
- *                                Written in 2024 by Moky <albert.moky@gmail.com>
- *
  * ==============================================================================
  * The MIT License (MIT)
  *
@@ -28,9 +23,9 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim;
+package chat.dim.compat;
 
-import chat.dim.compat.CommonPluginLoader;
+import chat.dim.ClientFacebook;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
@@ -40,20 +35,10 @@ public class ClientPluginLoader extends CommonPluginLoader {
     private ID.Factory identifierFactory;
 
     @Override
-    public boolean load() {
-        if (!super.load()) {
-            // already loaded
-            return false;
-        }
+    protected void registerIDFactory() {
 
-        replaceIDFactory();
+        identifierFactory = new EntityIDFactory();
 
-        return true;
-    }
-
-    private void replaceIDFactory() {
-
-        identifierFactory = ID.getFactory();
         ID.setFactory(new ID.Factory() {
 
             @Override

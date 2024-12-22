@@ -33,8 +33,8 @@ package chat.dim;
 import java.util.Date;
 import java.util.List;
 
-import chat.dim.cpu.GeneralContentProcessorFactory;
 import chat.dim.dkd.ContentProcessor;
+import chat.dim.dkd.ContentProcessorFactory;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
@@ -58,7 +58,7 @@ public abstract class CommonMessageProcessor extends MessageProcessor {
     @Override
     protected ContentProcessor.Factory createFactory(Facebook facebook, Messenger messenger) {
         ContentProcessor.Creator creator = createCreator(facebook, messenger);
-        return new GeneralContentProcessorFactory(creator);
+        return new ContentProcessorFactory(creator);
     }
     protected abstract ContentProcessor.Creator createCreator(Facebook facebook, Messenger messenger);
 
