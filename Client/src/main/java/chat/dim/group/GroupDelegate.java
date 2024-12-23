@@ -37,6 +37,7 @@ import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.TwinsHelper;
 import chat.dim.mkm.Group;
+import chat.dim.mkm.MetaHelper;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
@@ -193,7 +194,7 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
             Log.error("failed to get meta: " + group + ", " + user);
             return false;
         }
-        return gMeta.matchPublicKey(mMeta.getPublicKey());
+        return MetaHelper.matches(mMeta.getPublicKey(), gMeta);
     }
 
     public boolean isOwner(ID user, ID group) {

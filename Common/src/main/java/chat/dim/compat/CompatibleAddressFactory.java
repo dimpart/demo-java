@@ -51,7 +51,7 @@ public class CompatibleAddressFactory extends BaseAddressFactory {
     }
 
     @Override
-    public Address createAddress(String address) {
+    protected Address parse(String address) {
         if (address == null) {
             //throw new NullPointerException("address empty");
             assert false : "address empty";

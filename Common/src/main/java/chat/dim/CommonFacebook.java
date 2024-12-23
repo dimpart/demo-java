@@ -37,6 +37,7 @@ import chat.dim.crypto.DecryptKey;
 import chat.dim.crypto.SignKey;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.DocumentHelper;
+import chat.dim.mkm.MetaHelper;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
@@ -167,8 +168,7 @@ public abstract class CommonFacebook extends Facebook {
         //
         //  1. check valid
         //
-        boolean valid = meta.isValid() && meta.matchIdentifier(identifier);
-        if (!valid) {
+        if (!checkMeta(meta, identifier)) {
             assert false : "meta not valid: " + identifier;
             Log.warning("meta not valid: " + identifier);
             return false;
@@ -185,6 +185,10 @@ public abstract class CommonFacebook extends Facebook {
         //  3. save into database
         //
         return database.saveMeta(meta, identifier);
+    }
+
+    protected boolean checkMeta(Meta meta, ID identifier) {
+        return meta.isValid() && MetaHelper.matches(identifier, meta);
     }
 
     @Override
