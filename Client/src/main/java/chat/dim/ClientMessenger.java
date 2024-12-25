@@ -36,7 +36,7 @@ import java.util.List;
 import chat.dim.core.CipherKeyDelegate;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
-import chat.dim.msg.MessageHelper;
+import chat.dim.msg.MessageUtils;
 import chat.dim.network.ClientSession;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
@@ -206,8 +206,8 @@ public abstract class ClientMessenger extends CommonMessenger {
             Visa visa = user.getVisa();
             // create instant message with meta & visa
             InstantMessage iMsg = InstantMessage.create(env, content);
-            MessageHelper.setMeta(meta, iMsg);
-            MessageHelper.setVisa(visa, iMsg);
+            MessageUtils.setMeta(meta, iMsg);
+            MessageUtils.setVisa(visa, iMsg);
             sendInstantMessage(iMsg, -1);
         } else {
             // handshake again

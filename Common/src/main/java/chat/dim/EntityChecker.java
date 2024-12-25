@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import chat.dim.dbi.AccountDBI;
-import chat.dim.mkm.MetaHelper;
+import chat.dim.mkm.MetaUtils;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
@@ -156,7 +156,7 @@ public abstract class EntityChecker {
             // meta not found, sure to query
             return true;
         }
-        assert MetaHelper.matches(identifier, meta) : "meta not match: " + identifier + ", " + meta;
+        assert MetaUtils.matches(identifier, meta) : "meta not match: " + identifier + ", " + meta;
         return false;
     }
 

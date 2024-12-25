@@ -36,8 +36,8 @@ import java.util.List;
 import chat.dim.crypto.DecryptKey;
 import chat.dim.crypto.SignKey;
 import chat.dim.dbi.AccountDBI;
-import chat.dim.mkm.DocumentHelper;
-import chat.dim.mkm.MetaHelper;
+import chat.dim.mkm.DocumentUtils;
+import chat.dim.mkm.MetaUtils;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
@@ -119,10 +119,10 @@ public abstract class CommonFacebook extends Facebook {
 
     public Document getDocument(ID identifier, String type) {
         List<Document> documents = getDocuments(identifier);
-        Document doc = DocumentHelper.lastDocument(documents, type);
+        Document doc = DocumentUtils.lastDocument(documents, type);
         // compatible for document type
         if (doc == null && Document.VISA.equals(type)) {
-            doc = DocumentHelper.lastDocument(documents, Document.PROFILE);
+            doc = DocumentUtils.lastDocument(documents, Document.PROFILE);
         }
         return doc;
     }
@@ -130,14 +130,14 @@ public abstract class CommonFacebook extends Facebook {
     public Visa getVisa(ID user) {
         // assert user.isUser() : "user ID error: " + user;
         List<Document> documents = getDocuments(user);
-        return DocumentHelper.lastVisa(documents);
+        return DocumentUtils.lastVisa(documents);
     }
 
 
     public Bulletin getBulletin(ID group) {
         // assert group.isGroup() : "group ID error: " + group;
         List<Document> documents = getDocuments(group);
-        return DocumentHelper.lastBulletin(documents);
+        return DocumentUtils.lastBulletin(documents);
     }
 
     public String getName(ID identifier) {
@@ -188,7 +188,7 @@ public abstract class CommonFacebook extends Facebook {
     }
 
     protected boolean checkMeta(Meta meta, ID identifier) {
-        return meta.isValid() && MetaHelper.matches(identifier, meta);
+        return meta.isValid() && MetaUtils.matches(identifier, meta);
     }
 
     @Override
@@ -251,8 +251,8 @@ public abstract class CommonFacebook extends Facebook {
         String type = doc.getType();
         // check old documents with type
         List<Document> documents = getDocuments(identifier);
-        Document old = DocumentHelper.lastDocument(documents, type);
-        return old != null && DocumentHelper.isExpired(doc, old);
+        Document old = DocumentUtils.lastDocument(documents, type);
+        return old != null && DocumentUtils.isExpired(doc, old);
     }
 
     //

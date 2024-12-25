@@ -35,7 +35,7 @@ import java.util.List;
 
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.User;
-import chat.dim.protocol.BroadcastHelper;
+import chat.dim.protocol.BroadcastUtils;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
@@ -106,7 +106,7 @@ public abstract class ClientFacebook extends CommonFacebook {
         // check broadcast group
         if (group.isBroadcast()) {
             // founder of broadcast group
-            return BroadcastHelper.getBroadcastFounder(group);
+            return BroadcastUtils.getBroadcastFounder(group);
         }
         // check bulletin document
         Bulletin doc = getBulletin(group);
@@ -132,7 +132,7 @@ public abstract class ClientFacebook extends CommonFacebook {
         // check broadcast group
         if (group.isBroadcast()) {
             // owner of broadcast group
-            return BroadcastHelper.getBroadcastOwner(group);
+            return BroadcastUtils.getBroadcastOwner(group);
         }
         // check bulletin document
         Bulletin doc = getBulletin(group);
@@ -164,7 +164,7 @@ public abstract class ClientFacebook extends CommonFacebook {
         // check broadcast group
         if (group.isBroadcast()) {
             // members of broadcast group
-            return BroadcastHelper.getBroadcastMembers(group);
+            return BroadcastUtils.getBroadcastMembers(group);
         }
         // check group owner
         ID owner = getOwner(group);

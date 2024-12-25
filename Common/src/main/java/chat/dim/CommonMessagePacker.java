@@ -35,7 +35,7 @@ import java.util.Map;
 
 import chat.dim.compat.Compatible;
 import chat.dim.crypto.EncryptKey;
-import chat.dim.msg.MessageHelper;
+import chat.dim.msg.MessageUtils;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
@@ -91,7 +91,7 @@ public abstract class CommonMessagePacker extends MessagePacker {
         ID sender = rMsg.getSender();
         assert sender.isUser() : "sender error: " + sender;
         // check sender's meta & document
-        Visa visa = MessageHelper.getVisa(rMsg);
+        Visa visa = MessageUtils.getVisa(rMsg);
         if (visa != null) {
             // first handshake?
             ID did = visa.getIdentifier();

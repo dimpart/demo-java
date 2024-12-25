@@ -33,7 +33,7 @@ package chat.dim.protocol;
 import java.util.ArrayList;
 import java.util.List;
 
-public interface BroadcastHelper {
+public interface BroadcastUtils {
 
     static String getGroupSeed(ID group) {
         String name = group.getName();

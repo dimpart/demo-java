@@ -35,7 +35,7 @@ import java.util.Date;
 import java.util.List;
 
 import chat.dim.dbi.AccountDBI;
-import chat.dim.mkm.DocumentHelper;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
@@ -118,7 +118,7 @@ public class GroupCommandHelper extends TripletsHelper {
                 assert false : "group document not exists: " + group;
                 return true;
             }
-            return DocumentHelper.isBefore(doc.getTime(), content.getTime());
+            return DocumentUtils.isBefore(doc.getTime(), content.getTime());
         }
         // membership command, check with reset command
         Pair<ResetCommand, ReliableMessage> pair = getResetCommandMessage(group);
@@ -127,7 +127,7 @@ public class GroupCommandHelper extends TripletsHelper {
         if (cmd == null/* || msg == null*/) {
             return false;
         }
-        return DocumentHelper.isBefore(cmd.getTime(), content.getTime());
+        return DocumentUtils.isBefore(cmd.getTime(), content.getTime());
     }
 
     public static List<ID> getCommandMembers(GroupCommand content) {

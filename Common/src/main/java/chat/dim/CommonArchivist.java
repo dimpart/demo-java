@@ -40,7 +40,7 @@ import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.BaseGroup;
 import chat.dim.mkm.BaseUser;
 import chat.dim.mkm.Bot;
-import chat.dim.mkm.DocumentHelper;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.Group;
 import chat.dim.mkm.ServiceProvider;
 import chat.dim.mkm.Station;
@@ -128,7 +128,7 @@ public class CommonArchivist implements Archivist {
     public EncryptKey getVisaKey(ID user) {
         Facebook facebook = getFacebook();
         List<Document> documents = facebook.getDocuments(user);
-        Visa doc = DocumentHelper.lastVisa(documents);
+        Visa doc = DocumentUtils.lastVisa(documents);
         if (doc != null/* && doc.isValid()*/) {
             return doc.getPublicKey();
         }

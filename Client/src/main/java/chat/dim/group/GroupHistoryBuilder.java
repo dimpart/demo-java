@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.CommonMessenger;
-import chat.dim.mkm.DocumentHelper;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Command;
@@ -121,14 +121,14 @@ public class GroupHistoryBuilder extends TripletsHelper {
                 continue;
             } else if (item.first instanceof ResignCommand) {
                 // 'resign' command, comparing it with document time
-                if (DocumentHelper.isBefore(doc.getTime(), item.first.getTime())) {
+                if (DocumentUtils.isBefore(doc.getTime(), item.first.getTime())) {
                     Log.warning("expired '" + item.first.getCommandName() + "' command in group: "
                             + group + ", sender: " + item.second.getSender());
                     continue;
                 }
             } else {
                 // 'invite', 'join', 'quit', comparing with 'reset' time
-                if (DocumentHelper.isBefore(reset.getTime(), item.first.getTime())) {
+                if (DocumentUtils.isBefore(reset.getTime(), item.first.getTime())) {
                     Log.warning("expired '" + item.first.getCommandName() + "' command in group: "
                             + group + ", sender: " + item.second.getSender());
                     continue;
