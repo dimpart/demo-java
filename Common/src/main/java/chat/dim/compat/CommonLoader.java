@@ -35,6 +35,10 @@ import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.MuteCommand;
 import chat.dim.protocol.ReportCommand;
 
+/**
+ *  Extensions Loader
+ *  ~~~~~~~~~~~~~~~~~
+ */
 public class CommonLoader extends ExtensionLoader {
 
     private final PluginLoader pluginLoader;

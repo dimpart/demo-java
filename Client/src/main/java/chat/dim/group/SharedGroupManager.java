@@ -59,7 +59,7 @@ enum _SharedManager {
         manager = new SharedGroupManager();
     }
 
-    SharedGroupManager manager;
+    final SharedGroupManager manager;
 }
 
 

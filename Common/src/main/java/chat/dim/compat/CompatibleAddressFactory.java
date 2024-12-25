@@ -81,7 +81,9 @@ public class CompatibleAddressFactory extends BaseAddressFactory {
             //throw new AssertionError("invalid address: " + address);
             res = null;
         }
-        // TODO: other types of address
+        //
+        //  TODO: parse for other types of address
+        //
         if (res == null && 4 <= len && len <= 64) {
             res = new UnknownAddress(address);
         }

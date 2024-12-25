@@ -67,7 +67,7 @@ enum _SharedBotsManager {
         manager.start();
     }
 
-    GroupBotsManager manager;
+    final GroupBotsManager manager;
 }
 
 

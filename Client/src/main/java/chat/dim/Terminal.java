@@ -134,7 +134,7 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
                 // current session is active
                 Station station = session.getStation();
                 Log.debug("current station: " + station);
-                if (station.getPort() == port == station.getHost().equals(host)) {
+                if (station.getPort() == port && station.getHost().equals(host)) {
                     // same target
                     Log.warning("active session connected to " + host + ":" + port);
                     return old;

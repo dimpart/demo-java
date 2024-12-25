@@ -44,6 +44,7 @@ import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.Visa;
+import chat.dim.type.Duration;
 import chat.dim.utils.Log;
 
 /**
@@ -225,8 +226,8 @@ public abstract class CommonFacebook extends Facebook {
         } else {
             // calibrate the clock
             // make sure the document time is not in the far future
-            long nearFuture = System.currentTimeMillis() + 65536;
-            if (docTime.getTime() > nearFuture) {
+            Date nearFuture = Duration.ofMinutes(30).addTo(new Date());
+            if (docTime.after(nearFuture)) {
                 assert false : "document time error: " + docTime + ", " + doc;
                 Log.error("document time error: " + docTime + ", " + identifier);
                 return false;

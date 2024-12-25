@@ -230,14 +230,14 @@ public abstract class ClientMessenger extends CommonMessenger {
         Log.info("handshake success, change session accepted: " + session.isAccepted() + " -> true");
         session.setAccepted(true);
         // broadcast current documents after handshake success
-        broadcastDocument(false);
+        broadcastDocuments(false);
         // TODO: let a service bot to do this job
     }
 
     /**
      *  Broadcast meta & visa document to all stations
      */
-    public void broadcastDocument(boolean updated) {
+    public void broadcastDocuments(boolean updated) {
         User user = facebook.getCurrentUser();
         assert user != null : "current user not found";
         Visa visa = user.getVisa();

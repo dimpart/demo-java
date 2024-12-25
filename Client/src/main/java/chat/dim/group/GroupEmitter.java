@@ -38,7 +38,6 @@ import chat.dim.CommonMessenger;
 import chat.dim.EntityChecker;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.FileContent;
 import chat.dim.protocol.ForwardContent;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
@@ -131,10 +130,9 @@ public class GroupEmitter extends TripletsHelper {
         }
         assert iMsg.getReceiver().equals(group) : "group message error: " + iMsg;
 
-        // TODO: if it's a file message
-        //       please upload the file data first
-        //       before calling this
-        assert !(content instanceof FileContent) || !content.containsKey("data") : "content error: " + content;
+        /// NOTICE: even if the message content is a FileContent,
+        ///         there is no need to process the file data here too, because
+        ///         the message packer will handle it before encryption.
 
         //
         //  1. check group bots

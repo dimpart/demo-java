@@ -62,6 +62,7 @@ public final class EntityIDFactory extends IdentifierFactory {
         int size = identifier.length();
         if (size < 4 || size > 64) {
             assert false : "ID error: " + identifier;
+            return null;
         } else if (size == 15) {
             // "anyone@anywhere"
             if (ID.ANYONE.equalsIgnoreCase(identifier)) {

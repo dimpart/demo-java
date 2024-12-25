@@ -32,6 +32,10 @@ import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 
+/**
+ *  Plugin Loader
+ *  ~~~~~~~~~~~~~
+ */
 public class CommonPluginLoader extends PluginLoader {
 
     @Override

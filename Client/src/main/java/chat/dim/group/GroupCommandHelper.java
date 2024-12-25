@@ -42,6 +42,7 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.ResetCommand;
 import chat.dim.protocol.group.ResignCommand;
+import chat.dim.type.Duration;
 import chat.dim.type.Pair;
 import chat.dim.utils.Log;
 
@@ -67,8 +68,8 @@ public class GroupCommandHelper extends TripletsHelper {
         } else {
             // calibrate the clock
             // make sure the command time is not in the far future
-            long current = System.currentTimeMillis() + 65536;
-            if (cmdTime.getTime() > current) {
+            Date nearFuture = Duration.ofMinutes(30).addTo(new Date());
+            if (cmdTime.after(nearFuture)) {
                 assert false : "group command time error: " + cmdTime + ", " + content;
                 return false;
             }
