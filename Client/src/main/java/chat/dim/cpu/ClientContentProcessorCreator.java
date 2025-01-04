@@ -54,17 +54,22 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
     }
 
     @Override
-    public ContentProcessor createContentProcessor(int type) {
+    public ContentProcessor createContentProcessor(int msgType) {
+
+        // application customized
+        if (ContentType.APPLICATION.equals(msgType)) {
+            return new CustomizedContentProcessor(getFacebook(), getMessenger());
+        } else if (ContentType.CUSTOMIZED.equals(msgType)) {
+            return new CustomizedContentProcessor(getFacebook(), getMessenger());
+        }
+
         // history command
-        if (ContentType.HISTORY.equals(type)) {
+        if (ContentType.HISTORY.equals(msgType)) {
             return new HistoryCommandProcessor(getFacebook(), getMessenger());
         }
-        // default
-        if (type == 0) {
-            return new BaseContentProcessor(getFacebook(), getMessenger());
-        }
+
         // others
-        return super.createContentProcessor(type);
+        return super.createContentProcessor(msgType);
     }
 
     @Override

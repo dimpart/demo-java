@@ -25,11 +25,13 @@
  */
 package chat.dim.compat;
 
+import chat.dim.dkd.AppCustomizedContent;
 import chat.dim.plugins.ExtensionLoader;
 import chat.dim.plugins.PluginLoader;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.BlockCommand;
 import chat.dim.protocol.Command;
+import chat.dim.protocol.ContentType;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.MuteCommand;
@@ -52,6 +54,21 @@ public class CommonLoader extends ExtensionLoader {
     public void run() {
         super.run();
         pluginLoader.run();
+    }
+
+    @Override
+    protected void registerContentFactories() {
+        super.registerContentFactories();
+        registerCustomizedFactories();
+    }
+
+    /**
+     *  Customized content factories
+     */
+    protected void registerCustomizedFactories() {
+
+        setContentFactory(ContentType.CUSTOMIZED, AppCustomizedContent::new);
+        setContentFactory(ContentType.APPLICATION, AppCustomizedContent::new);
     }
 
     /**
