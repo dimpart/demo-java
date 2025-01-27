@@ -81,9 +81,9 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
         assert content instanceof GroupCommand : "group command error: " + content;
         GroupCommand command = (GroupCommand) content;
         return respondReceipt("Command not support.", rMsg.getEnvelope(), command, newMap(
-                "template", "Group command (name: ${command}) not support yet!",
+                "template", "Group command (name: ${cmd}) not support yet!",
                 "replacements", newMap(
-                        "command", command.getCommandName()
+                        "cmd", command.getCmd()
                 )
         ));
     }
@@ -100,7 +100,7 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
             errors = respondReceipt("Command expired.", rMsg.getEnvelope(), content, newMap(
                     "template", "Group command expired: ${cmd}, group: ${ID}.",
                     "replacements", newMap(
-                            "cmd", content.getCommandName(),
+                            "cmd", content.getCmd(),
                             "ID", group.toString()
                     )
             ));
