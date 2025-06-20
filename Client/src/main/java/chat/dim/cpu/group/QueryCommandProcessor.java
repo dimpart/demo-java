@@ -88,9 +88,9 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
         boolean canQuery = isMember || isBot;
         if (!canQuery) {
             return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
-                    "template", "Not allowed to query members of group: ${ID}",
+                    "template", "Not allowed to query members of group: ${gid}",
                     "replacements", newMap(
-                            "ID", group.toString()
+                            "gid", group.toString()
                     )
             ));
         }
@@ -107,9 +107,9 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
             } else if (!lastTime.after(queryTime)) {
                 // group history not updated
                 return respondReceipt("Group history not updated.", rMsg.getEnvelope(), command, newMap(
-                        "template", "Group history not updated: ${ID}, last time: ${time}",
+                        "template", "Group history not updated: ${gid}, last time: ${time}",
                         "replacements", newMap(
-                                "ID", group.toString(),
+                                "gid", group.toString(),
                                 "time", lastTime.getTime() / 1000.0d
                         )
                 ));

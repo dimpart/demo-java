@@ -30,11 +30,11 @@
  */
 package chat.dim.compat;
 
-import chat.dim.core.Barrack;
 import chat.dim.mkm.BTCAddress;
 import chat.dim.mkm.BaseAddressFactory;
 import chat.dim.mkm.ETHAddress;
 import chat.dim.protocol.Address;
+import chat.dim.utils.ThanosCache;
 
 public class CompatibleAddressFactory extends BaseAddressFactory {
 
@@ -46,7 +46,7 @@ public class CompatibleAddressFactory extends BaseAddressFactory {
      */
     public int reduceMemory() {
         int finger = 0;
-        finger = Barrack.thanos(addresses, finger);
+        finger = ThanosCache.thanos(addresses, finger);
         return finger >> 1;
     }
 

@@ -92,17 +92,17 @@ public class QuitCommandProcessor extends GroupCommandProcessor {
         // 2. check permission
         if (isOwner) {
             return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
-                    "template", "Owner cannot quit from group: ${ID}",
+                    "template", "Owner cannot quit from group: ${gid}",
                     "replacements", newMap(
-                            "ID", group.toString()
+                            "gid", group.toString()
                     )
             ));
         }
         if (isAdmin) {
             return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
-                    "template", "Administrator cannot quit from group: ${ID}",
+                    "template", "Administrator cannot quit from group: ${gid}",
                     "replacements", newMap(
-                            "ID", group.toString()
+                            "gid", group.toString()
                     )
             ));
         }

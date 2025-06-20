@@ -54,7 +54,7 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
     }
 
     @Override
-    public ContentProcessor createContentProcessor(int msgType) {
+    public ContentProcessor createContentProcessor(String msgType) {
 
         // application customized
         if (ContentType.APPLICATION.equals(msgType)) {
@@ -73,7 +73,7 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
     }
 
     @Override
-    public ContentProcessor createCommandProcessor(int type, String name) {
+    public ContentProcessor createCommandProcessor(String type, String name) {
         switch (name) {
             case Command.RECEIPT:
                 return new ReceiptCommandProcessor(getFacebook(), getMessenger());

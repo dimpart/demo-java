@@ -189,6 +189,7 @@ public abstract class CommonMessagePacker extends MessagePacker {
         ReliableMessage rMsg = super.deserializeMessage(data);
         if (rMsg != null) {
             Compatible.fixMetaAttachment(rMsg);
+            Compatible.fixVisaAttachment(rMsg);
         }
         return rMsg;
     }
@@ -196,6 +197,7 @@ public abstract class CommonMessagePacker extends MessagePacker {
     @Override
     public byte[] serializeMessage(ReliableMessage rMsg) {
         Compatible.fixMetaAttachment(rMsg);
+        Compatible.fixVisaAttachment(rMsg);
         return super.serializeMessage(rMsg);
     }
 

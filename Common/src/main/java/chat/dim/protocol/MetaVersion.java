@@ -54,7 +54,7 @@ package chat.dim.protocol;
  *      0000 0100 - this meta generate ETH address
  *      ...
  */
-public enum MetaType {
+public enum MetaVersion {
 
     DEFAULT (1),
     MKM     (1),  // 0000 0001: username@address
@@ -68,7 +68,7 @@ public enum MetaType {
     // Meta Version
     public final int value;
 
-    MetaType(int version) {
+    MetaVersion(int version) {
         value = version;
     }
 
@@ -84,8 +84,8 @@ public enum MetaType {
     public static String parseString(Object type) {
         if (type instanceof String) {
             return (String) type;
-        } else if (type instanceof MetaType) {
-            return Integer.toString(((MetaType) type).value);
+        } else if (type instanceof MetaVersion) {
+            return Integer.toString(((MetaVersion) type).value);
         } else if (type instanceof Integer) {
             return Integer.toString((int) type);
         } else if (type instanceof Number) {
@@ -123,9 +123,9 @@ public enum MetaType {
                 return ExETH.value;
             }
             // TODO: other algorithms
-        } else if (type instanceof MetaType) {
+        } else if (type instanceof MetaVersion) {
             // enum
-            return ((MetaType) type).value;
+            return ((MetaVersion) type).value;
         } else {
             return -1;
         }

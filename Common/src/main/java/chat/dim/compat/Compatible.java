@@ -34,10 +34,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import chat.dim.protocol.Command;
+import chat.dim.protocol.Content;
+import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.MetaCommand;
-import chat.dim.protocol.MetaType;
+import chat.dim.protocol.MetaVersion;
+import chat.dim.protocol.NameCard;
 import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.type.Converter;
+import chat.dim.utils.Log;
 
 // TODO: remove after all server/client upgraded
 public interface Compatible {
@@ -59,7 +64,7 @@ public interface Compatible {
                 meta.put("algorithm", type);
             }
         }
-        int version = MetaType.parseInt(type, 0);
+        int version = MetaVersion.parseInt(type, 0);
         if (version > 0) {
             meta.put("type", version);
             meta.put("version", version);
@@ -67,7 +72,53 @@ public interface Compatible {
     }
 
     @SuppressWarnings("unchecked")
+    static void fixVisaAttachment(ReliableMessage rMsg) {
+        Object visa = rMsg.get("visa");
+        if (visa != null) {
+            fixID((Map<String, Object>) visa);
+        }
+    }
+    static void fixID(Map<String, Object> doc) {
+        Object did = doc.get("did");
+        if (did != null) {
+            doc.put("ID", did);
+        } else {
+            did = doc.get("ID");
+            if (did != null) {
+                doc.put("did", did);
+            }
+        }
+    }
+
+    static void fixType(Content content) {
+        Object type = content.get("type");
+        if (type instanceof String) {
+            try {
+                int num = Converter.getInt(type, -1);
+                if (num >= 0) {
+                    content.put("type", num);
+                }
+            } catch (Exception error) {
+                Log.warning("failed to convert content type: " + type);
+            }
+        }
+    }
+
+    static Content fixContent(Content content) {
+        // 0. fix 'type'
+        fixType(content);
+        // 1. fix 'ID'
+        if (content instanceof NameCard) {
+            // ID <-> did
+            fixID(content);
+        }
+        return content;
+    }
+
+    @SuppressWarnings("unchecked")
     static Command fixCommand(Command content) {
+        // 0. fix 'type'
+        fixType(content);
         // 1. fix 'cmd'
         content = fixCmd(content);
         // 2. fix other commands
@@ -78,6 +129,11 @@ public interface Compatible {
             if (meta != null) {
                 fixMetaVersion((Map<String, Object>) meta);
             }
+            // ID <-> did
+            fixID(content);
+        } else if (content instanceof LoginCommand) {
+            // ID <-> did
+            fixID(content);
         }
         // OK
         //return Command.parse(content.toMap());

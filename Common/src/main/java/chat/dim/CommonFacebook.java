@@ -39,8 +39,10 @@ import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.MetaUtils;
 import chat.dim.mkm.User;
+import chat.dim.plugins.SharedAccountExtensions;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
+import chat.dim.protocol.DocumentType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.Visa;
@@ -122,8 +124,8 @@ public abstract class CommonFacebook extends Facebook {
         List<Document> documents = getDocuments(identifier);
         Document doc = DocumentUtils.lastDocument(documents, type);
         // compatible for document type
-        if (doc == null && Document.VISA.equals(type)) {
-            doc = DocumentUtils.lastDocument(documents, Document.PROFILE);
+        if (doc == null && DocumentType.VISA.equals(type)) {
+            doc = DocumentUtils.lastDocument(documents, DocumentType.PROFILE);
         }
         return doc;
     }
@@ -144,9 +146,9 @@ public abstract class CommonFacebook extends Facebook {
     public String getName(ID identifier) {
         String type;
         if (identifier.isUser()) {
-            type = Document.VISA;
+            type = DocumentType.VISA;
         } else if (identifier.isGroup()) {
-            type = Document.BULLETIN;
+            type = DocumentType.BULLETIN;
         } else {
             type = "*";
         }
@@ -249,7 +251,7 @@ public abstract class CommonFacebook extends Facebook {
 
     protected boolean checkDocumentExpired(Document doc) {
         ID identifier = doc.getIdentifier();
-        String type = doc.getType();
+        String type = SharedAccountExtensions.helper.getDocumentType(doc.toMap(), null);
         // check old documents with type
         List<Document> documents = getDocuments(identifier);
         Document old = DocumentUtils.lastDocument(documents, type);

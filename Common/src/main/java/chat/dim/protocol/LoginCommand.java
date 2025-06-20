@@ -40,17 +40,17 @@ import chat.dim.mkm.Station;
  *      command  : "login",
  *      time     : 0,
  *      //---- client info ----
- *      ID       : "{UserID}",
+ *      did      : "{UserID}",
  *      device   : "DeviceID",  // (optional)
  *      agent    : "UserAgent", // (optional)
  *      //---- server info ----
  *      station  : {
- *          ID   : "{StationID}",
+ *          did  : "{StationID}",
  *          host : "{IP}",
  *          port : 9394
  *      },
  *      provider : {
- *          ID   : "{SP_ID}"
+ *          did  : "{SP_ID}"
  *      }
  *  }
  */
@@ -65,7 +65,7 @@ public class LoginCommand extends BaseCommand {
     public LoginCommand(ID identifier) {
         super(LOGIN);
         assert identifier != null : "login ID should not empty";
-        put("ID", identifier.toString());
+        put("did", identifier.toString());
     }
 
     //
@@ -74,7 +74,7 @@ public class LoginCommand extends BaseCommand {
 
     // user ID
     public ID getIdentifier() {
-        return ID.parse(get("ID"));
+        return ID.parse(get("did"));
     }
 
     // device ID
@@ -111,6 +111,7 @@ public class LoginCommand extends BaseCommand {
         ID sid = station.getIdentifier();
         if (!sid.isBroadcast()) {
             info.put("ID", sid.toString());
+            info.put("did", sid.toString());
         }
         info.put("host", station.getHost());
         info.put("port", station.getPort());
@@ -129,6 +130,7 @@ public class LoginCommand extends BaseCommand {
     public void setProvider(ID provider) {
         Map<String, Object> info = new HashMap<>();
         info.put("ID", provider.toString());
+        info.put("did", provider.toString());
         //put("provider", info);
         setProvider(info);
     }

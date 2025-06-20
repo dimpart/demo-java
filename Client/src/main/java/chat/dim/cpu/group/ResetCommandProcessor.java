@@ -101,18 +101,18 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         boolean canReset = isOwner || isAdmin;
         if (!canReset) {
             return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
-                    "template", "Not allowed to reset members of group: ${ID}",
+                    "template", "Not allowed to reset members of group: ${gid}",
                     "replacements", newMap(
-                            "ID", group.toString()
+                            "gid", group.toString()
                     )
             ));
         }
         // 2.1. check owner
         if (!newMembers.get(0).equals(owner)) {
             return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
-                    "template", "Owner must be the first member of group: ${ID}",
+                    "template", "Owner must be the first member of group: ${gid}",
                     "replacements", newMap(
-                            "ID", group.toString()
+                            "gid", group.toString()
                     )
             ));
         }
@@ -126,9 +126,9 @@ public class ResetCommandProcessor extends GroupCommandProcessor {
         }
         if (expelAdmin) {
             return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
-                    "template", "Not allowed to expel administrator of group: ${ID}",
+                    "template", "Not allowed to expel administrator of group: ${gid}",
                     "replacements", newMap(
-                            "ID", group.toString()
+                            "gid", group.toString()
                     )
             ));
         }

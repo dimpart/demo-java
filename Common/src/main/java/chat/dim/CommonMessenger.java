@@ -147,6 +147,8 @@ public class CommonMessenger extends Messenger implements Transmitter {
     public byte[] serializeContent(Content content, SymmetricKey password, InstantMessage iMsg) {
         if (content instanceof Command) {
             content = Compatible.fixCommand((Command) content);
+        } else {
+            content = Compatible.fixContent(content);
         }
         return super.serializeContent(content, password, iMsg);
     }
@@ -156,6 +158,8 @@ public class CommonMessenger extends Messenger implements Transmitter {
         Content content = super.deserializeContent(data, password, sMsg);
         if (content instanceof Command) {
             content = Compatible.fixCommand((Command) content);
+        } else {
+            content = Compatible.fixContent(content);
         }
         return content;
     }

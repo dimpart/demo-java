@@ -71,7 +71,10 @@ public class StationInfo {
         ID provider;
         int chosen;
         for (Map<String, Object> item : array) {
-            identifier = ID.parse(item.get("ID"));
+            identifier = ID.parse(item.get("did"));
+            if (identifier == null) {
+                identifier = ID.parse(item.get("ID"));
+            }
             host = Converter.getString(item.get("host"), null);
             port = Converter.getInt(item.get("port"), 0);
             provider = ID.parse(item.get("provider"));
@@ -90,6 +93,7 @@ public class StationInfo {
         for (StationInfo info : stations) {
             array.add(TwinsHelper.newMap(
                     "ID", info.identifier.toString(),
+                    "did", info.identifier.toString(),
                     "chosen", info.chosen,
                     "host", info.host,
                     "port", info.port,

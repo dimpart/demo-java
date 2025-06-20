@@ -106,9 +106,9 @@ public class InviteCommandProcessor extends ResetCommandProcessor {
         // 2. check permission
         if (!isMember) {
             return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
-                    "template", "Not allowed to invite member into group: ${ID}",
+                    "template", "Not allowed to invite member into group: ${gid}",
                     "replacements", newMap(
-                            "ID", group.toString()
+                            "gid", group.toString()
                     )
             ));
         }

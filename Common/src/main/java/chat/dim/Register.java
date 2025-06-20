@@ -47,6 +47,7 @@ import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
+import chat.dim.protocol.MetaType;
 import chat.dim.protocol.Visa;
 
 public class Register {
@@ -73,7 +74,7 @@ public class Register {
         //
         //  Step 2: generate meta with private key (and meta seed)
         //
-        Meta meta = Meta.generate(Meta.ETH, idKey, null);
+        Meta meta = Meta.generate(MetaType.ETH, idKey, null);
         //
         //  Step 3: generate ID with meta
         //
@@ -116,7 +117,7 @@ public class Register {
         //
         //  Step 2: generate meta with private key (and meta seed)
         //
-        Meta meta = Meta.generate(Meta.MKM, privateKey, seed);
+        Meta meta = Meta.generate(MetaType.MKM, privateKey, seed);
         //
         //  Step 3: generate ID with meta
         //

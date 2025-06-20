@@ -38,7 +38,7 @@ import chat.dim.format.JSON;
 import chat.dim.format.TransportableData;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
-import chat.dim.protocol.MetaType;
+import chat.dim.protocol.MetaVersion;
 import chat.dim.sql.SQLConditions;
 import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
@@ -80,7 +80,7 @@ public class MetaTable extends DataTableHandler<Meta> implements MetaDBI {
                 String json = resultSet.getString("pub_key");
                 PublicKey key = PublicKey.parse(JSON.decode(json));
                 Meta meta;
-                if (MetaType.hasSeed(type)) {
+                if (MetaVersion.hasSeed(type)) {
                     String seed = resultSet.getString("seed");
                     String fingerprint = resultSet.getString("fingerprint");
                     TransportableData ted = TransportableData.parse(fingerprint);
@@ -125,11 +125,11 @@ public class MetaTable extends DataTableHandler<Meta> implements MetaDBI {
             return false;
         }
 
-        int type = MetaType.parseInt(meta.getType(), 0);
+        int type = MetaVersion.parseInt(meta.getType(), 0);
         String json = JSON.encode(meta.getPublicKey());
         String seed;
         String fingerprint;
-        if (MetaType.hasSeed(type)) {
+        if (MetaVersion.hasSeed(type)) {
             seed = meta.getSeed();
             fingerprint = meta.getString("fingerprint", "");
         } else {

@@ -98,10 +98,10 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
         boolean expired = helper.isCommandExpired(content);
         if (expired) {
             errors = respondReceipt("Command expired.", rMsg.getEnvelope(), content, newMap(
-                    "template", "Group command expired: ${cmd}, group: ${ID}.",
+                    "template", "Group command expired: ${cmd}, group: ${gid}.",
                     "replacements", newMap(
                             "cmd", content.getCmd(),
-                            "ID", group.toString()
+                            "gid", group.toString()
                     )
             ));
             group = null;
@@ -122,9 +122,9 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
         List<ID> members = GroupCommandHelper.getCommandMembers(content);
         if (/*members == null || */members.isEmpty()) {
             errors = respondReceipt("Command error.", rMsg.getEnvelope(), content, newMap(
-                    "template", "Group members empty: ${ID}",
+                    "template", "Group members empty: ${gid}",
                     "replacements", newMap(
-                            "ID", group.toString()
+                            "gid", group.toString()
                     )
             ));
         } else {
@@ -146,9 +146,9 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
         if (owner == null || members == null || members.isEmpty()) {
             // TODO: query group members?
             errors = respondReceipt("Group empty.", rMsg.getEnvelope(), content, newMap(
-                    "template", "Group empty: ${ID}",
+                    "template", "Group empty: ${gid}",
                     "replacements", newMap(
-                            "ID", group.toString()
+                            "gid", group.toString()
                     )
             ));
         } else {

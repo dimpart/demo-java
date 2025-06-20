@@ -69,7 +69,10 @@ public class ProviderInfo {
         ID identifier;
         int chosen;
         for (Map<String, Object> item : array) {
-            identifier = ID.parse(item.get("ID"));
+            identifier = ID.parse(item.get("did"));
+            if (identifier == null) {
+                identifier = ID.parse(item.get("ID"));
+            }
             chosen = Converter.getInt(item.get("chosen"), 0);
             if (identifier == null) {
                 // SP ID error
@@ -85,6 +88,7 @@ public class ProviderInfo {
         for (ProviderInfo info : providers) {
             array.add(TwinsHelper.newMap(
                     "ID", info.identifier.toString(),
+                    "did", info.identifier.toString(),
                     "chosen", info.chosen
             ));
         }

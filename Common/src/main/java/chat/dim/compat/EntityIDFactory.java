@@ -30,10 +30,10 @@
  */
 package chat.dim.compat;
 
-import chat.dim.core.Barrack;
 import chat.dim.mkm.IdentifierFactory;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
+import chat.dim.utils.ThanosCache;
 
 public final class EntityIDFactory extends IdentifierFactory {
 
@@ -45,7 +45,7 @@ public final class EntityIDFactory extends IdentifierFactory {
      */
     public int reduceMemory() {
         int finger = 0;
-        finger = Barrack.thanos(identifiers, finger);
+        finger = ThanosCache.thanos(identifiers, finger);
         return finger >> 1;
     }
 

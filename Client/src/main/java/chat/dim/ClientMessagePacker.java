@@ -267,7 +267,7 @@ public abstract class ClientMessagePacker extends CommonMessagePacker {
     protected InstantMessage getFailedMessage(SecureMessage sMsg) {
         ID sender = sMsg.getSender();
         ID group = sMsg.getGroup();
-        int type = sMsg.getType();
+        String type = sMsg.getType();
         if (ContentType.COMMAND.equals(type) || ContentType.HISTORY.equals(type)) {
             Log.warning("ignore message unable to decrypt: " + type + ", from " + sender);
             return null;
