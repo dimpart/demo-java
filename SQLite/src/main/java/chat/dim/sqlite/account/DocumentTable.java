@@ -36,7 +36,7 @@ import java.util.Map;
 
 import chat.dim.dbi.DocumentDBI;
 import chat.dim.format.TransportableData;
-import chat.dim.plugins.SharedAccountExtensions;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentType;
 import chat.dim.protocol.ID;
@@ -125,7 +125,7 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
     @Override
     public boolean saveDocument(Document doc) {
         ID identifier = doc.getIdentifier();
-        String type = getDocumentType(doc);
+        String type = DocumentUtils.getDocumentType(doc);
         if (type == null) {
             type = "";
         }
@@ -133,7 +133,8 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
         List<Document> documents = getDocuments(identifier);
         if (documents != null) {
             for (Document item : documents) {
-                if (identifier.equals(item.getIdentifier()) && type.equals(getDocumentType(item))) {
+                if (identifier.equals(item.getIdentifier()) &&
+                        type.equals(DocumentUtils.getDocumentType(item))) {
                     // old record found, update it
                     return updateDocument(doc);
                 }
@@ -143,17 +144,13 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
         return insertDocument(doc);
     }
 
-    private String getDocumentType(Document doc) {
-        return SharedAccountExtensions.helper.getDocumentType(doc.toMap(), null);
-    }
-
     protected boolean updateDocument(Document doc) {
         if (!prepare()) {
             // db error
             return false;
         }
         ID identifier = doc.getIdentifier();
-        String type = getDocumentType(doc);
+        String type = DocumentUtils.getDocumentType(doc);
         String data = doc.getString("data", "");
         String signature = doc.getString("signature", "");
         // build conditions
@@ -173,7 +170,7 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
             return false;
         }
         ID identifier = doc.getIdentifier();
-        String type = getDocumentType(doc);
+        String type = DocumentUtils.getDocumentType(doc);
         String data = doc.getString("data", "");
         String signature = doc.getString("signature", "");
         // new values

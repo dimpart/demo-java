@@ -34,28 +34,21 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.crypto.EncryptKey;
-import chat.dim.crypto.VerifyKey;
+import chat.dim.core.Barrack;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.BaseGroup;
 import chat.dim.mkm.BaseUser;
 import chat.dim.mkm.Bot;
-import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.Group;
 import chat.dim.mkm.ServiceProvider;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
-import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
-import chat.dim.protocol.Meta;
-import chat.dim.protocol.Visa;
+import chat.dim.utils.MemoryCache;
+import chat.dim.utils.ThanosCache;
 
-public class CommonArchivist implements Archivist {
-
-    private final WeakReference<Facebook> barrack;
-
-    protected final AccountDBI database;
+public class CommonArchivist implements Barrack {
 
     public CommonArchivist(Facebook facebook, AccountDBI db) {
         super();
@@ -67,18 +60,61 @@ public class CommonArchivist implements Archivist {
         return barrack.get();
     }
 
+    private final WeakReference<Facebook> barrack;
+
+    protected final AccountDBI database;
+
+    // memory caches
+    protected final MemoryCache<ID, User>   userCache = createUserCache();
+    protected final MemoryCache<ID, Group> groupCache = createGroupCache();
+
+    protected MemoryCache<ID, User> createUserCache() {
+        return new ThanosCache<>();
+    }
+    protected MemoryCache<ID, Group> createGroupCache() {
+        return new ThanosCache<>();
+    }
+
+    /**
+     * Call it when received 'UIApplicationDidReceiveMemoryWarningNotification',
+     * this will remove 50% of cached objects
+     *
+     * @return number of survivors
+     */
+    public int reduceMemory() {
+        int cnt1 = userCache.reduceMemory();
+        int cnt2 = groupCache.reduceMemory();
+        return cnt1 + cnt2;
+    }
+
+    //
+    //  Barrack
+    //
+
+    @Override
+    public void cacheUser(User user) {
+        userCache.put(user.getIdentifier(), user);
+    }
+
+    @Override
+    public void cacheGroup(Group group) {
+        groupCache.put(group.getIdentifier(), group);
+    }
+
+    @Override
+    public User getUser(ID identifier) {
+        return userCache.get(identifier);
+    }
+
+    @Override
+    public Group getGroup(ID identifier) {
+        return groupCache.get(identifier);
+    }
+
     @Override
     public User createUser(ID identifier) {
         assert identifier.isUser() : "user ID error: " + identifier;
-        // check visa key
-        if (!identifier.isBroadcast()) {
-            Facebook facebook = getFacebook();
-            if (facebook.getPublicKeyForEncryption(identifier) == null) {
-                assert false : "visa.key not found: " + identifier;
-                return null;
-            }
-            // NOTICE: if visa.key exists, then visa & meta must exist too.
-        }
+        assert getFacebook().getVisaKey(identifier) != null : "visa.key not found: " + identifier;
         int type = identifier.getType();
         // check user type
         if (EntityType.STATION.equals(type)) {
@@ -93,17 +129,7 @@ public class CommonArchivist implements Archivist {
     @Override
     public Group createGroup(ID identifier) {
         assert identifier.isGroup() : "group ID error: " + identifier;
-        // check members
-        if (!identifier.isBroadcast()) {
-            Facebook facebook = getFacebook();
-            List<ID> members = facebook.getMembers(identifier);
-            if (members == null || members.isEmpty()) {
-                assert false : "group members not found: " + identifier;
-                return null;
-            }
-            // NOTICE: if members exist, then owner (founder) must exist,
-            //         and bulletin & meta must exist too.
-        }
+        assert getFacebook().getMembers(identifier).size() > 0 : "group members not found: " + identifier;
         int type = identifier.getType();
         // check group type
         if (EntityType.ISP.equals(type)) {
@@ -111,28 +137,6 @@ public class CommonArchivist implements Archivist {
         }
         // general group, or 'everyone@everywhere'
         return new BaseGroup(identifier);
-    }
-
-    @Override
-    public VerifyKey getMetaKey(ID user) {
-        Facebook facebook = getFacebook();
-        Meta meta = facebook.getMeta(user);
-        if (meta != null/* && meta.isValid()*/) {
-            return meta.getPublicKey();
-        }
-        //throw new NullPointerException("failed to get meta for ID: " + user);
-        return null;
-    }
-
-    @Override
-    public EncryptKey getVisaKey(ID user) {
-        Facebook facebook = getFacebook();
-        List<Document> documents = facebook.getDocuments(user);
-        Visa doc = DocumentUtils.lastVisa(documents);
-        if (doc != null/* && doc.isValid()*/) {
-            return doc.getPublicKey();
-        }
-        return null;
     }
 
     @Override

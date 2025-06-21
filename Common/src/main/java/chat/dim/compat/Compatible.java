@@ -129,6 +129,10 @@ public interface Compatible {
             if (meta != null) {
                 fixMetaVersion((Map<String, Object>) meta);
             }
+            Object doc = content.get("document");
+            if (doc != null) {
+                fixID((Map<String, Object>) doc);
+            }
             // ID <-> did
             fixID(content);
         } else if (content instanceof LoginCommand) {

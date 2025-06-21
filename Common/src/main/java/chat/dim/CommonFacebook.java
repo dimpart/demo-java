@@ -33,13 +33,15 @@ package chat.dim;
 import java.util.Date;
 import java.util.List;
 
+import chat.dim.core.Barrack;
 import chat.dim.crypto.DecryptKey;
+import chat.dim.crypto.EncryptKey;
 import chat.dim.crypto.SignKey;
+import chat.dim.crypto.VerifyKey;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.MetaUtils;
 import chat.dim.mkm.User;
-import chat.dim.plugins.SharedAccountExtensions;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentType;
@@ -56,7 +58,7 @@ public abstract class CommonFacebook extends Facebook {
 
     protected final AccountDBI database;
 
-    private CommonArchivist archivist;
+    private CommonArchivist barrack;
     private EntityChecker checker;
 
     private User current;
@@ -64,7 +66,7 @@ public abstract class CommonFacebook extends Facebook {
     public CommonFacebook(AccountDBI db) {
         super();
         database = db;
-        archivist = null;
+        barrack = null;
         checker = null;
         // current user
         current = null;
@@ -82,11 +84,11 @@ public abstract class CommonFacebook extends Facebook {
     }
 
     @Override
-    public CommonArchivist getArchivist() {
-        return archivist;
+    protected CommonArchivist getBarrack() {
+        return barrack;
     }
-    public void setArchivist(CommonArchivist archivist) {
-        this.archivist = archivist;
+    public void setBarrack(CommonArchivist archivist) {
+        barrack = archivist;
     }
 
     //
@@ -99,8 +101,8 @@ public abstract class CommonFacebook extends Facebook {
         if (user != null) {
             return user;
         }
-        CommonArchivist archivist = getArchivist();
-        List<User> localUsers = archivist.getLocalUsers();
+        Barrack barrack = getBarrack();
+        List<User> localUsers = barrack.getLocalUsers();
         if (localUsers == null || localUsers.isEmpty()) {
             return null;
         }
@@ -251,11 +253,31 @@ public abstract class CommonFacebook extends Facebook {
 
     protected boolean checkDocumentExpired(Document doc) {
         ID identifier = doc.getIdentifier();
-        String type = SharedAccountExtensions.helper.getDocumentType(doc.toMap(), null);
+        String type = DocumentUtils.getDocumentType(doc);
         // check old documents with type
         List<Document> documents = getDocuments(identifier);
         Document old = DocumentUtils.lastDocument(documents, type);
         return old != null && DocumentUtils.isExpired(doc, old);
+    }
+
+    @Override
+    protected VerifyKey getMetaKey(ID user) {
+        Meta meta = getMeta(user);
+        if (meta != null/* && meta.isValid()*/) {
+            return meta.getPublicKey();
+        }
+        //throw new NullPointerException("failed to get meta for ID: " + user);
+        return null;
+    }
+
+    @Override
+    protected EncryptKey getVisaKey(ID user) {
+        List<Document> documents = getDocuments(user);
+        Visa doc = DocumentUtils.lastVisa(documents);
+        if (doc != null/* && doc.isValid()*/) {
+            return doc.getPublicKey();
+        }
+        return null;
     }
 
     //

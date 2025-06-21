@@ -33,6 +33,7 @@ package chat.dim;
 import java.util.ArrayList;
 import java.util.List;
 
+import chat.dim.core.Barrack;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.User;
 import chat.dim.protocol.BroadcastUtils;
@@ -59,8 +60,8 @@ public abstract class ClientFacebook extends CommonFacebook {
         assert receiver.isGroup() : "receiver error: " + receiver;
         // the messenger will check group info before decrypting message,
         // so we can trust that the group's meta & members MUST exist here.
-        CommonArchivist archivist = getArchivist();
-        List<User> users = archivist.getLocalUsers();
+        Barrack barrack = getBarrack();
+        List<User> users = barrack.getLocalUsers();
         if (users == null || users.isEmpty()) {
             assert false : "local users should not be empty";
             return null;

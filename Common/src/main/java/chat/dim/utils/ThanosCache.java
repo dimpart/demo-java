@@ -1,13 +1,13 @@
 /* license: https://mit-license.org
  *
- *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
+ *  DIMP : Decentralized Instant Messaging Protocol
  *
- *                                Written in 2024 by Moky <albert.moky@gmail.com>
+ *                                Written in 2025 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2024 Albert Moky
+ * Copyright (c) 2025 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,32 +28,47 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.group;
+package chat.dim.utils;
 
-import chat.dim.CommonFacebook;
-import chat.dim.CommonMessenger;
-import chat.dim.dbi.AccountDBI;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
+public class ThanosCache <K, V> implements MemoryCache<K, V> {
 
-abstract class TripletsHelper {
-    protected TripletsHelper(GroupDelegate dataSource) {
-        assert dataSource != null : "Group delegate should not empty";
-        delegate = dataSource;
+    private final Map<K, V> caches = new HashMap<>();
+
+    @Override
+    public V get(K key) {
+        return caches.get(key);
     }
 
-    protected final GroupDelegate delegate;
-
-    protected CommonFacebook getFacebook() {
-        return delegate.getFacebook();
+    @Override
+    public V put(K key, V value) {
+        return caches.put(key, value);
     }
 
-    protected CommonMessenger getMessenger() {
-        return delegate.getMessenger();
+    @Override
+    public int reduceMemory() {
+        int finger = 0;
+        finger = thanos(caches, finger);
+        return finger >> 1;
     }
 
-    protected AccountDBI getDatabase() {
-        CommonFacebook facebook = getFacebook();
-        return facebook == null ? null : facebook.getDatabase();
+    /**
+     *  Thanos can kill half lives of a world with a snap of the finger
+     */
+    public static <K, V> int thanos(Map<K, V> planet, int finger) {
+        Iterator<Map.Entry<K, V>> people = planet.entrySet().iterator();
+        while (people.hasNext()) {
+            people.next();
+            if ((++finger & 1) == 1) {
+                // kill it
+                people.remove();
+            }
+            // let it go
+        }
+        return finger;
     }
 
 }

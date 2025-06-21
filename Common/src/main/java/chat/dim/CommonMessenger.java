@@ -37,7 +37,6 @@ import chat.dim.core.CipherKeyDelegate;
 import chat.dim.core.Packer;
 import chat.dim.core.Processor;
 import chat.dim.crypto.SymmetricKey;
-import chat.dim.mkm.Entity;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
@@ -77,10 +76,6 @@ public class CommonMessenger extends Messenger implements Transmitter {
     }
 
     @Override
-    protected Entity.Delegate getEntityDelegate() {
-        return facebook;
-    }
-
     public CommonFacebook getFacebook() {
         return facebook;
     }

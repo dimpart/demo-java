@@ -1,13 +1,13 @@
 /* license: https://mit-license.org
  *
- *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
+ *  DIMP : Decentralized Instant Messaging Protocol
  *
- *                                Written in 2024 by Moky <albert.moky@gmail.com>
+ *                                Written in 2025 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2024 Albert Moky
+ * Copyright (c) 2025 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,32 +28,17 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.group;
+package chat.dim.utils;
 
-import chat.dim.CommonFacebook;
-import chat.dim.CommonMessenger;
-import chat.dim.dbi.AccountDBI;
+public interface MemoryCache <K, V> {
 
+    V get(K key);
 
-abstract class TripletsHelper {
-    protected TripletsHelper(GroupDelegate dataSource) {
-        assert dataSource != null : "Group delegate should not empty";
-        delegate = dataSource;
-    }
+    V put(K key, V value);
 
-    protected final GroupDelegate delegate;
-
-    protected CommonFacebook getFacebook() {
-        return delegate.getFacebook();
-    }
-
-    protected CommonMessenger getMessenger() {
-        return delegate.getMessenger();
-    }
-
-    protected AccountDBI getDatabase() {
-        CommonFacebook facebook = getFacebook();
-        return facebook == null ? null : facebook.getDatabase();
-    }
+    /**
+     *  Garbage Collection
+     */
+    int reduceMemory();
 
 }
