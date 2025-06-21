@@ -338,7 +338,8 @@ public abstract class Terminal extends Runner implements SessionState.Delegate {
             lastOnlineTime = null;
             return;
         } else if (messenger == null) {
-            assert false : "messenger lost";
+            //assert false : "messenger lost";
+            Log.warning("messenger lost, state changed: " + previous + " -> " + current);
             return;
         }
         if (current.equals(SessionState.Order.DEFAULT) ||

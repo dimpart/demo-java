@@ -36,19 +36,13 @@ import java.util.List;
 
 import chat.dim.core.Barrack;
 import chat.dim.dbi.AccountDBI;
-import chat.dim.mkm.BaseGroup;
-import chat.dim.mkm.BaseUser;
-import chat.dim.mkm.Bot;
 import chat.dim.mkm.Group;
-import chat.dim.mkm.ServiceProvider;
-import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
-import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.utils.MemoryCache;
 import chat.dim.utils.ThanosCache;
 
-public class CommonArchivist implements Barrack {
+public class CommonArchivist extends Barrack {
 
     public CommonArchivist(Facebook facebook, AccountDBI db) {
         super();
@@ -93,11 +87,17 @@ public class CommonArchivist implements Barrack {
 
     @Override
     public void cacheUser(User user) {
+        if (user.getDataSource() == null) {
+            user.setDataSource(getFacebook());
+        }
         userCache.put(user.getIdentifier(), user);
     }
 
     @Override
     public void cacheGroup(Group group) {
+        if (group.getDataSource() == null) {
+            group.setDataSource(getFacebook());
+        }
         groupCache.put(group.getIdentifier(), group);
     }
 
@@ -109,34 +109,6 @@ public class CommonArchivist implements Barrack {
     @Override
     public Group getGroup(ID identifier) {
         return groupCache.get(identifier);
-    }
-
-    @Override
-    public User createUser(ID identifier) {
-        assert identifier.isUser() : "user ID error: " + identifier;
-        assert getFacebook().getVisaKey(identifier) != null : "visa.key not found: " + identifier;
-        int type = identifier.getType();
-        // check user type
-        if (EntityType.STATION.equals(type)) {
-            return new Station(identifier);
-        } else if (EntityType.BOT.equals(type)) {
-            return new Bot(identifier);
-        }
-        // general user, or 'anyone@anywhere'
-        return new BaseUser(identifier);
-    }
-
-    @Override
-    public Group createGroup(ID identifier) {
-        assert identifier.isGroup() : "group ID error: " + identifier;
-        assert getFacebook().getMembers(identifier).size() > 0 : "group members not found: " + identifier;
-        int type = identifier.getType();
-        // check group type
-        if (EntityType.ISP.equals(type)) {
-            return new ServiceProvider(identifier);
-        }
-        // general group, or 'everyone@everywhere'
-        return new BaseGroup(identifier);
     }
 
     @Override
