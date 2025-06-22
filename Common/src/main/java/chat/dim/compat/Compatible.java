@@ -33,27 +33,57 @@ package chat.dim.compat;
 import java.util.HashMap;
 import java.util.Map;
 
-import chat.dim.protocol.Command;
-import chat.dim.protocol.Content;
-import chat.dim.protocol.LoginCommand;
-import chat.dim.protocol.MetaCommand;
 import chat.dim.protocol.MetaVersion;
-import chat.dim.protocol.NameCard;
 import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.type.Converter;
-import chat.dim.utils.Log;
+
 
 // TODO: remove after all server/client upgraded
-public interface Compatible {
+public abstract class Compatible {
+
+    // 'cmd' <-> 'command'
+    static void fixCmd(Map<String, Object> content) {
+        Object cmd = content.get("command");
+        if (cmd != null) {
+            // command to cmd
+            if (!content.containsKey("cmd")) {
+                content.put("cmd", cmd);
+            }
+        } else {
+            // cmd to command
+            cmd = content.get("cmd");
+            if (cmd != null) {
+                content.put("command", cmd);
+            }
+        }
+    }
+
+    // 'ID' <-> 'did'
+    static void fixID(Map<String, Object> content) {
+        Object did = content.get("did");
+        if (did != null) {
+            // did to ID
+            if (!content.containsKey("ID")) {
+                content.put("ID", did);
+            }
+        } else {
+            // ID to did
+            did = content.get("ID");
+            if (did != null) {
+                content.put("did", did);
+            }
+        }
+    }
 
     @SuppressWarnings("unchecked")
-    static void fixMetaAttachment(ReliableMessage rMsg) {
+    public static void fixMetaAttachment(ReliableMessage rMsg) {
         Object meta = rMsg.get("meta");
         if (meta != null) {
             fixMetaVersion((Map<String, Object>) meta);
         }
     }
+
+    // 'type' <-> 'version'
     static void fixMetaVersion(Map<String, Object> meta) {
         Object type = meta.get("type");
         if (type == null) {
@@ -72,87 +102,17 @@ public interface Compatible {
     }
 
     @SuppressWarnings("unchecked")
-    static void fixVisaAttachment(ReliableMessage rMsg) {
+    public static void fixVisaAttachment(ReliableMessage rMsg) {
         Object visa = rMsg.get("visa");
         if (visa != null) {
-            fixID((Map<String, Object>) visa);
-        }
-    }
-    static void fixID(Map<String, Object> doc) {
-        Object did = doc.get("did");
-        if (did != null) {
-            doc.put("ID", did);
-        } else {
-            did = doc.get("ID");
-            if (did != null) {
-                doc.put("did", did);
-            }
+            fixDocument((Map<String, Object>) visa);
         }
     }
 
-    static void fixType(Content content) {
-        Object type = content.get("type");
-        if (type instanceof String) {
-            try {
-                int num = Converter.getInt(type, -1);
-                if (num >= 0) {
-                    content.put("type", num);
-                }
-            } catch (Exception error) {
-                Log.warning("failed to convert content type: " + type);
-            }
-        }
-    }
-
-    static Content fixContent(Content content) {
-        // 0. fix 'type'
-        fixType(content);
-        // 1. fix 'ID'
-        if (content instanceof NameCard) {
-            // ID <-> did
-            fixID(content);
-        }
-        return content;
-    }
-
-    @SuppressWarnings("unchecked")
-    static Command fixCommand(Command content) {
-        // 0. fix 'type'
-        fixType(content);
-        // 1. fix 'cmd'
-        content = fixCmd(content);
-        // 2. fix other commands
-        if (content instanceof ReceiptCommand) {
-            fixReceiptCommand((ReceiptCommand) content);
-        } else if (content instanceof MetaCommand) {
-            Object meta = content.get("meta");
-            if (meta != null) {
-                fixMetaVersion((Map<String, Object>) meta);
-            }
-            Object doc = content.get("document");
-            if (doc != null) {
-                fixID((Map<String, Object>) doc);
-            }
-            // ID <-> did
-            fixID(content);
-        } else if (content instanceof LoginCommand) {
-            // ID <-> did
-            fixID(content);
-        }
-        // OK
-        //return Command.parse(content.toMap());
-        return content;
-    }
-    static Command fixCmd(Command content) {
-        Object cmd = content.get("cmd");
-        if (cmd == null) {
-            cmd = content.get("command");
-            content.put("cmd", cmd);
-        } else if (!content.containsKey("command")) {
-            content.put("command", cmd);
-            content = Command.parse(content.toMap());
-        }
-        return content;
+    static Map<String, Object> fixDocument(Map<String, Object> document) {
+        // 'ID' <-> 'did'
+        Compatible.fixID(document);
+        return document;
     }
 
     @SuppressWarnings("unchecked")
@@ -193,7 +153,7 @@ public interface Compatible {
             copyReceiptValues((Map<String, Object>) origin, content);
         }
     }
-    static void copyReceiptValues(Map<String, Object> fromOrigin, ReceiptCommand toContent) {
+    private static void copyReceiptValues(Map<String, Object> fromOrigin, ReceiptCommand toContent) {
         String name;
         for (Map.Entry<String, Object> entry : fromOrigin.entrySet()) {
             name = entry.getKey();

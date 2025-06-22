@@ -225,7 +225,7 @@ public abstract class CommonFacebook extends Facebook {
         Date docTime = doc.getTime();
         // check document time
         if (docTime == null) {
-            assert false : "document error: " + doc;
+            //assert false : "document error: " + doc;
             Log.warning("document without time: " + identifier);
         } else {
             // calibrate the clock

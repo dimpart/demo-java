@@ -67,8 +67,8 @@ public class CommonLoader extends ExtensionLoader {
      */
     protected void registerCustomizedFactories() {
 
-        setContentFactory(ContentType.CUSTOMIZED, AppCustomizedContent::new);
-        setContentFactory(ContentType.APPLICATION, AppCustomizedContent::new);
+        setContentFactory(ContentType.CUSTOMIZED, "customized", AppCustomizedContent::new);
+        setContentFactory(ContentType.APPLICATION, "application", AppCustomizedContent::new);
     }
 
     /**

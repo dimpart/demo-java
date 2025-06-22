@@ -30,13 +30,18 @@
  */
 package chat.dim;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Map;
 
-import chat.dim.compat.Compatible;
+import chat.dim.compat.CompatibleIncoming;
+import chat.dim.compat.CompatibleOutgoing;
 import chat.dim.core.CipherKeyDelegate;
 import chat.dim.core.Packer;
 import chat.dim.core.Processor;
 import chat.dim.crypto.SymmetricKey;
+import chat.dim.format.JSON;
+import chat.dim.format.UTF8;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
@@ -140,23 +145,31 @@ public class CommonMessenger extends Messenger implements Transmitter {
 
     @Override
     public byte[] serializeContent(Content content, SymmetricKey password, InstantMessage iMsg) {
-        if (content instanceof Command) {
-            content = Compatible.fixCommand((Command) content);
-        } else {
-            content = Compatible.fixContent(content);
-        }
+        CompatibleOutgoing.fixContent(content);
         return super.serializeContent(content, password, iMsg);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Content deserializeContent(byte[] data, SymmetricKey password, SecureMessage sMsg) {
-        Content content = super.deserializeContent(data, password, sMsg);
-        if (content instanceof Command) {
-            content = Compatible.fixCommand((Command) content);
-        } else {
-            content = Compatible.fixContent(content);
+        //Content content = super.deserializeContent(data, password, sMsg);
+        String json = UTF8.decode(data);
+        if (json == null) {
+            assert false : "content data error: " + Arrays.toString(data);
+            return null;
         }
-        return content;
+        Object dict = JSON.decode(json);
+        if (dict instanceof Map) {
+            CompatibleIncoming.fixContent((Map<String, Object>) dict);
+        }
+        // TODO: translate short keys
+        //       'T' -> 'type'
+        //       'N' -> 'sn'
+        //       'W' -> 'time'
+        //       'G' -> 'group'
+        return Content.parse(dict);
+        // NOTICE: check attachment for File/Image/Audio/Video message content
+        //         after deserialize content, this job should be do in subclass
     }
 
     //

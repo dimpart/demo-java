@@ -46,6 +46,7 @@ import chat.dim.protocol.Visa;
 import chat.dim.type.Duration;
 import chat.dim.type.Pair;
 import chat.dim.utils.FrequencyChecker;
+import chat.dim.utils.Log;
 import chat.dim.utils.RecentTimeChecker;
 
 public abstract class EntityChecker {
@@ -211,7 +212,8 @@ public abstract class EntityChecker {
             assert doc.getIdentifier().equals(identifier) : "document not match: " + identifier + ", " + doc;
             docTime = doc.getTime();
             if (docTime == null) {
-                assert false : "document error: " + doc;
+                //assert false : "document error: " + doc;
+                Log.warning("document without time: " + doc);
             } else if (lastTime == null || lastTime.before(docTime)) {
                 lastTime = docTime;
             }
