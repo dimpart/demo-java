@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import chat.dim.crypto.AsymmetricKey;
+import chat.dim.crypto.AsymmetricAlgorithms;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.crypto.PrivateKey;
 import chat.dim.crypto.SignKey;
@@ -70,7 +70,7 @@ public class Register {
         //
         //  Step 1: generate private key (with asymmetric algorithm)
         //
-        PrivateKey idKey = PrivateKey.generate(PrivateKey.ECC);
+        PrivateKey idKey = PrivateKey.generate(AsymmetricAlgorithms.ECC);
         //
         //  Step 2: generate meta with private key (and meta seed)
         //
@@ -82,7 +82,7 @@ public class Register {
         //
         //  Step 4: generate visa with ID and sign with private key
         //
-        PrivateKey msgKey = PrivateKey.generate(AsymmetricKey.RSA);
+        PrivateKey msgKey = PrivateKey.generate(AsymmetricAlgorithms.RSA);
         EncryptKey visaKey = (EncryptKey) msgKey.getPublicKey();
         Visa visa = createVisa(identifier, visaKey, idKey, nickname, avatar);
         //

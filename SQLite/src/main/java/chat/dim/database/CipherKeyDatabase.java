@@ -31,6 +31,7 @@
 package chat.dim.database;
 
 import chat.dim.crypto.PlainKey;
+import chat.dim.crypto.SymmetricAlgorithms;
 import chat.dim.crypto.SymmetricKey;
 import chat.dim.dbi.CipherKeyDBI;
 import chat.dim.mem.CacheManager;
@@ -59,7 +60,7 @@ public class CipherKeyDatabase implements CipherKeyDBI {
         SymmetricKey key = pair == null ? null : pair.value;
         if (key == null && generate) {
             // generate and cache it
-            key = SymmetricKey.generate(SymmetricKey.AES);
+            key = SymmetricKey.generate(SymmetricAlgorithms.AES);
             assert key != null : "failed to generate symmetric key";
             keyCache.update(sender + "->" + receiver, key, 7*24*3600*1000, now);
         }
