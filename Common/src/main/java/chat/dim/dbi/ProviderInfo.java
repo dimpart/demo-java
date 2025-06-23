@@ -73,7 +73,7 @@ public class ProviderInfo {
             if (identifier == null) {
                 identifier = ID.parse(item.get("ID"));
             }
-            chosen = Converter.getInt(item.get("chosen"), 0);
+            chosen = Converter.getInteger(item.get("chosen"), 0);
             if (identifier == null) {
                 // SP ID error
                 continue;

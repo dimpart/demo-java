@@ -98,8 +98,8 @@ public abstract class CompatibleOutgoing {
         Object type = content.get("type");
         if (type instanceof String) {
             try {
-                int num = Converter.getInt(type, -1);
-                if (num >= 0) {
+                Integer num = Converter.getInteger(type, -1);
+                if (num != null && num >= 0) {
                     content.put("type", num);
                 }
             } catch (Exception error) {

@@ -76,9 +76,9 @@ public class StationInfo {
                 identifier = ID.parse(item.get("ID"));
             }
             host = Converter.getString(item.get("host"), null);
-            port = Converter.getInt(item.get("port"), 0);
+            port = Converter.getInteger(item.get("port"), 0);
             provider = ID.parse(item.get("provider"));
-            chosen = Converter.getInt(item.get("chosen"), 0);
+            chosen = Converter.getInteger(item.get("chosen"), 0);
             if (host == null || port == 0/* || provider == null*/) {
                 // station socket error
                 continue;
