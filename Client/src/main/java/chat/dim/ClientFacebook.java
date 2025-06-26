@@ -33,9 +33,7 @@ package chat.dim;
 import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.core.Barrack;
 import chat.dim.dbi.AccountDBI;
-import chat.dim.mkm.User;
 import chat.dim.protocol.BroadcastUtils;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
@@ -49,36 +47,6 @@ public abstract class ClientFacebook extends CommonFacebook {
 
     public ClientFacebook(AccountDBI database) {
         super(database);
-    }
-
-    @Override
-    public User selectLocalUser(ID receiver) {
-        if (receiver.isUser()) {
-            return super.selectLocalUser(receiver);
-        }
-        // group message (recipient not designated)
-        assert receiver.isGroup() : "receiver error: " + receiver;
-        // the messenger will check group info before decrypting message,
-        // so we can trust that the group's meta & members MUST exist here.
-        Barrack barrack = getBarrack();
-        List<User> users = barrack.getLocalUsers();
-        if (users == null || users.isEmpty()) {
-            assert false : "local users should not be empty";
-            return null;
-        } else if (receiver.isBroadcast()) {
-            // broadcast message can be decrypted by anyone, so
-            // just return current user here
-            return users.get(0);
-        }
-        List<ID> members = getMembers(receiver);
-        assert !members.isEmpty() : "members not found: " + receiver;
-        for (User item : users) {
-            if (members.contains(item.getIdentifier())) {
-                // DISCUSS: set this item to be current user?
-                return item;
-            }
-        }
-        return null;
     }
 
     @Override

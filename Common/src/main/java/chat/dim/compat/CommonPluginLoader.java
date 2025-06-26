@@ -32,12 +32,20 @@ import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaType;
+import chat.dim.type.Converter;
+import chat.dim.type.SafeConverter;
 
 /**
  *  Plugin Loader
  *  ~~~~~~~~~~~~~
  */
 public class CommonPluginLoader extends PluginLoader {
+
+    @Override
+    protected void load() {
+        Converter.converter = new SafeConverter();
+        super.load();
+    }
 
     @Override
     protected void registerBase64Coder() {

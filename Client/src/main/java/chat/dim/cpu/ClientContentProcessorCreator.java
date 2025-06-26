@@ -55,19 +55,20 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
 
     @Override
     public ContentProcessor createContentProcessor(String msgType) {
+        switch (msgType) {
 
-        // application customized
-        if (ContentType.APPLICATION.equals(msgType)) {
-            return new CustomizedContentProcessor(getFacebook(), getMessenger());
-        } else if (ContentType.CUSTOMIZED.equals(msgType)) {
-            return new CustomizedContentProcessor(getFacebook(), getMessenger());
+            // application customized
+            case ContentType.APPLICATION:
+            case "application":
+            case ContentType.CUSTOMIZED:
+            case "customized":
+                return new CustomizedContentProcessor(getFacebook(), getMessenger());
+
+            // history command
+            case ContentType.HISTORY:
+            case "history":
+                return new HistoryCommandProcessor(getFacebook(), getMessenger());
         }
-
-        // history command
-        if (ContentType.HISTORY.equals(msgType)) {
-            return new HistoryCommandProcessor(getFacebook(), getMessenger());
-        }
-
         // others
         return super.createContentProcessor(msgType);
     }
@@ -75,6 +76,7 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
     @Override
     public ContentProcessor createCommandProcessor(String type, String name) {
         switch (name) {
+
             case Command.RECEIPT:
                 return new ReceiptCommandProcessor(getFacebook(), getMessenger());
             case HandshakeCommand.HANDSHAKE:

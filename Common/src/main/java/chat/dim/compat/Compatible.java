@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import chat.dim.protocol.MetaVersion;
-import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 
 
@@ -115,8 +114,24 @@ public abstract class Compatible {
         return document;
     }
 
+    static void fixFileContent(Map<String, Object> content) {
+        Object pwd = content.get("key");
+        if (pwd != null) {
+            // Tarsier version > 1.3.7
+            // DIM SDK version > 1.1.0
+            content.put("password", pwd);
+        } else {
+            // Tarsier version <= 1.3.7
+            // DIM SDK version <= 1.1.0
+            pwd = content.get("password");
+            if (pwd != null) {
+                content.put("key", pwd);
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    static void fixReceiptCommand(ReceiptCommand content) {
+    static void fixReceiptCommand(Map<String, Object> content) {
         // check for v2.0
         Object origin = content.get("origin");
         if (origin == null) {
@@ -153,7 +168,7 @@ public abstract class Compatible {
             copyReceiptValues((Map<String, Object>) origin, content);
         }
     }
-    private static void copyReceiptValues(Map<String, Object> fromOrigin, ReceiptCommand toContent) {
+    private static void copyReceiptValues(Map<String, Object> fromOrigin, Map<String, Object> toContent) {
         String name;
         for (Map.Entry<String, Object> entry : fromOrigin.entrySet()) {
             name = entry.getKey();

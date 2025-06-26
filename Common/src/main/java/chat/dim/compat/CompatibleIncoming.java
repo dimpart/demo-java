@@ -48,6 +48,15 @@ public abstract class CompatibleIncoming {
         // get content type
         String type = Converter.getString(content.get("type"), "");
 
+        if (type.equals(ContentType.FILE) || type.equals("file") ||
+                type.equals(ContentType.IMAGE) || type.equals("image") ||
+                type.equals(ContentType.AUDIO) || type.equals("audio") ||
+                type.equals(ContentType.VIDEO) || type.equals("video")) {
+            // 1. 'key' <-> 'password'
+            Compatible.fixFileContent(content);
+            return;
+        }
+
         if (type.equals(ContentType.NAME_CARD) || type.equals("card")) {
             // 1. 'ID' <-> 'did'
             Compatible.fixID(content);

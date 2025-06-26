@@ -38,12 +38,12 @@ import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
+import chat.dim.protocol.FileContent;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.MetaCommand;
 import chat.dim.protocol.NameCard;
 import chat.dim.protocol.ReceiptCommand;
 import chat.dim.type.Converter;
-import chat.dim.utils.Log;
 
 
 // TODO: remove after all server/client upgraded
@@ -53,6 +53,12 @@ public abstract class CompatibleOutgoing {
     public static void fixContent(Content content) {
         // 0. change 'type' value from string to int
         fixType(content);
+
+        if (content instanceof FileContent) {
+            // 1. 'key' <-> 'password'
+            Compatible.fixFileContent(content.toMap());
+            return;
+        }
 
         if (content instanceof NameCard) {
             // 1. 'ID' <-> 'did'
@@ -67,7 +73,7 @@ public abstract class CompatibleOutgoing {
 
         if (content instanceof ReceiptCommand) {
             // 2. check for v2.0
-            Compatible.fixReceiptCommand((ReceiptCommand) content);
+            Compatible.fixReceiptCommand(content.toMap());
             return;
         }
 
@@ -97,13 +103,9 @@ public abstract class CompatibleOutgoing {
     private static void fixType(Map<String, Object> content) {
         Object type = content.get("type");
         if (type instanceof String) {
-            try {
-                Integer num = Converter.getInteger(type, -1);
-                if (num != null && num >= 0) {
-                    content.put("type", num);
-                }
-            } catch (Exception error) {
-                Log.warning("failed to convert content type: " + type);
+            Integer num = Converter.getInteger(type, -1);
+            if (num != null && num >= 0) {
+                content.put("type", num);
             }
         }
     }

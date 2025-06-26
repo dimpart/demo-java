@@ -30,6 +30,7 @@
  */
 package chat.dim;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -116,6 +117,56 @@ public abstract class CommonFacebook extends Facebook {
             user.setDataSource(this);
         }
         current = user;
+    }
+
+    @Override
+    public User selectLocalUser(ID receiver) {
+        List<User> localUsers = barrack.getLocalUsers();
+        if (localUsers == null) {
+            localUsers = new ArrayList<>();
+        }
+        User user = current;
+        if (user != null/* && !localUsers.contains(user)*/) {
+            localUsers.add(0, user);
+        }
+        //
+        //  1.
+        //
+        if (localUsers.isEmpty()) {
+            assert false : "local users should not be empty";
+            return null;
+        } else if (receiver.isBroadcast()) {
+            // broadcast message can be decrypted by anyone, so
+            // just return current user here
+            return localUsers.get(0);
+        }
+        //
+        //  2.
+        //
+        if (receiver.isUser()) {
+            // personal message
+            for (User item : localUsers) {
+                if (receiver.equals(item.getIdentifier())) {
+                    // DISCUSS: set this item to be current user?
+                    return item;
+                }
+            }
+        } else {
+            // group message (recipient not designated)
+            assert receiver.isGroup() : "receiver error: " + receiver;
+            // the messenger will check group info before decrypting message,
+            // so we can trust that the group's meta & members MUST exist here.
+            List<ID> members = getMembers(receiver);
+            assert !members.isEmpty() : "members not found: " + receiver;
+            for (User item : localUsers) {
+                if (members.contains(item.getIdentifier())) {
+                    // DISCUSS: set this item to be current user?
+                    return item;
+                }
+            }
+        }
+        // not me?
+        return null;
     }
 
     //

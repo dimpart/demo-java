@@ -54,7 +54,10 @@ public final class Time extends Date {
             return (Time) time;
         }
         Date date = Converter.getDateTime(time, null);
-        //assert date != null : "should not happen";
+        if (date == null) {
+            assert false : "should not happen: " + time;
+            return null;
+        }
         return new Time(date.getTime());
     }
 
