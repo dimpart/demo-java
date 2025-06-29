@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import chat.dim.compat.Compatible;
+import chat.dim.core.Compressor;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.msg.MessageUtils;
 import chat.dim.protocol.ID;
@@ -57,6 +58,16 @@ public abstract class CommonMessagePacker extends MessagePacker {
     @Override
     protected CommonMessenger getMessenger() {
         return (CommonMessenger) super.getMessenger();
+    }
+
+    @Override
+    protected Compressor getCompressor() {
+        CommonMessenger messenger = getMessenger();
+        if (messenger == null) {
+            assert false : "messenger not found";
+            return null;
+        }
+        return messenger.getCompressor();
     }
 
     /**
