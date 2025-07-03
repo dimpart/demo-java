@@ -97,7 +97,8 @@ public abstract class ClientMessenger extends CommonMessenger {
         InstantMessage iMsg = InstantMessage.create(env, res);
         SecureMessage sMsg = encryptMessage(iMsg);
         if (sMsg == null) {
-            assert false : "failed to encrypt message: " + me + " -> " + to;
+            //assert false : "failed to encrypt message: " + me + " -> " + to;
+            Log.error("failed to encrypt message: " + me + " -> " + to);
             return null;
         }
         ReliableMessage rMsg = signMessage(sMsg);

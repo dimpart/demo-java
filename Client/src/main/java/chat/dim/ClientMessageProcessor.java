@@ -35,7 +35,6 @@ import java.util.List;
 
 import chat.dim.cpu.ClientContentProcessorCreator;
 import chat.dim.dkd.ContentProcessor;
-import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.HandshakeCommand;
@@ -124,12 +123,11 @@ public class ClientMessageProcessor extends CommonMessageProcessor {
         }
         ID sender = rMsg.getSender();
         ID receiver = rMsg.getReceiver();
-        User user = getFacebook().selectLocalUser(receiver);
+        ID user = getFacebook().selectLocalUser(receiver);
         if (user == null) {
             assert false : "receiver error: " + receiver;
             return null;
         }
-        receiver = user.getIdentifier();
         CommonMessenger messenger = getMessenger();
         // check responses
         int sty = sender.getType();
@@ -150,7 +148,7 @@ public class ClientMessageProcessor extends CommonMessageProcessor {
                 }
             }
             // normal response
-            messenger.sendContent(res, receiver, sender, 1);
+            messenger.sendContent(res, user, sender, 1);
         }
         // DON'T respond to station directly
         return null;

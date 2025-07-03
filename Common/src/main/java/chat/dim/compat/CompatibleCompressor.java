@@ -51,7 +51,9 @@ public class CompatibleCompressor extends MessageCompressor {
     @Override
     public Map<String, Object> extractContent(byte[] data, Map<String, Object> key) {
         Map<String, Object> content = super.extractContent(data, key);
-        CompatibleIncoming.fixContent(content);
+        if (content != null) {
+            CompatibleIncoming.fixContent(content);
+        }
         return content;
     }
 

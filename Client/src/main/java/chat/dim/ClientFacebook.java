@@ -36,7 +36,6 @@ import java.util.List;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.protocol.BroadcastUtils;
 import chat.dim.protocol.Bulletin;
-import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 
@@ -47,22 +46,6 @@ public abstract class ClientFacebook extends CommonFacebook {
 
     public ClientFacebook(AccountDBI database) {
         super(database);
-    }
-
-    @Override
-    public boolean saveDocument(Document doc) {
-        boolean ok = super.saveDocument(doc);
-        if (ok && doc instanceof Bulletin) {
-            // check administrators
-            Object array = doc.getProperty("administrators");
-            if (array instanceof List) {
-                ID group = doc.getIdentifier();
-                assert group.isGroup() : "group ID error: " + group;
-                List<ID> admins = ID.convert((List<?>) array);
-                ok = saveAdministrators(admins, group);
-            }
-        }
-        return ok;
     }
 
     //

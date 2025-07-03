@@ -1,13 +1,8 @@
 /* license: https://mit-license.org
- *
- *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
- *
- *                                Written in 2024 by Moky <albert.moky@gmail.com>
- *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2024 Albert Moky
+ * Copyright (c) 2025 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,38 +23,29 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.group;
+package chat.dim.compat;
 
-import chat.dim.CommonFacebook;
-import chat.dim.CommonMessenger;
-import chat.dim.core.Archivist;
-import chat.dim.dbi.AccountDBI;
+import chat.dim.plugins.ExtensionLoader;
+import chat.dim.plugins.PluginLoader;
 
 
-abstract class TripletsHelper {
-    protected TripletsHelper(GroupDelegate dataSource) {
-        assert dataSource != null : "Group delegate should not empty";
-        delegate = dataSource;
+public class LibraryLoader implements Runnable {
+
+    private final ExtensionLoader extensionLoader = createExtensionLoader();
+    private final PluginLoader pluginLoader = createPluginLoader();
+
+    protected ExtensionLoader createExtensionLoader() {
+        return new CommonExtensionLoader();
     }
 
-    protected final GroupDelegate delegate;
-
-    protected CommonFacebook getFacebook() {
-        return delegate.getFacebook();
+    protected PluginLoader createPluginLoader() {
+        return new ClientPluginLoader();
     }
 
-    protected CommonMessenger getMessenger() {
-        return delegate.getMessenger();
-    }
-
-    protected Archivist getArchivist() {
-        CommonFacebook facebook = getFacebook();
-        return facebook == null ? null : facebook.getArchivist();
-    }
-
-    protected AccountDBI getDatabase() {
-        CommonFacebook facebook = getFacebook();
-        return facebook == null ? null : facebook.getDatabase();
+    @Override
+    public void run() {
+        extensionLoader.run();
+        pluginLoader.run();
     }
 
 }

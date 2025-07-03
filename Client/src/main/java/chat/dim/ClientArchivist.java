@@ -30,11 +30,16 @@
  */
 package chat.dim;
 
+import java.util.List;
+
 import chat.dim.dbi.AccountDBI;
 import chat.dim.group.SharedGroupManager;
 import chat.dim.mkm.Entity;
 import chat.dim.mkm.Group;
+import chat.dim.protocol.Bulletin;
+import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
+
 
 public class ClientArchivist extends CommonArchivist {
 
@@ -54,6 +59,22 @@ public class ClientArchivist extends CommonArchivist {
             }
         }
         return grp;
+    }
+
+    @Override
+    public boolean saveDocument(Document doc) {
+        boolean ok = super.saveDocument(doc);
+        if (ok && doc instanceof Bulletin) {
+            // check administrators
+            Object array = doc.getProperty("administrators");
+            if (array instanceof List) {
+                ID group = doc.getIdentifier();
+                assert group.isGroup() : "group ID error: " + group;
+                List<ID> admins = ID.convert((List<?>) array);
+                ok = database.saveAdministrators(admins, group);
+            }
+        }
+        return ok;
     }
 
 }

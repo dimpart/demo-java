@@ -31,32 +31,42 @@
 package chat.dim;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import chat.dim.core.Archivist;
 import chat.dim.core.Barrack;
+import chat.dim.crypto.EncryptKey;
+import chat.dim.crypto.VerifyKey;
 import chat.dim.dbi.AccountDBI;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.Group;
+import chat.dim.mkm.MetaUtils;
 import chat.dim.mkm.User;
+import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.Meta;
+import chat.dim.protocol.Visa;
+import chat.dim.type.Duration;
+import chat.dim.utils.Log;
 import chat.dim.utils.MemoryCache;
 import chat.dim.utils.ThanosCache;
 
-public class CommonArchivist extends Barrack {
+public class CommonArchivist extends Barrack implements Archivist {
+
+    protected final AccountDBI database;
 
     public CommonArchivist(Facebook facebook, AccountDBI db) {
         super();
-        barrack = new WeakReference<>(facebook);
+        facebookRef = new WeakReference<>(facebook);
         database = db;
     }
 
     protected Facebook getFacebook() {
-        return barrack.get();
+        return facebookRef.get();
     }
 
-    private final WeakReference<Facebook> barrack;
-
-    protected final AccountDBI database;
+    private final WeakReference<Facebook> facebookRef;
 
     // memory caches
     protected final MemoryCache<ID, User>   userCache = createUserCache();
@@ -111,25 +121,149 @@ public class CommonArchivist extends Barrack {
         return groupCache.get(identifier);
     }
 
+    //
+    //  Archivist
+    //
+
     @Override
-    public List<User> getLocalUsers() {
+    public boolean saveMeta(Meta meta, ID identifier) {
         Facebook facebook = getFacebook();
-        List<ID> array = database.getLocalUsers();
-        if (facebook == null || array == null) {
-            return null;
+        if (facebook == null) {
+            assert false : "facebook lost";
+            return false;
         }
-        List<User> allUsers = new ArrayList<>();
-        User user;
-        for (ID item : array) {
-            assert facebook.getPrivateKeyForSignature(item) != null : "private key not found: " + item;
-            user = facebook.getUser(item);
-            if (user != null) {
-                allUsers.add(user);
-            } else {
-                assert false : "failed to create user: " + item;
-            }
+        //
+        //  1. check valid
+        //
+        if (!checkMeta(meta, identifier)) {
+            assert false : "meta not valid: " + identifier;
+            Log.warning("meta not valid: " + identifier);
+            return false;
         }
-        return allUsers;
+        //
+        //  2. check duplicated
+        //
+        Meta old = facebook.getMeta(identifier);
+        if (old != null) {
+            Log.debug("meta duplicated: " + identifier);
+            return true;
+        }
+        //
+        //  3. save into database
+        //
+        return database.saveMeta(meta, identifier);
     }
 
+    protected boolean checkMeta(Meta meta, ID identifier) {
+        return meta.isValid() && MetaUtils.matches(identifier, meta);
+    }
+
+    @Override
+    public boolean saveDocument(Document doc) {
+        //
+        //  1. check valid
+        //
+        boolean valid = checkDocumentValid(doc);
+        if (!valid) {
+            assert false : "document not valid: " + doc.getIdentifier();
+            Log.warning("document not valid: " + doc.getIdentifier());
+            return false;
+        }
+        //
+        //  2. check expired
+        //
+        if (checkDocumentExpired(doc)) {
+            Log.info("drop expired document: " + doc.getIdentifier());
+            return false;
+        }
+        //
+        //  3. save into database
+        //
+        return database.saveDocument(doc);
+    }
+
+    protected boolean checkDocumentValid(Document doc) {
+        ID identifier = doc.getIdentifier();
+        Date docTime = doc.getTime();
+        // check document time
+        if (docTime == null) {
+            //assert false : "document error: " + doc;
+            Log.warning("document without time: " + identifier);
+        } else {
+            // calibrate the clock
+            // make sure the document time is not in the far future
+            Date nearFuture = Duration.ofMinutes(30).addTo(new Date());
+            if (docTime.after(nearFuture)) {
+                assert false : "document time error: " + docTime + ", " + doc;
+                Log.error("document time error: " + docTime + ", " + identifier);
+                return false;
+            }
+        }
+        // check valid
+        return doc.isValid() || verifyDocument(doc);
+    }
+
+    protected boolean verifyDocument(Document doc) {
+        Facebook facebook = getFacebook();
+        if (facebook == null) {
+            assert false : "facebook lost";
+            return false;
+        }
+        ID identifier = doc.getIdentifier();
+        Meta meta = facebook.getMeta(identifier);
+        if (meta == null) {
+            Log.warning("failed to get meta: " + identifier);
+            return false;
+        }
+        return doc.verify(meta.getPublicKey());
+    }
+
+    protected boolean checkDocumentExpired(Document doc) {
+        Facebook facebook = getFacebook();
+        if (facebook == null) {
+            assert false : "facebook lost";
+            return false;
+        }
+        ID identifier = doc.getIdentifier();
+        String type = DocumentUtils.getDocumentType(doc);
+        // check old documents with type
+        List<Document> documents = facebook.getDocuments(identifier);
+        Document old = DocumentUtils.lastDocument(documents, type);
+        return old != null && DocumentUtils.isExpired(doc, old);
+    }
+
+    @Override
+    public VerifyKey getMetaKey(ID user) {
+        Facebook facebook = getFacebook();
+        if (facebook == null) {
+            assert false : "facebook lost";
+            return null;
+        }
+        Meta meta = facebook.getMeta(user);
+        if (meta != null/* && meta.isValid()*/) {
+            return meta.getPublicKey();
+        }
+        //throw new NullPointerException("failed to get meta for ID: " + user);
+        return null;
+    }
+
+    @Override
+    public EncryptKey getVisaKey(ID user) {
+        Facebook facebook = getFacebook();
+        if (facebook == null) {
+            assert false : "facebook lost";
+            return null;
+        }
+        List<Document> documents = facebook.getDocuments(user);
+        Visa doc = DocumentUtils.lastVisa(documents);
+        if (doc != null/* && doc.isValid()*/) {
+            return doc.getPublicKey();
+        }
+        return null;
+    }
+
+    @Override
+    public List<ID> getLocalUsers() {
+        return database.getLocalUsers();
+    }
 }

@@ -27,7 +27,6 @@ package chat.dim.compat;
 
 import chat.dim.dkd.AppCustomizedContent;
 import chat.dim.plugins.ExtensionLoader;
-import chat.dim.plugins.PluginLoader;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.BlockCommand;
 import chat.dim.protocol.Command;
@@ -41,20 +40,7 @@ import chat.dim.protocol.ReportCommand;
  *  Extensions Loader
  *  ~~~~~~~~~~~~~~~~~
  */
-public class CommonLoader extends ExtensionLoader {
-
-    private final PluginLoader pluginLoader;
-
-    public CommonLoader(PluginLoader pluginLoader) {
-        super();
-        this.pluginLoader = pluginLoader;
-    }
-
-    @Override
-    public void run() {
-        super.run();
-        pluginLoader.run();
-    }
+public class CommonExtensionLoader extends ExtensionLoader {
 
     @Override
     protected void registerContentFactories() {

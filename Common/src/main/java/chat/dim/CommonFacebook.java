@@ -30,18 +30,13 @@
  */
 package chat.dim;
 
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-import chat.dim.core.Barrack;
+import chat.dim.core.Archivist;
 import chat.dim.crypto.DecryptKey;
-import chat.dim.crypto.EncryptKey;
 import chat.dim.crypto.SignKey;
-import chat.dim.crypto.VerifyKey;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.DocumentUtils;
-import chat.dim.mkm.MetaUtils;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
@@ -49,8 +44,6 @@ import chat.dim.protocol.DocumentType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.Visa;
-import chat.dim.type.Duration;
-import chat.dim.utils.Log;
 
 /**
  *  Common Facebook with Database
@@ -62,15 +55,14 @@ public abstract class CommonFacebook extends Facebook {
     private CommonArchivist barrack;
     private EntityChecker checker;
 
-    private User current;
+    private User currentUser;
 
     public CommonFacebook(AccountDBI db) {
         super();
         database = db;
         barrack = null;
         checker = null;
-        // current user
-        current = null;
+        currentUser = null;
     }
 
     public AccountDBI getDatabase() {
@@ -82,6 +74,11 @@ public abstract class CommonFacebook extends Facebook {
     }
     public void setEntityChecker(EntityChecker checker) {
         this.checker = checker;
+    }
+
+    @Override
+    public Archivist getArchivist() {
+        return barrack;
     }
 
     @Override
@@ -98,75 +95,53 @@ public abstract class CommonFacebook extends Facebook {
 
     public User getCurrentUser() {
         // Get current user (for signing and sending message)
-        User user = current;
-        if (user != null) {
-            return user;
+        User current = currentUser;
+        if (current != null) {
+            return current;
         }
-        Barrack barrack = getBarrack();
-        List<User> localUsers = barrack.getLocalUsers();
-        if (localUsers == null || localUsers.isEmpty()) {
+        List<ID> array = database.getLocalUsers();
+        if (array == null || array.isEmpty()) {
             return null;
         }
-        user = localUsers.get(0);
-        current = user;
-        return user;
+        current = getUser(array.get(0));
+        currentUser = current;
+        return current;
     }
 
     public void setCurrentUser(User user) {
         if (user.getDataSource() == null) {
             user.setDataSource(this);
         }
-        current = user;
+        currentUser = user;
     }
 
     @Override
-    public User selectLocalUser(ID receiver) {
-        List<User> localUsers = barrack.getLocalUsers();
-        if (localUsers == null) {
-            localUsers = new ArrayList<>();
-        }
-        User user = current;
-        if (user != null/* && !localUsers.contains(user)*/) {
-            localUsers.add(0, user);
-        }
-        //
-        //  1.
-        //
-        if (localUsers.isEmpty()) {
-            assert false : "local users should not be empty";
-            return null;
-        } else if (receiver.isBroadcast()) {
-            // broadcast message can be decrypted by anyone, so
-            // just return current user here
-            return localUsers.get(0);
-        }
-        //
-        //  2.
-        //
-        if (receiver.isUser()) {
-            // personal message
-            for (User item : localUsers) {
-                if (receiver.equals(item.getIdentifier())) {
-                    // DISCUSS: set this item to be current user?
-                    return item;
+    public ID selectLocalUser(ID receiver) {
+        User user = currentUser;
+        if (user != null) {
+            ID current = user.getIdentifier();
+            if (receiver.isBroadcast()) {
+                // broadcast message can be decrypted by anyone, so
+                // just return current user here
+                return current;
+            } else if (receiver.isGroup()) {
+                // group message (recipient not designated)
+                //
+                // the messenger will check group info before decrypting message,
+                // so we can trust that the group's meta & members MUST exist here.
+                List<ID> members = getMembers(receiver);
+                if (members == null || members.isEmpty()) {
+                    assert false : "members not found: " + receiver;
+                    return null;
+                } else if (members.contains(current)) {
+                    return current;
                 }
-            }
-        } else {
-            // group message (recipient not designated)
-            assert receiver.isGroup() : "receiver error: " + receiver;
-            // the messenger will check group info before decrypting message,
-            // so we can trust that the group's meta & members MUST exist here.
-            List<ID> members = getMembers(receiver);
-            assert !members.isEmpty() : "members not found: " + receiver;
-            for (User item : localUsers) {
-                if (members.contains(item.getIdentifier())) {
-                    // DISCUSS: set this item to be current user?
-                    return item;
-                }
+            } else if (receiver.equals(current)) {
+                return current;
             }
         }
-        // not me?
-        return null;
+        // check local users
+        return super.selectLocalUser(receiver);
     }
 
     //
@@ -218,118 +193,6 @@ public abstract class CommonFacebook extends Facebook {
     }
 
     // -------- Storage
-
-    @Override
-    public boolean saveMeta(Meta meta, ID identifier) {
-        //
-        //  1. check valid
-        //
-        if (!checkMeta(meta, identifier)) {
-            assert false : "meta not valid: " + identifier;
-            Log.warning("meta not valid: " + identifier);
-            return false;
-        }
-        //
-        //  2. check duplicated
-        //
-        Meta old = getMeta(identifier);
-        if (old != null) {
-            Log.debug("meta duplicated: " + identifier);
-            return true;
-        }
-        //
-        //  3. save into database
-        //
-        return database.saveMeta(meta, identifier);
-    }
-
-    protected boolean checkMeta(Meta meta, ID identifier) {
-        return meta.isValid() && MetaUtils.matches(identifier, meta);
-    }
-
-    @Override
-    public boolean saveDocument(Document doc) {
-        //
-        //  1. check valid
-        //
-        boolean valid = checkDocumentValid(doc);
-        if (!valid) {
-            assert false : "document not valid: " + doc.getIdentifier();
-            Log.warning("document not valid: " + doc.getIdentifier());
-            return false;
-        }
-        //
-        //  2. check expired
-        //
-        if (checkDocumentExpired(doc)) {
-            Log.info("drop expired document: " + doc.getIdentifier());
-            return false;
-        }
-        //
-        //  3. save into database
-        //
-        return database.saveDocument(doc);
-    }
-
-    protected boolean checkDocumentValid(Document doc) {
-        ID identifier = doc.getIdentifier();
-        Date docTime = doc.getTime();
-        // check document time
-        if (docTime == null) {
-            //assert false : "document error: " + doc;
-            Log.warning("document without time: " + identifier);
-        } else {
-            // calibrate the clock
-            // make sure the document time is not in the far future
-            Date nearFuture = Duration.ofMinutes(30).addTo(new Date());
-            if (docTime.after(nearFuture)) {
-                assert false : "document time error: " + docTime + ", " + doc;
-                Log.error("document time error: " + docTime + ", " + identifier);
-                return false;
-            }
-        }
-        // check valid
-        return doc.isValid() || verifyDocument(doc);
-    }
-
-    protected boolean verifyDocument(Document doc) {
-        ID identifier = doc.getIdentifier();
-        Meta meta = getMeta(identifier);
-        if (meta == null) {
-            Log.warning("failed to get meta: " + identifier);
-            return false;
-        }
-        return doc.verify(meta.getPublicKey());
-    }
-
-    protected boolean checkDocumentExpired(Document doc) {
-        ID identifier = doc.getIdentifier();
-        String type = DocumentUtils.getDocumentType(doc);
-        // check old documents with type
-        List<Document> documents = getDocuments(identifier);
-        Document old = DocumentUtils.lastDocument(documents, type);
-        return old != null && DocumentUtils.isExpired(doc, old);
-    }
-
-    @Override
-    protected VerifyKey getMetaKey(ID user) {
-        Meta meta = getMeta(user);
-        if (meta != null/* && meta.isValid()*/) {
-            return meta.getPublicKey();
-        }
-        //throw new NullPointerException("failed to get meta for ID: " + user);
-        return null;
-    }
-
-    @Override
-    protected EncryptKey getVisaKey(ID user) {
-        List<Document> documents = getDocuments(user);
-        Visa doc = DocumentUtils.lastVisa(documents);
-        if (doc != null/* && doc.isValid()*/) {
-            return doc.getPublicKey();
-        }
-        return null;
-    }
 
     //
     //  Entity DataSource
