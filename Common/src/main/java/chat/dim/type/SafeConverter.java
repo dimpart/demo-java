@@ -27,7 +27,7 @@ package chat.dim.type;
 
 import java.util.Date;
 
-public class SafeConverter extends DataConverter {
+public class SafeConverter extends BaseConverter {
 
     @Override
     public Boolean getBoolean(Object value, Boolean defaultValueIfNull) {

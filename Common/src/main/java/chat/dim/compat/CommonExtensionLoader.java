@@ -53,6 +53,7 @@ public class CommonExtensionLoader extends ExtensionLoader {
      */
     protected void registerCustomizedFactories() {
 
+        // Application Customized
         setContentFactory(ContentType.CUSTOMIZED, "customized", AppCustomizedContent::new);
         setContentFactory(ContentType.APPLICATION, "application", AppCustomizedContent::new);
     }
@@ -65,17 +66,17 @@ public class CommonExtensionLoader extends ExtensionLoader {
         super.registerCommandFactories();
 
         // Handshake
-        Command.setFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
+        setCommandFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
         // Login
-        Command.setFactory(LoginCommand.LOGIN, LoginCommand::new);
+        setCommandFactory(LoginCommand.LOGIN, LoginCommand::new);
         // Report
-        Command.setFactory(ReportCommand.REPORT, ReportCommand::new);
+        setCommandFactory(ReportCommand.REPORT, ReportCommand::new);
         // Mute
-        Command.setFactory(MuteCommand.MUTE, MuteCommand::new);
+        setCommandFactory(MuteCommand.MUTE, MuteCommand::new);
         // Block
-        Command.setFactory(BlockCommand.BLOCK, BlockCommand::new);
+        setCommandFactory(BlockCommand.BLOCK, BlockCommand::new);
         // ANS
-        Command.setFactory(AnsCommand.ANS, AnsCommand::new);
+        setCommandFactory(AnsCommand.ANS, AnsCommand::new);
     }
 
 }

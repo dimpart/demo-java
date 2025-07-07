@@ -33,13 +33,11 @@ package chat.dim.compat;
 import java.util.Map;
 
 import chat.dim.core.MessageCompressor;
-import chat.dim.core.MessageShortener;
 
 public class CompatibleCompressor extends MessageCompressor {
 
-    @Override
-    protected MessageShortener createShortener() {
-        return new CompatibleShortener();
+    public CompatibleCompressor() {
+        super(new CompatibleShortener());
     }
 
     @Override

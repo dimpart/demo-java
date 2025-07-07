@@ -54,19 +54,19 @@ import chat.dim.utils.ThanosCache;
 
 public class CommonArchivist extends Barrack implements Archivist {
 
-    protected final AccountDBI database;
-
     public CommonArchivist(Facebook facebook, AccountDBI db) {
         super();
         facebookRef = new WeakReference<>(facebook);
         database = db;
     }
 
+    protected final AccountDBI database;
+
+    private final WeakReference<Facebook> facebookRef;
+
     protected Facebook getFacebook() {
         return facebookRef.get();
     }
-
-    private final WeakReference<Facebook> facebookRef;
 
     // memory caches
     protected final MemoryCache<ID, User>   userCache = createUserCache();
