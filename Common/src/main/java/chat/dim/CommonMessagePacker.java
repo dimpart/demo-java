@@ -33,8 +33,6 @@ package chat.dim;
 import java.util.HashMap;
 import java.util.Map;
 
-import chat.dim.compat.Compatible;
-import chat.dim.core.Compressor;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.msg.MessageUtils;
 import chat.dim.protocol.ID;
@@ -48,26 +46,6 @@ public abstract class CommonMessagePacker extends MessagePacker {
 
     public CommonMessagePacker(CommonFacebook facebook, CommonMessenger messenger) {
         super(facebook, messenger);
-    }
-
-    @Override
-    protected CommonFacebook getFacebook() {
-        return (CommonFacebook) super.getFacebook();
-    }
-
-    @Override
-    protected CommonMessenger getMessenger() {
-        return (CommonMessenger) super.getMessenger();
-    }
-
-    @Override
-    protected Compressor getCompressor() {
-        CommonMessenger messenger = getMessenger();
-        if (messenger == null) {
-            assert false : "messenger not found";
-            return null;
-        }
-        return messenger.getCompressor();
     }
 
     /**
@@ -186,30 +164,6 @@ public abstract class CommonMessagePacker extends MessagePacker {
             return (ReliableMessage) sMsg;
         }
         return super.signMessage(sMsg);
-    }
-
-    @Override
-    public ReliableMessage deserializeMessage(byte[] data) {
-        if (data == null || data.length < 2) {
-            // message data error
-            return null;
-        //} else if (data[0] != '{' || data[data.length-1] != '}') {
-        //    // only support JsON format now
-        //    return null;
-        }
-        ReliableMessage rMsg = super.deserializeMessage(data);
-        if (rMsg != null) {
-            Compatible.fixMetaAttachment(rMsg);
-            Compatible.fixVisaAttachment(rMsg);
-        }
-        return rMsg;
-    }
-
-    @Override
-    public byte[] serializeMessage(ReliableMessage rMsg) {
-        Compatible.fixMetaAttachment(rMsg);
-        Compatible.fixVisaAttachment(rMsg);
-        return super.serializeMessage(rMsg);
     }
 
     /*/

@@ -45,7 +45,7 @@ import chat.dim.type.ConstantString;
  *          address  - a string to identify an entity
  *          terminal - entity login resource(device), OPTIONAL
  */
-public final class EntityID extends ConstantString implements ID {
+final class EntityID extends ConstantString implements ID {
 
     private final String name;
     private final Address address;

@@ -32,6 +32,7 @@ package chat.dim;
 
 import java.util.Date;
 
+import chat.dim.compat.Compatible;
 import chat.dim.compat.CompatibleCompressor;
 import chat.dim.compat.CompatibleOutgoing;
 import chat.dim.core.CipherKeyDelegate;
@@ -110,6 +111,32 @@ public class CommonMessenger extends Messenger implements Transmitter {
     public void setProcessor(Processor processor) {
         this.processor = processor;
     }
+
+    @Override
+    public byte[] serializeMessage(ReliableMessage rMsg) {
+        Compatible.fixMetaAttachment(rMsg);
+        Compatible.fixVisaAttachment(rMsg);
+        return super.serializeMessage(rMsg);
+    }
+
+    @Override
+    public ReliableMessage deserializeMessage(byte[] data) {
+        if (data == null || data.length <= 8) {
+            // message data error
+            return null;
+            //} else if (data[0] != '{' || data[data.length-1] != '}') {
+            //    // only support JsON format now
+            //    return null;
+        }
+        ReliableMessage rMsg = super.deserializeMessage(data);
+        if (rMsg != null) {
+            Compatible.fixMetaAttachment(rMsg);
+            Compatible.fixVisaAttachment(rMsg);
+        }
+        return rMsg;
+    }
+
+    //-------- InstantMessageDelegate
 
     @Override
     public byte[] encryptKey(byte[] data, ID receiver, InstantMessage iMsg) {

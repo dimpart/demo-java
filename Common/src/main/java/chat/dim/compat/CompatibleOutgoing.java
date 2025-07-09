@@ -52,7 +52,7 @@ public abstract class CompatibleOutgoing {
     @SuppressWarnings("unchecked")
     public static void fixContent(Content content) {
         // 0. change 'type' value from string to int
-        fixType(content);
+        fixType(content.toMap());
 
         if (content instanceof FileContent) {
             // 1. 'key' <-> 'password'
@@ -80,13 +80,28 @@ public abstract class CompatibleOutgoing {
         if (content instanceof LoginCommand) {
             // 2. 'ID' <-> 'did'
             Compatible.fixID(content.toMap());
+            // 3. fix station
+            Object station = content.get("station");
+            if (station instanceof Map) {
+                Compatible.fixID((Map<String, Object>) station);
+            }
+            // 4. fix provider
+            Object provider = content.get("provider");
+            if (provider instanceof Map) {
+                Compatible.fixID((Map<String, Object>) provider);
+            }
             return;
         }
+
+        //if (content instanceof ReportCommand) {
+            // check state for oldest version
+        //}
 
         if (content instanceof DocumentCommand) {
             // 2. cmd: 'documents' -> 'document'
             fixDocs((DocumentCommand) content);
         }
+
         if (content instanceof MetaCommand) {
             // 3. 'ID' <-> 'did'
             Compatible.fixID(content.toMap());
@@ -110,6 +125,7 @@ public abstract class CompatibleOutgoing {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static void fixDocs(DocumentCommand content) {
         // cmd: 'documents' -> 'document'
         String cmd = content.getCmd();
@@ -128,6 +144,10 @@ public abstract class CompatibleOutgoing {
             if (docs.size() == 1) {
                 content.remove("documents");
             }
+        }
+        Object document = content.get("document");
+        if (document instanceof Map) {
+            Compatible.fixID((Map<String, Object>) document);
         }
     }
 

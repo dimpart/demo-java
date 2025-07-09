@@ -29,7 +29,6 @@ import chat.dim.dkd.AppCustomizedContent;
 import chat.dim.plugins.ExtensionLoader;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.BlockCommand;
-import chat.dim.protocol.Command;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
@@ -65,18 +64,23 @@ public class CommonExtensionLoader extends ExtensionLoader {
     protected void registerCommandFactories() {
         super.registerCommandFactories();
 
+        // ANS
+        setCommandFactory(AnsCommand.ANS, AnsCommand::new);
+
         // Handshake
         setCommandFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
         // Login
         setCommandFactory(LoginCommand.LOGIN, LoginCommand::new);
-        // Report
-        setCommandFactory(ReportCommand.REPORT, ReportCommand::new);
+
         // Mute
         setCommandFactory(MuteCommand.MUTE, MuteCommand::new);
         // Block
         setCommandFactory(BlockCommand.BLOCK, BlockCommand::new);
-        // ANS
-        setCommandFactory(AnsCommand.ANS, AnsCommand::new);
+
+        // Report
+        setCommandFactory(ReportCommand.REPORT, ReportCommand::new);
+        setCommandFactory(ReportCommand.ONLINE, ReportCommand::new);
+        setCommandFactory(ReportCommand.OFFLINE, ReportCommand::new);
     }
 
 }

@@ -46,12 +46,12 @@ public abstract class CompatibleIncoming {
     @SuppressWarnings("unchecked")
     public static void fixContent(Map<String, Object> content) {
         // get content type
-        String type = Converter.getString(content.get("type"), "");
+        String type = Converter.getString(content.get("type"), null);
+        if (type == null) {
+            type = "";
+        }
 
-        if (type.equals(ContentType.FILE) || type.equals("file") ||
-                type.equals(ContentType.IMAGE) || type.equals("image") ||
-                type.equals(ContentType.AUDIO) || type.equals("audio") ||
-                type.equals(ContentType.VIDEO) || type.equals("video")) {
+        if (Compatible.FILE_TYPES.contains(type)) {
             // 1. 'key' <-> 'password'
             Compatible.fixFileContent(content);
             return;
@@ -85,6 +85,7 @@ public abstract class CompatibleIncoming {
             // 2. cmd: 'document' -> 'documents'
             fixDocs(content);
         }
+
         if (cmd.equals(Command.META) || cmd.equals(Command.DOCUMENTS) || cmd.equals("document")) {
             // 3. 'ID' <-> 'did'
             Compatible.fixID(content);

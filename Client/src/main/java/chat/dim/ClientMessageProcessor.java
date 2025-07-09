@@ -50,13 +50,8 @@ public class ClientMessageProcessor extends CommonMessageProcessor {
     }
 
     @Override
-    protected ClientFacebook getFacebook() {
-        return (ClientFacebook) super.getFacebook();
-    }
-
-    @Override
-    protected ClientMessenger getMessenger() {
-        return (ClientMessenger) super.getMessenger();
+    protected CommonMessenger getMessenger() {
+        return (CommonMessenger) super.getMessenger();
     }
 
     @Override
@@ -69,8 +64,8 @@ public class ClientMessageProcessor extends CommonMessageProcessor {
         if (group == null) {
             return;
         }
-        ClientFacebook facebook = getFacebook();
-        EntityChecker checker = facebook.getEntityChecker();
+        Facebook facebook = getFacebook();
+        EntityChecker checker = getEntityChecker();
         if (checker == null) {
             assert false : "should not happen";
             return;
@@ -121,14 +116,19 @@ public class ClientMessageProcessor extends CommonMessageProcessor {
             // urgent command
             return responses;
         }
+        Facebook facebook = getFacebook();
+        CommonMessenger messenger = getMessenger();
+        if (facebook == null || messenger == null) {
+            assert false : "twins not ready: " + facebook + ", " + messenger;
+            return null;
+        }
         ID sender = rMsg.getSender();
         ID receiver = rMsg.getReceiver();
-        ID user = getFacebook().selectLocalUser(receiver);
+        ID user = facebook.selectLocalUser(receiver);
         if (user == null) {
             assert false : "receiver error: " + receiver;
             return null;
         }
-        CommonMessenger messenger = getMessenger();
         // check responses
         int sty = sender.getType();
         boolean fromBots = EntityType.STATION.equals(sty) && EntityType.BOT.equals(sty);

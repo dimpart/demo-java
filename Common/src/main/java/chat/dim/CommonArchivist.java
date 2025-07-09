@@ -128,10 +128,7 @@ public class CommonArchivist extends Barrack implements Archivist {
     @Override
     public boolean saveMeta(Meta meta, ID identifier) {
         Facebook facebook = getFacebook();
-        if (facebook == null) {
-            assert false : "facebook lost";
-            return false;
-        }
+        assert facebook != null : "facebook lost";
         //
         //  1. check valid
         //
@@ -200,16 +197,16 @@ public class CommonArchivist extends Barrack implements Archivist {
             }
         }
         // check valid
-        return doc.isValid() || verifyDocument(doc);
+        return verifyDocument(doc);
     }
 
     protected boolean verifyDocument(Document doc) {
-        Facebook facebook = getFacebook();
-        if (facebook == null) {
-            assert false : "facebook lost";
-            return false;
+        if (doc.isValid()) {
+            return true;
         }
         ID identifier = doc.getIdentifier();
+        Facebook facebook = getFacebook();
+        assert facebook != null : "facebook lost";
         Meta meta = facebook.getMeta(identifier);
         if (meta == null) {
             Log.warning("failed to get meta: " + identifier);
@@ -220,12 +217,12 @@ public class CommonArchivist extends Barrack implements Archivist {
 
     protected boolean checkDocumentExpired(Document doc) {
         Facebook facebook = getFacebook();
-        if (facebook == null) {
-            assert false : "facebook lost";
-            return false;
-        }
+        assert facebook != null : "facebook lost";
         ID identifier = doc.getIdentifier();
         String type = DocumentUtils.getDocumentType(doc);
+        if (type == null) {
+            type = "*";
+        }
         // check old documents with type
         List<Document> documents = facebook.getDocuments(identifier);
         Document old = DocumentUtils.lastDocument(documents, type);
@@ -235,10 +232,7 @@ public class CommonArchivist extends Barrack implements Archivist {
     @Override
     public VerifyKey getMetaKey(ID user) {
         Facebook facebook = getFacebook();
-        if (facebook == null) {
-            assert false : "facebook lost";
-            return null;
-        }
+        assert facebook != null : "facebook lost";
         Meta meta = facebook.getMeta(user);
         if (meta != null/* && meta.isValid()*/) {
             return meta.getPublicKey();
@@ -250,10 +244,7 @@ public class CommonArchivist extends Barrack implements Archivist {
     @Override
     public EncryptKey getVisaKey(ID user) {
         Facebook facebook = getFacebook();
-        if (facebook == null) {
-            assert false : "facebook lost";
-            return null;
-        }
+        assert facebook != null : "facebook lost";
         List<Document> documents = facebook.getDocuments(user);
         Visa doc = DocumentUtils.lastVisa(documents);
         if (doc != null/* && doc.isValid()*/) {

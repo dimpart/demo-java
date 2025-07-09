@@ -45,14 +45,13 @@ public abstract class CommonMessageProcessor extends MessageProcessor {
         super(facebook, messenger);
     }
 
-    @Override
-    protected CommonFacebook getFacebook() {
-        return (CommonFacebook) super.getFacebook();
-    }
-
-    @Override
-    protected CommonMessenger getMessenger() {
-        return (CommonMessenger) super.getMessenger();
+    protected EntityChecker getEntityChecker() {
+        Facebook facebook = getFacebook();
+        if (facebook instanceof CommonFacebook) {
+            return ((CommonFacebook) facebook).getEntityChecker();
+        }
+        assert facebook == null : "facebook error: " + facebook;
+        return null;
     }
 
     @Override
@@ -63,8 +62,7 @@ public abstract class CommonMessageProcessor extends MessageProcessor {
     protected abstract ContentProcessor.Creator createCreator(Facebook facebook, Messenger messenger);
 
     private boolean checkVisaTime(Content content, ReliableMessage rMsg) {
-        CommonFacebook facebook = getFacebook();
-        EntityChecker checker = facebook.getEntityChecker();
+        EntityChecker checker = getEntityChecker();
         if (checker == null) {
             assert false : "should not happen";
             return false;
@@ -83,6 +81,7 @@ public abstract class CommonMessageProcessor extends MessageProcessor {
             // check whether needs update
             if (docUpdated) {
                 // checking for new isa
+                Facebook facebook = getFacebook();
                 facebook.getDocuments(sender);
             }
         }

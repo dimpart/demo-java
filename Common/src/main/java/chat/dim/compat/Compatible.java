@@ -30,49 +30,18 @@
  */
 package chat.dim.compat;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import chat.dim.protocol.ContentType;
 import chat.dim.protocol.MetaVersion;
 import chat.dim.protocol.ReliableMessage;
 
 
 // TODO: remove after all server/client upgraded
 public abstract class Compatible {
-
-    // 'cmd' <-> 'command'
-    static void fixCmd(Map<String, Object> content) {
-        Object cmd = content.get("command");
-        if (cmd != null) {
-            // command to cmd
-            if (!content.containsKey("cmd")) {
-                content.put("cmd", cmd);
-            }
-        } else {
-            // cmd to command
-            cmd = content.get("cmd");
-            if (cmd != null) {
-                content.put("command", cmd);
-            }
-        }
-    }
-
-    // 'ID' <-> 'did'
-    static void fixID(Map<String, Object> content) {
-        Object did = content.get("did");
-        if (did != null) {
-            // did to ID
-            if (!content.containsKey("ID")) {
-                content.put("ID", did);
-            }
-        } else {
-            // ID to did
-            did = content.get("ID");
-            if (did != null) {
-                content.put("did", did);
-            }
-        }
-    }
 
     @SuppressWarnings("unchecked")
     public static void fixMetaAttachment(ReliableMessage rMsg) {
@@ -108,11 +77,56 @@ public abstract class Compatible {
         }
     }
 
+    // 'ID' <-> 'did'
     static Map<String, Object> fixDocument(Map<String, Object> document) {
-        // 'ID' <-> 'did'
         Compatible.fixID(document);
         return document;
     }
+
+    // 'cmd' <-> 'command'
+    static void fixCmd(Map<String, Object> content) {
+        Object cmd = content.get("command");
+        if (cmd == null) {
+            // 'command' not exists, copy the value from 'cmd'
+            cmd = content.get("cmd");
+            if (cmd != null) {
+                content.put("command", cmd);
+            } else {
+                assert false : "command error: " + content;
+            }
+        } else if (content.containsKey("cmd")) {
+            assert cmd.equals(content.get("cmd")) : "command error: " + content;
+        } else {
+            // copy value from 'command' to 'cmd'
+            content.put("cmd", cmd);
+        }
+    }
+
+    // 'ID' <-> 'did'
+    static void fixID(Map<String, Object> content) {
+        Object did = content.get("did");
+        if (did == null) {
+            // 'did' not exists, copy the value form 'ID'
+            did = content.get("ID");
+            if (did != null) {
+                content.put("did", did);
+            //} else {
+            //    assert false : "did not exists: " + content;
+            }
+        } else if (content.containsKey("ID")) {
+            assert did.equals(content.get("ID")) : "did error: " + content;
+        } else {
+            // copy value from 'did' to 'ID'
+            content.put("ID", did);
+        }
+    }
+
+    static final List<String> FILE_TYPES = new ArrayList<String>() {{
+        add(ContentType.FILE);  add("file");
+        add(ContentType.IMAGE); add("image");
+        add(ContentType.AUDIO); add("audio");
+        add(ContentType.VIDEO); add("video");
+    }};
 
     static void fixFileContent(Map<String, Object> content) {
         Object pwd = content.get("key");

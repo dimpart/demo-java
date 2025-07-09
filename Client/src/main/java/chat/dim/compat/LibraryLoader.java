@@ -31,15 +31,22 @@ import chat.dim.plugins.PluginLoader;
 
 public class LibraryLoader implements Runnable {
 
-    private final ExtensionLoader extensionLoader = createExtensionLoader();
-    private final PluginLoader pluginLoader = createPluginLoader();
+    private final ExtensionLoader extensionLoader;
+    private final PluginLoader pluginLoader;
 
-    protected ExtensionLoader createExtensionLoader() {
-        return new CommonExtensionLoader();
-    }
+    public LibraryLoader(ExtensionLoader extensionLoader, PluginLoader pluginLoader) {
 
-    protected PluginLoader createPluginLoader() {
-        return new ClientPluginLoader();
+        if (extensionLoader == null) {
+            this.extensionLoader = new CommonExtensionLoader();
+        } else {
+            this.extensionLoader = extensionLoader;
+        }
+
+        if (pluginLoader == null) {
+            this.pluginLoader = new CommonPluginLoader();
+        } else {
+            this.pluginLoader = pluginLoader;
+        }
     }
 
     @Override

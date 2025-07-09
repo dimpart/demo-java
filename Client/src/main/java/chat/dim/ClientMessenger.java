@@ -70,6 +70,26 @@ public abstract class ClientMessenger extends CommonMessenger {
     }
 
     @Override
+    public ReliableMessage deserializeMessage(byte[] data) {
+        ReliableMessage msg = super.deserializeMessage(data);
+        if (msg != null && checkDuplicated(msg)) {
+            msg = null;
+        }
+        return msg;
+    }
+
+    protected boolean checkDuplicated(ReliableMessage rMsg) {
+        Checkpoint cp = Checkpoint.getInstance();
+        boolean duplicated = cp.checkDuplicatedMessage(rMsg);
+        if (duplicated) {
+            String sig = cp.getSig(rMsg);
+            Log.warning("drop duplicated message (" + sig + "):"
+                    + rMsg.getSender() + " -> " + rMsg.getReceiver());
+        }
+        return duplicated;
+    }
+
+    @Override
     public List<ReliableMessage> processReliableMessage(ReliableMessage rMsg) {
         List<ReliableMessage> responses = super.processReliableMessage(rMsg);
         if (responses == null || responses.isEmpty()) {
