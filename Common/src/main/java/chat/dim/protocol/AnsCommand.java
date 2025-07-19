@@ -32,7 +32,10 @@ import chat.dim.dkd.cmd.BaseCommand;
 import chat.dim.utils.ArrayUtils;
 
 /**
- *  Command message: {
+ *  ANS Command
+ *
+ *  <blockquote><pre>
+ *  data format: {
  *      type : 0x88,
  *      sn   : 123,
  *
@@ -42,6 +45,7 @@ import chat.dim.utils.ArrayUtils;
  *          "{alias}": "{ID}",
  *      }
  *  }
+ *  </pre></blockquote>
  */
 public class AnsCommand extends BaseCommand {
 

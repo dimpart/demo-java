@@ -32,7 +32,6 @@ package chat.dim.protocol;
 
 /**
  *  Handshake State
- *  ~~~~~~~~~~~~~~~
  */
 public enum HandshakeState {
     START,    // C -> S, without session key(or session expired)

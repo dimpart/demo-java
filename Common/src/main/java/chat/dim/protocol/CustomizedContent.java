@@ -33,7 +33,10 @@ package chat.dim.protocol;
 import chat.dim.dkd.AppCustomizedContent;
 
 /**
- *  Application Customized message: {
+ *  Application Customized message
+ *
+ *  <blockquote><pre>
+ *  data format: {
  *      type : 0xCC,
  *      sn   : 123,
  *
@@ -42,6 +45,7 @@ import chat.dim.dkd.AppCustomizedContent;
  *      act   : "{ACTION}",  // action name (3.g.: "throw")
  *      extra : info         // action parameters
  *  }
+ *  </pre></blockquote>
  */
 public interface CustomizedContent extends Content {
 

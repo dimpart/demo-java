@@ -35,7 +35,10 @@ import java.util.Map;
 import chat.dim.dkd.cmd.BaseCommand;
 
 /**
- *  Handshake command message: {
+ *  Handshake command message
+ *
+ *  <blockquote><pre>
+ *  data format: {
  *      type : 0x88,
  *      sn   : 123,
  *
@@ -43,6 +46,7 @@ import chat.dim.dkd.cmd.BaseCommand;
  *      title   : "Hello world!", // "DIM?", "DIM!"
  *      session : "{SESSION_KEY}" // session key
  *  }
+ *  </pre></blockquote>
  */
 public class HandshakeCommand extends BaseCommand {
 

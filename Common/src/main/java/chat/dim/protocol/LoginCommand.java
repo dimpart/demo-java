@@ -33,7 +33,10 @@ import chat.dim.mkm.ServiceProvider;
 import chat.dim.mkm.Station;
 
 /**
- *  Command message: {
+ *  Login Command
+ *
+ *  <blockquote><pre>
+ *  data format: {
  *      type : 0x88,
  *      sn   : 123,
  *
@@ -53,6 +56,7 @@ import chat.dim.mkm.Station;
  *          did  : "{SP_ID}"
  *      }
  *  }
+ *  </pre></blockquote>
  */
 public class LoginCommand extends BaseCommand {
 

@@ -31,13 +31,19 @@
 package chat.dim.cpu;
 
 import java.util.List;
+import java.util.Map;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.TwinsHelper;
 import chat.dim.protocol.Content;
+import chat.dim.protocol.ContentType;
 import chat.dim.protocol.CustomizedContent;
+import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.protocol.group.GroupHistory;
+import chat.dim.protocol.group.QueryCommand;
 
 /**
  *  Customized Content Processing Unit
@@ -47,7 +53,10 @@ public class CustomizedContentProcessor extends BaseContentProcessor implements 
 
     public CustomizedContentProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
+        groupHistoryHandler = new GroupHistoryHandler(facebook, messenger);
     }
+
+    private final GroupHistoryHandler groupHistoryHandler;
 
     @Override
     public List<Content> processContent(Content content, ReliableMessage rMsg) {
@@ -75,6 +84,11 @@ public class CustomizedContentProcessor extends BaseContentProcessor implements 
 
     // override for your application
     protected List<Content> filter(String app, CustomizedContent content, ReliableMessage rMsg) {
+        if (GroupHistory.APP.equals(app)) {
+            // app id matched,
+            // return no errors
+            return null;
+        }
         return respondReceipt("Content not support.", rMsg.getEnvelope(), content, newMap(
                 "template", "Customized content (app: ${app}) not support yet!",
                 "replacements", newMap(
@@ -83,8 +97,16 @@ public class CustomizedContentProcessor extends BaseContentProcessor implements 
         ));
     }
 
-    // override for your module
+    // override for your modules
     protected CustomizedContentHandler fetch(String mod, CustomizedContent content, ReliableMessage rMsg) {
+        if (GroupHistory.MOD.equals(mod)) {
+            String app = content.getApplication();
+            if (GroupHistory.APP.equals(app)) {
+                return groupHistoryHandler;
+            }
+            assert false : "unknown app: " + app + ", content: " + content + ", sender: " + rMsg.getSender();
+            //return null;
+        }
         // if the application has too many modules, I suggest you to
         // use different handler to do the jobs for each module.
         return this;
@@ -103,5 +125,53 @@ public class CustomizedContentProcessor extends BaseContentProcessor implements 
                         "act", act
                 )
         ));
+    }
+}
+
+
+/*  Command Transform:
+
+    +===============================+===============================+
+    |      Customized Content       |      Group Query Command      |
+    +-------------------------------+-------------------------------+
+    |   "type" : i2s(0xCC)          |   "type" : i2s(0x88)          |
+    |   "sn"   : 123                |   "sn"   : 123                |
+    |   "time" : 123.456            |   "time" : 123.456            |
+    |   "app"  : "chat.dim.group"   |                               |
+    |   "mod"  : "history"          |                               |
+    |   "act"  : "query"            |                               |
+    |                               |   "command"   : "query"       |
+    |   "group"     : "{GROUP_ID}"  |   "group"     : "{GROUP_ID}"  |
+    |   "last_time" : 0             |   "last_time" : 0             |
+    +===============================+===============================+
+ */
+final class GroupHistoryHandler extends TwinsHelper implements CustomizedContentHandler {
+
+    public GroupHistoryHandler(Facebook facebook, Messenger messenger) {
+        super(facebook, messenger);
+    }
+
+    @Override
+    public List<Content> handleAction(String act, ID sender, CustomizedContent content, ReliableMessage rMsg) {
+        Messenger messenger = getMessenger();
+        if (messenger == null) {
+            assert false : "messenger lost";
+        } else if (GroupHistory.ACT_QUERY.equals(act)) {
+            assert GroupHistory.APP.equals(content.getApplication());
+            assert GroupHistory.MOD.equals(content.getModule());
+            assert content.getGroup() != null : "group command error: " + content + ", sender: " + sender;
+        } else {
+            assert false : "unknown action: " + act + ", " + content + ", sender: " + sender;
+            return null;
+        }
+        Map<String, Object> info = content.copyMap(false);
+        info.put("type", ContentType.COMMAND);
+        info.put("command", GroupCommand.QUERY);
+        Content query = Content.parse(info);
+        if (query instanceof QueryCommand) {
+            return messenger.processContent(query, rMsg);
+        }
+        assert false : "query command error: " + query + ", " + content + ", sender: " + sender;
+        return null;
     }
 }

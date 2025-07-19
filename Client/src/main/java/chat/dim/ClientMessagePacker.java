@@ -59,6 +59,11 @@ public abstract class ClientMessagePacker extends CommonMessagePacker {
         return (CommonFacebook) super.getFacebook();
     }
 
+    @Override
+    protected CommonMessenger getMessenger() {
+        return (CommonMessenger) super.getMessenger();
+    }
+
     // for checking whether group's ready
     protected List<ID> getMembers(ID group) {
         Facebook facebook = getFacebook();

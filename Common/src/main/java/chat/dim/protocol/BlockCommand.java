@@ -36,13 +36,17 @@ import java.util.Map;
 import chat.dim.dkd.cmd.BaseCommand;
 
 /**
- *  Command message: {
+ *  Block Command
+ *
+ *  <blockquote><pre>
+ *  data format: {
  *      type : 0x88,
  *      sn   : 123,
  *
  *      command : "block",
  *      list    : []      // block-list
  *  }
+ *  </pre></blockquote>
  */
 public class BlockCommand extends BaseCommand {
 

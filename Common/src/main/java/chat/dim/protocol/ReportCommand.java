@@ -30,7 +30,10 @@ import java.util.Map;
 import chat.dim.dkd.cmd.BaseCommand;
 
 /**
- *  Command message: {
+ *  Report Command
+ *
+ *  <blockquote><pre>
+ *  data format: {
  *      type : 0x88,
  *      sn   : 123,
  *
@@ -39,6 +42,7 @@ import chat.dim.dkd.cmd.BaseCommand;
  *      //---- extra info
  *      time    : 1234567890,    // timestamp
  *  }
+ *  </pre></blockquote>
  */
 public class ReportCommand extends BaseCommand {
 

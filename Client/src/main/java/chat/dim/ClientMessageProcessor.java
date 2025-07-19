@@ -50,6 +50,11 @@ public class ClientMessageProcessor extends CommonMessageProcessor {
     }
 
     @Override
+    protected CommonFacebook getFacebook() {
+        return (CommonFacebook) super.getFacebook();
+    }
+
+    @Override
     protected CommonMessenger getMessenger() {
         return (CommonMessenger) super.getMessenger();
     }

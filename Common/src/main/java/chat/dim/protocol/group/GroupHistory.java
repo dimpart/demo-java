@@ -2,12 +2,12 @@
  *
  *  DIMP : Decentralized Instant Messaging Protocol
  *
- *                                Written in 2019 by Moky <albert.moky@gmail.com>
+ *                                Written in 2025 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 Albert Moky
+ * Copyright (c) 2025 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,73 +28,58 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.protocol;
+package chat.dim.protocol.group;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Date;
 
-import chat.dim.dkd.cmd.BaseCommand;
+import chat.dim.protocol.CustomizedContent;
+import chat.dim.protocol.ID;
 
 /**
- *  Mute Command
+ *  Group Key Command
  *
  *  <blockquote><pre>
  *  data format: {
- *      type : 0x88,
- *      sn   : 123,
+ *      "type" : i2s(0xCC),
+ *      "sn"   : 123,
+ *      "time" : 123.456,
  *
- *      command : "mute",
- *      list    : []      // mute-list
+ *      "app"  : "chat.dim.group",
+ *      "mod"  : "history",
+ *      "act"  : "query",
+ *
+ *      "group"     : "{GROUP_ID}",
+ *      "last_time" : 0,             // Last group history time for querying
  *  }
  *  </pre></blockquote>
  */
-public class MuteCommand extends BaseCommand {
+public interface GroupHistory {
 
-    public static final String MUTE   = "mute";
+    String APP = "chat.dim.group";
+    String MOD = "history";
 
-    // mute-list
-    private List<ID> muteList = null;
+    String ACT_QUERY = "query";
 
-    public MuteCommand(Map<String, Object> content) {
-        super(content);
-    }
+    //
+    //  Factory method
+    //
 
     /**
-     *  Send mute-list
+     *  QueryCommand is deprecated, use this action instead.
      *
-     * @param list - mute list
+     * @param group    - group ID
+     * @param lastTime - last group history time
+     * @return customized content for querying
      */
-    public MuteCommand(List<ID> list) {
-        super(MUTE);
-        setMuteList(list);
-    }
-
-    /**
-     *  Query mute-list
-     */
-    public MuteCommand() {
-        super(MUTE);
-    }
-
-    //-------- setters/getters --------
-
-    @SuppressWarnings("unchecked")
-    public List<ID> getMuteList() {
-        if (muteList == null) {
-            Object list = get("list");
-            if (list != null) {
-                muteList = ID.convert((List<String>) list);
-            }
+    static CustomizedContent queryGroupHistory(ID group, Date lastTime) {
+        assert group.isGroup() : "group ID error: " + group;
+        CustomizedContent content = CustomizedContent.create(APP, MOD, ACT_QUERY);
+        content.setGroup(group);
+        if (lastTime != null) {
+            // Last group history time for querying
+            content.setDateTime("last_time", lastTime);
         }
-        return muteList;
+        return content;
     }
 
-    public void setMuteList(List<ID> list) {
-        if (list == null) {
-            remove("list");
-        } else {
-            put("list", ID.revert(list));
-        }
-        muteList = list;
-    }
 }
