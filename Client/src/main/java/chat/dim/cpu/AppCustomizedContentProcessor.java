@@ -30,27 +30,40 @@
  */
 package chat.dim.cpu;
 
-import java.util.List;
-
-import chat.dim.protocol.Content;
+import chat.dim.Facebook;
+import chat.dim.Messenger;
+import chat.dim.cpu.app.CustomizedContentHandler;
+import chat.dim.cpu.app.GroupHistoryHandler;
 import chat.dim.protocol.CustomizedContent;
-import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 
 /**
- *  Handler for Customized Content
- *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *  Customized Content Processing Unit
+ *  <p>
+ *      Handle content for application customized
+ *  </p>
  */
-public interface CustomizedContentHandler {
+public class AppCustomizedContentProcessor extends CustomizedContentProcessor {
 
-    /**
-     *  Do your job
-     *
-     * @param act     - action
-     * @param sender  - user ID
-     * @param content - customized content
-     * @param rMsg    - network message
-     * @return responses
-     */
-    List<Content> handleAction(String act, ID sender, CustomizedContent content, ReliableMessage rMsg);
+    protected final GroupHistoryHandler groupHistoryHandler;
+
+    public AppCustomizedContentProcessor(Facebook facebook, Messenger messenger) {
+        super(facebook, messenger);
+        groupHistoryHandler = createGroupHistoryHandler(facebook, messenger);
+    }
+
+    protected GroupHistoryHandler createGroupHistoryHandler(Facebook facebook, Messenger messenger) {
+        return new GroupHistoryHandler(facebook, messenger);
+    }
+
+    @Override
+    protected CustomizedContentHandler filter(String app, String mod, CustomizedContent content, ReliableMessage rMsg) {
+        if (content.getGroup() != null) {
+            if (groupHistoryHandler.matches(app, mod)) {
+                return groupHistoryHandler;
+            }
+        }
+        return super.filter(app, mod, content, rMsg);
+    }
+
 }

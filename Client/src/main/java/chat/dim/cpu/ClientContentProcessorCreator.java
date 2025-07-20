@@ -62,7 +62,7 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
             case "application":
             case ContentType.CUSTOMIZED:
             case "customized":
-                return new CustomizedContentProcessor(getFacebook(), getMessenger());
+                return new AppCustomizedContentProcessor(getFacebook(), getMessenger());
 
             // history command
             case ContentType.HISTORY:

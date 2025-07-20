@@ -42,19 +42,13 @@ import chat.dim.protocol.ReportCommand;
 public class CommonExtensionLoader extends ExtensionLoader {
 
     @Override
-    protected void registerContentFactories() {
-        super.registerContentFactories();
-        registerCustomizedFactories();
-    }
-
-    /**
-     *  Customized content factories
-     */
     protected void registerCustomizedFactories() {
 
         // Application Customized
         setContentFactory(ContentType.CUSTOMIZED, "customized", AppCustomizedContent::new);
         setContentFactory(ContentType.APPLICATION, "application", AppCustomizedContent::new);
+
+        //super.registerCustomizedFactories();
     }
 
     /**

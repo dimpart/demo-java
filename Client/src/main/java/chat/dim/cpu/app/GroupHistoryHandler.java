@@ -2,12 +2,12 @@
  *
  *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
- *                                Written in 2022 by Moky <albert.moky@gmail.com>
+ *                                Written in 2025 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 Albert Moky
+ * Copyright (c) 2025 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,14 +28,13 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.cpu;
+package chat.dim.cpu.app;
 
 import java.util.List;
 import java.util.Map;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
-import chat.dim.TwinsHelper;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.CustomizedContent;
@@ -44,90 +43,6 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.GroupHistory;
 import chat.dim.protocol.group.QueryCommand;
-
-/**
- *  Customized Content Processing Unit
- *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- */
-public class CustomizedContentProcessor extends BaseContentProcessor implements CustomizedContentHandler {
-
-    public CustomizedContentProcessor(Facebook facebook, Messenger messenger) {
-        super(facebook, messenger);
-        groupHistoryHandler = new GroupHistoryHandler(facebook, messenger);
-    }
-
-    private final GroupHistoryHandler groupHistoryHandler;
-
-    @Override
-    public List<Content> processContent(Content content, ReliableMessage rMsg) {
-        assert content instanceof CustomizedContent : "customized content error: " + content;
-        CustomizedContent customized = (CustomizedContent) content;
-        // 1. check app id
-        String app = customized.getApplication();
-        List<Content> res = filter(app, customized, rMsg);
-        if (res != null) {
-            // app id not found
-            return res;
-        }
-        // 2. get handler with module name
-        String mod = customized.getModule();
-        CustomizedContentHandler handler = fetch(mod, customized, rMsg);
-        if (handler == null) {
-            // module not support
-            return null;
-        }
-        // 3. do the job
-        String act = customized.getAction();
-        ID sender = rMsg.getSender();
-        return handler.handleAction(act, sender, customized, rMsg);
-    }
-
-    // override for your application
-    protected List<Content> filter(String app, CustomizedContent content, ReliableMessage rMsg) {
-        if (GroupHistory.APP.equals(app)) {
-            // app id matched,
-            // return no errors
-            return null;
-        }
-        return respondReceipt("Content not support.", rMsg.getEnvelope(), content, newMap(
-                "template", "Customized content (app: ${app}) not support yet!",
-                "replacements", newMap(
-                        "app", app
-                )
-        ));
-    }
-
-    // override for your modules
-    protected CustomizedContentHandler fetch(String mod, CustomizedContent content, ReliableMessage rMsg) {
-        if (GroupHistory.MOD.equals(mod)) {
-            String app = content.getApplication();
-            if (GroupHistory.APP.equals(app)) {
-                return groupHistoryHandler;
-            }
-            assert false : "unknown app: " + app + ", content: " + content + ", sender: " + rMsg.getSender();
-            //return null;
-        }
-        // if the application has too many modules, I suggest you to
-        // use different handler to do the jobs for each module.
-        return this;
-    }
-
-    // override for customized actions
-    @Override
-    public List<Content> handleAction(String act, ID sender, CustomizedContent content, ReliableMessage rMsg) {
-        String app = content.getApplication();
-        String mod = content.getModule();
-        return respondReceipt("Content not support.", rMsg.getEnvelope(), content, newMap(
-                "template", "Customized content (app: ${app}, mod: ${mod}, act: ${act}) not support yet!",
-                "replacements", newMap(
-                        "app", app,
-                        "mod", mod,
-                        "act", act
-                )
-        ));
-    }
-}
-
 
 /*  Command Transform:
 
@@ -145,10 +60,14 @@ public class CustomizedContentProcessor extends BaseContentProcessor implements 
     |   "last_time" : 0             |   "last_time" : 0             |
     +===============================+===============================+
  */
-final class GroupHistoryHandler extends TwinsHelper implements CustomizedContentHandler {
+public final class GroupHistoryHandler extends BaseCustomizedHandler {
 
     public GroupHistoryHandler(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
+    }
+
+    public boolean matches(String app, String mod) {
+        return GroupHistory.APP.equals(app) && GroupHistory.MOD.equals(mod);
     }
 
     @Override
@@ -156,13 +75,14 @@ final class GroupHistoryHandler extends TwinsHelper implements CustomizedContent
         Messenger messenger = getMessenger();
         if (messenger == null) {
             assert false : "messenger lost";
+            return null;
         } else if (GroupHistory.ACT_QUERY.equals(act)) {
             assert GroupHistory.APP.equals(content.getApplication());
             assert GroupHistory.MOD.equals(content.getModule());
             assert content.getGroup() != null : "group command error: " + content + ", sender: " + sender;
         } else {
             assert false : "unknown action: " + act + ", " + content + ", sender: " + sender;
-            return null;
+            return super.handleAction(act, sender, content, rMsg);
         }
         Map<String, Object> info = content.copyMap(false);
         info.put("type", ContentType.COMMAND);
@@ -172,6 +92,7 @@ final class GroupHistoryHandler extends TwinsHelper implements CustomizedContent
             return messenger.processContent(query, rMsg);
         }
         assert false : "query command error: " + query + ", " + content + ", sender: " + sender;
-        return null;
+        return respondReceipt("Query command error.", rMsg.getEnvelope(), content, null);
     }
+
 }
