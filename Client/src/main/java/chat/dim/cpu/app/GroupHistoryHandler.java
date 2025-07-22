@@ -66,23 +66,26 @@ public final class GroupHistoryHandler extends BaseCustomizedHandler {
         super(facebook, messenger);
     }
 
-    public boolean matches(String app, String mod) {
-        return GroupHistory.APP.equals(app) && GroupHistory.MOD.equals(mod);
-    }
-
     @Override
     public List<Content> handleAction(String act, ID sender, CustomizedContent content, ReliableMessage rMsg) {
+        if (content.getGroup() == null) {
+            assert false : "group command error: " + content + ", sender: " + sender;
+            return respondReceipt("Group command error.", rMsg.getEnvelope(), content, null);
+        }
+        if (GroupHistory.ACT_QUERY.equals(act)) {
+            assert GroupHistory.APP.equals(content.getApplication());
+            assert GroupHistory.MOD.equals(content.getModule());
+            return transformQueryCommand(content, rMsg);
+        }
+        assert false : "unknown action: " + act + ", " + content + ", sender: " + sender;
+        return super.handleAction(act, sender, content, rMsg);
+    }
+
+    private List<Content> transformQueryCommand(CustomizedContent content, ReliableMessage rMsg) {
         Messenger messenger = getMessenger();
         if (messenger == null) {
             assert false : "messenger lost";
             return null;
-        } else if (GroupHistory.ACT_QUERY.equals(act)) {
-            assert GroupHistory.APP.equals(content.getApplication());
-            assert GroupHistory.MOD.equals(content.getModule());
-            assert content.getGroup() != null : "group command error: " + content + ", sender: " + sender;
-        } else {
-            assert false : "unknown action: " + act + ", " + content + ", sender: " + sender;
-            return super.handleAction(act, sender, content, rMsg);
         }
         Map<String, Object> info = content.copyMap(false);
         info.put("type", ContentType.COMMAND);
@@ -91,7 +94,7 @@ public final class GroupHistoryHandler extends BaseCustomizedHandler {
         if (query instanceof QueryCommand) {
             return messenger.processContent(query, rMsg);
         }
-        assert false : "query command error: " + query + ", " + content + ", sender: " + sender;
+        assert false : "query command error: " + query + ", " + content + ", sender: " + rMsg.getSender();
         return respondReceipt("Query command error.", rMsg.getEnvelope(), content, null);
     }
 

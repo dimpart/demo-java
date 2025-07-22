@@ -32,6 +32,7 @@ package chat.dim.cpu;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.cpu.app.GroupHistoryHandler;
 import chat.dim.cpu.group.ExpelCommandProcessor;
 import chat.dim.cpu.group.InviteCommandProcessor;
 import chat.dim.cpu.group.JoinCommandProcessor;
@@ -46,11 +47,23 @@ import chat.dim.protocol.ContentType;
 import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
+import chat.dim.protocol.group.GroupHistory;
 
 public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
 
     public ClientContentProcessorCreator(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
+    }
+
+    protected AppCustomizedProcessor createCustomizedContentProcessor(Facebook facebook, Messenger messenger) {
+        AppCustomizedProcessor cpu = new AppCustomizedProcessor(facebook, messenger);
+        // 'chat.dim.group:history'
+        cpu.setHandler(
+                GroupHistory.APP,
+                GroupHistory.MOD,
+                new GroupHistoryHandler(facebook, messenger)
+        );
+        return cpu;
     }
 
     @Override
@@ -62,7 +75,7 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
             case "application":
             case ContentType.CUSTOMIZED:
             case "customized":
-                return new AppCustomizedContentProcessor(getFacebook(), getMessenger());
+                return createCustomizedContentProcessor(getFacebook(), getMessenger());
 
             // history command
             case ContentType.HISTORY:

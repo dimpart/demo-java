@@ -30,10 +30,12 @@
  */
 package chat.dim.cpu;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.app.CustomizedContentHandler;
-import chat.dim.cpu.app.GroupHistoryHandler;
 import chat.dim.protocol.CustomizedContent;
 import chat.dim.protocol.ReliableMessage;
 
@@ -43,26 +45,29 @@ import chat.dim.protocol.ReliableMessage;
  *      Handle content for application customized
  *  </p>
  */
-public class AppCustomizedContentProcessor extends CustomizedContentProcessor {
+public final class AppCustomizedProcessor extends CustomizedContentProcessor {
 
-    protected final GroupHistoryHandler groupHistoryHandler;
+    private final Map<String, CustomizedContentHandler> handlers = new HashMap<>();
 
-    public AppCustomizedContentProcessor(Facebook facebook, Messenger messenger) {
+    public AppCustomizedProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
-        groupHistoryHandler = createGroupHistoryHandler(facebook, messenger);
     }
 
-    protected GroupHistoryHandler createGroupHistoryHandler(Facebook facebook, Messenger messenger) {
-        return new GroupHistoryHandler(facebook, messenger);
+    public void setHandler(String app, String mod, CustomizedContentHandler handler) {
+        handlers.put(app + ":" + mod, handler);
+    }
+
+    private CustomizedContentHandler getHandler(String app, String mod) {
+        return handlers.get(app + ":" + mod);
     }
 
     @Override
     protected CustomizedContentHandler filter(String app, String mod, CustomizedContent content, ReliableMessage rMsg) {
-        if (content.getGroup() != null) {
-            if (groupHistoryHandler.matches(app, mod)) {
-                return groupHistoryHandler;
-            }
+        CustomizedContentHandler handler = getHandler(app, mod);
+        if (handler != null) {
+            return handler;
         }
+        // default handler
         return super.filter(app, mod, content, rMsg);
     }
 
