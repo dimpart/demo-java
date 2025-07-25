@@ -33,8 +33,8 @@ package chat.dim.network;
 import java.util.Date;
 
 import chat.dim.fsm.BaseTransition;
+import chat.dim.log.Log;
 import chat.dim.port.Porter;
-import chat.dim.utils.Log;
 
 /**
  *  Transitions

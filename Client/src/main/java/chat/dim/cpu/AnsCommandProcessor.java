@@ -36,10 +36,10 @@ import java.util.Map;
 import chat.dim.ClientFacebook;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.log.Log;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.utils.Log;
 
 public class AnsCommandProcessor extends BaseCommandProcessor {
 

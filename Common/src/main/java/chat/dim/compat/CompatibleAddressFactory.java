@@ -30,11 +30,11 @@
  */
 package chat.dim.compat;
 
+import chat.dim.mem.ThanosCache;
 import chat.dim.mkm.BTCAddress;
 import chat.dim.mkm.BaseAddressFactory;
 import chat.dim.mkm.ETHAddress;
 import chat.dim.protocol.Address;
-import chat.dim.utils.ThanosCache;
 
 public class CompatibleAddressFactory extends BaseAddressFactory {
 

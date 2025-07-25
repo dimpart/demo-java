@@ -30,6 +30,8 @@
  */
 package chat.dim.utils;
 
+import chat.dim.log.Log;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;

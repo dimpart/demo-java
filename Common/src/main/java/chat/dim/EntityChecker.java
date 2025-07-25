@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import chat.dim.dbi.AccountDBI;
+import chat.dim.log.Log;
 import chat.dim.mkm.MetaUtils;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.GroupCommand;
@@ -46,7 +47,6 @@ import chat.dim.protocol.Visa;
 import chat.dim.type.Duration;
 import chat.dim.type.Pair;
 import chat.dim.utils.FrequencyChecker;
-import chat.dim.utils.Log;
 import chat.dim.utils.RecentTimeChecker;
 
 public abstract class EntityChecker {

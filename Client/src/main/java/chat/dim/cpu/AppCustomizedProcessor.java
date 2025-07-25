@@ -45,7 +45,7 @@ import chat.dim.protocol.ReliableMessage;
  *      Handle content for application customized
  *  </p>
  */
-public final class AppCustomizedProcessor extends CustomizedContentProcessor {
+public class AppCustomizedProcessor extends CustomizedContentProcessor {
 
     private final Map<String, CustomizedContentHandler> handlers = new HashMap<>();
 
@@ -57,7 +57,7 @@ public final class AppCustomizedProcessor extends CustomizedContentProcessor {
         handlers.put(app + ":" + mod, handler);
     }
 
-    private CustomizedContentHandler getHandler(String app, String mod) {
+    protected CustomizedContentHandler getHandler(String app, String mod) {
         return handlers.get(app + ":" + mod);
     }
 

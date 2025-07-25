@@ -36,6 +36,7 @@ import java.util.List;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.EntityChecker;
+import chat.dim.log.Log;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ForwardContent;
@@ -44,7 +45,6 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.type.Pair;
-import chat.dim.utils.Log;
 
 public class GroupEmitter extends TripletsHelper {
 

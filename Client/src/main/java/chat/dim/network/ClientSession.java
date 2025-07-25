@@ -39,6 +39,7 @@ import java.util.List;
 
 import chat.dim.Messenger;
 import chat.dim.dbi.SessionDBI;
+import chat.dim.log.Log;
 import chat.dim.mkm.Station;
 import chat.dim.mtp.StreamArrival;
 import chat.dim.net.Connection;
@@ -47,7 +48,6 @@ import chat.dim.port.Porter;
 import chat.dim.tcp.StreamHub;
 import chat.dim.threading.BackgroundThreads;
 import chat.dim.utils.ArrayUtils;
-import chat.dim.utils.Log;
 
 /**
  *  Session for Connection

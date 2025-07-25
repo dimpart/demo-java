@@ -35,6 +35,7 @@ import java.util.List;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.group.GroupCommandHelper;
+import chat.dim.log.Log;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ForwardContent;
 import chat.dim.protocol.GroupCommand;
@@ -43,7 +44,6 @@ import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.type.Pair;
 import chat.dim.type.Triplet;
-import chat.dim.utils.Log;
 
 public class GroupCommandProcessor extends HistoryCommandProcessor {
 

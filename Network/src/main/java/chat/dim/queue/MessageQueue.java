@@ -39,10 +39,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import chat.dim.log.Log;
 import chat.dim.port.Departure;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.utils.Log;
 
 public final class MessageQueue {
 

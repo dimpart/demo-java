@@ -36,6 +36,7 @@ import java.util.List;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.cpu.GroupCommandProcessor;
+import chat.dim.log.Log;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.GroupCommand;
@@ -44,7 +45,6 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.JoinCommand;
 import chat.dim.type.Pair;
 import chat.dim.type.Triplet;
-import chat.dim.utils.Log;
 
 /**
  *  Join Group Command Processor

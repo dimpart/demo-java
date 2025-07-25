@@ -36,13 +36,13 @@ import java.util.List;
 import java.util.Map;
 
 import chat.dim.Messenger;
+import chat.dim.log.Log;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
-import chat.dim.utils.Log;
 
 public class GroupPacker extends TripletsHelper {
 

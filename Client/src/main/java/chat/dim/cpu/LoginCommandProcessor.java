@@ -36,11 +36,11 @@ import chat.dim.ClientMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.dbi.SessionDBI;
+import chat.dim.log.Log;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.utils.Log;
 
 public class LoginCommandProcessor extends BaseCommandProcessor {
 

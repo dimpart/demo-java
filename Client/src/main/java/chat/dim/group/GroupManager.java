@@ -35,6 +35,7 @@ import java.util.List;
 
 import chat.dim.CommonMessenger;
 import chat.dim.Register;
+import chat.dim.log.Log;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
@@ -51,7 +52,6 @@ import chat.dim.protocol.group.InviteCommand;
 import chat.dim.protocol.group.ResetCommand;
 import chat.dim.type.Copier;
 import chat.dim.type.Pair;
-import chat.dim.utils.Log;
 
 public class GroupManager extends TripletsHelper {
 

@@ -28,47 +28,17 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.utils;
+package chat.dim.mem;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+public interface MemoryCache <K, V> {
 
-public class ThanosCache <K, V> implements MemoryCache<K, V> {
+    V get(K key);
 
-    private final Map<K, V> caches = new HashMap<>();
-
-    @Override
-    public V get(K key) {
-        return caches.get(key);
-    }
-
-    @Override
-    public V put(K key, V value) {
-        return caches.put(key, value);
-    }
-
-    @Override
-    public int reduceMemory() {
-        int finger = 0;
-        finger = thanos(caches, finger);
-        return finger >> 1;
-    }
+    V put(K key, V value);
 
     /**
-     *  Thanos can kill half lives of a world with a snap of the finger
+     *  Garbage Collection
      */
-    public static <K, V> int thanos(Map<K, V> planet, int finger) {
-        Iterator<Map.Entry<K, V>> people = planet.entrySet().iterator();
-        while (people.hasNext()) {
-            people.next();
-            if ((++finger & 1) == 1) {
-                // kill it
-                people.remove();
-            }
-            // let it go
-        }
-        return finger;
-    }
+    int reduceMemory();
 
 }

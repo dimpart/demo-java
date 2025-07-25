@@ -38,6 +38,7 @@ import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.Date;
 
+import chat.dim.log.Log;
 import chat.dim.net.Connection;
 import chat.dim.net.Hub;
 import chat.dim.pack.DeparturePacker;
@@ -51,7 +52,6 @@ import chat.dim.skywalker.Runner;
 import chat.dim.socket.BaseChannel;
 import chat.dim.tcp.StreamChannel;
 import chat.dim.tcp.StreamHub;
-import chat.dim.utils.Log;
 
 public class GateKeeper extends Runner implements Porter.Delegate {
 

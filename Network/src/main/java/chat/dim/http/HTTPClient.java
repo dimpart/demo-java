@@ -47,10 +47,10 @@ import chat.dim.digest.MD5;
 import chat.dim.filesys.ExternalStorage;
 import chat.dim.filesys.Paths;
 import chat.dim.format.Hex;
+import chat.dim.log.Log;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
 import chat.dim.skywalker.Runner;
-import chat.dim.utils.Log;
 import chat.dim.utils.Template;
 
 public abstract class HTTPClient extends Runner implements UploadDelegate, DownloadDelegate {

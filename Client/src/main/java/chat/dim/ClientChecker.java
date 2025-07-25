@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.List;
 
 import chat.dim.dbi.AccountDBI;
+import chat.dim.log.Log;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
@@ -48,7 +49,6 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.Visa;
 import chat.dim.protocol.group.QueryCommand;
 import chat.dim.type.Pair;
-import chat.dim.utils.Log;
 
 public class ClientChecker extends EntityChecker {
 

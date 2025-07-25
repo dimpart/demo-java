@@ -35,6 +35,7 @@ import java.util.List;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.crypto.SignKey;
+import chat.dim.log.Log;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
@@ -43,7 +44,6 @@ import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
-import chat.dim.utils.Log;
 
 public class AdminManager extends TripletsHelper {
 

@@ -37,6 +37,7 @@ import java.util.Locale;
 import chat.dim.core.Packer;
 import chat.dim.core.Processor;
 import chat.dim.dbi.SessionDBI;
+import chat.dim.log.Log;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.network.ClientSession;
@@ -47,7 +48,6 @@ import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.skywalker.Runner;
 import chat.dim.type.Duration;
-import chat.dim.utils.Log;
 
 public abstract class Terminal extends Runner implements SessionState.Delegate {
 

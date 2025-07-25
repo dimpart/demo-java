@@ -34,13 +34,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import chat.dim.crypto.EncryptKey;
+import chat.dim.log.Log;
 import chat.dim.msg.MessageUtils;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
-import chat.dim.utils.Log;
 
 public abstract class CommonMessagePacker extends MessagePacker {
 

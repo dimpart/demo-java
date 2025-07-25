@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.List;
 
 import chat.dim.dbi.AccountDBI;
+import chat.dim.log.Log;
 import chat.dim.mkm.DocumentUtils;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.GroupCommand;
@@ -44,7 +45,6 @@ import chat.dim.protocol.group.ResetCommand;
 import chat.dim.protocol.group.ResignCommand;
 import chat.dim.type.Duration;
 import chat.dim.type.Pair;
-import chat.dim.utils.Log;
 
 public class GroupCommandHelper extends TripletsHelper {
 

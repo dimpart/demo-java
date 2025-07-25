@@ -30,10 +30,10 @@
  */
 package chat.dim.compat;
 
+import chat.dim.mem.ThanosCache;
 import chat.dim.mkm.IdentifierFactory;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
-import chat.dim.utils.ThanosCache;
 
 public final class EntityIDFactory extends IdentifierFactory {
 

@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.core.CipherKeyDelegate;
+import chat.dim.log.Log;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.msg.MessageUtils;
@@ -53,7 +54,6 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
-import chat.dim.utils.Log;
 
 /**
  *  Client Messenger for Handshake & Broadcast Report

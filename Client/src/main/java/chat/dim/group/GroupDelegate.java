@@ -38,6 +38,7 @@ import chat.dim.CommonMessenger;
 import chat.dim.Facebook;
 import chat.dim.TwinsHelper;
 import chat.dim.core.Archivist;
+import chat.dim.log.Log;
 import chat.dim.mkm.Group;
 import chat.dim.mkm.MetaUtils;
 import chat.dim.protocol.Bulletin;
@@ -47,7 +48,6 @@ import chat.dim.protocol.Envelope;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReceiptCommand;
-import chat.dim.utils.Log;
 
 public class GroupDelegate extends TwinsHelper implements Group.DataSource {
 

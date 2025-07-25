@@ -39,7 +39,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import chat.dim.filesys.Paths;
-import chat.dim.utils.Log;
+import chat.dim.log.Log;
 
 /**
  *  Download Task

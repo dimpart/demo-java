@@ -43,6 +43,7 @@ import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
 import chat.dim.EntityChecker;
 import chat.dim.Session;
+import chat.dim.log.Log;
 import chat.dim.mkm.User;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.Envelope;
@@ -50,7 +51,6 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.Visa;
 import chat.dim.skywalker.Runner;
-import chat.dim.utils.Log;
 
 
 // Singleton

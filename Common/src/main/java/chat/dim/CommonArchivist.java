@@ -39,6 +39,9 @@ import chat.dim.core.Barrack;
 import chat.dim.crypto.EncryptKey;
 import chat.dim.crypto.VerifyKey;
 import chat.dim.dbi.AccountDBI;
+import chat.dim.log.Log;
+import chat.dim.mem.MemoryCache;
+import chat.dim.mem.ThanosCache;
 import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.Group;
 import chat.dim.mkm.MetaUtils;
@@ -48,9 +51,6 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.Visa;
 import chat.dim.type.Duration;
-import chat.dim.utils.Log;
-import chat.dim.utils.MemoryCache;
-import chat.dim.utils.ThanosCache;
 
 public class CommonArchivist extends Barrack implements Archivist {
 

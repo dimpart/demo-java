@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import chat.dim.crypto.SymmetricKey;
+import chat.dim.log.Log;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ContentType;
@@ -46,7 +47,6 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.TextContent;
 import chat.dim.protocol.Visa;
-import chat.dim.utils.Log;
 
 public abstract class ClientMessagePacker extends CommonMessagePacker {
 

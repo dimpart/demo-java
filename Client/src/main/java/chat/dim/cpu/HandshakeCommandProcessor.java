@@ -35,13 +35,13 @@ import java.util.List;
 import chat.dim.ClientMessenger;
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.log.Log;
 import chat.dim.mkm.Station;
 import chat.dim.network.ClientSession;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.utils.Log;
 
 public class HandshakeCommandProcessor extends BaseCommandProcessor {
 

@@ -42,7 +42,7 @@ import java.util.UnknownFormatConversionException;
 
 import chat.dim.format.JSONMap;
 import chat.dim.format.UTF8;
-import chat.dim.utils.Log;
+import chat.dim.log.Log;
 
 /**
  *  Upload Task
