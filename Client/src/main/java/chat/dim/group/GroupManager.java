@@ -84,7 +84,7 @@ public class GroupManager extends TripletsHelper {
 
     /**
      *  Create new group with members
-     *  (broadcast document & members to all members and neighbor station)
+     *  (broadcast document &amp; members to all members and neighbor station)
      *
      * @param members - initial group members
      * @return new group ID

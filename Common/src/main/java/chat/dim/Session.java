@@ -44,7 +44,7 @@ public interface Session extends Transmitter {
     /**
      *  Get remote socket address
      *
-     * @return host & port
+     * @return host &amp; port
      */
     SocketAddress getRemoteAddress();
 

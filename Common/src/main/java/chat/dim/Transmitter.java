@@ -61,7 +61,7 @@ public interface Transmitter {
     /**
      *  Send reliable message with priority
      *
-     * @param rMsg     - encrypted & signed message
+     * @param rMsg     - encrypted &amp; signed message
      * @param priority - smaller is faster
      * @return false on error
      */

@@ -37,7 +37,7 @@ import chat.dim.fsm.Context;
 import chat.dim.port.Porter;
 import chat.dim.protocol.ID;
 
-/**
+/*
  *  Session States
  *  ~~~~~~~~~~~~~~
  *

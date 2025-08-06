@@ -54,7 +54,7 @@ import chat.dim.type.Converter;
 import chat.dim.type.Pair;
 
 /**
- *  Common Messenger with Session & Database
+ *  Common Messenger with Session &amp; Database
  */
 public class CommonMessenger extends Messenger implements Transmitter {
 

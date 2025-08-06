@@ -67,7 +67,7 @@ import chat.dim.utils.ArrayUtils;
  *          Only send message when it's True.
  *
  *   'station' - Remote Station
- *          Station with remote IP & port, its ID will be set
+ *          Station with remote IP &amp; port, its ID will be set
  *          when first handshake responded, and we can trust
  *          all messages from this ID after that.
  */

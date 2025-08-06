@@ -56,7 +56,7 @@ import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.Visa;
 
 /**
- *  Client Messenger for Handshake & Broadcast Report
+ *  Client Messenger for Handshake &amp; Broadcast Report
  */
 public abstract class ClientMessenger extends CommonMessenger {
 
@@ -256,7 +256,7 @@ public abstract class ClientMessenger extends CommonMessenger {
     }
 
     /**
-     *  Broadcast meta & visa document to all stations
+     *  Broadcast meta &amp; visa document to all stations
      */
     public void broadcastDocuments(boolean updated) {
         User user = facebook.getCurrentUser();
