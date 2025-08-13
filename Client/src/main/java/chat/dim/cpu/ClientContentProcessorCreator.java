@@ -48,6 +48,7 @@ import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.group.GroupHistory;
+import chat.dim.protocol.group.QueryCommand;
 
 public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
 
@@ -113,7 +114,7 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
                 return new JoinCommandProcessor(getFacebook(), getMessenger());
             case GroupCommand.QUIT:
                 return new QuitCommandProcessor(getFacebook(), getMessenger());
-            case GroupCommand.QUERY:
+            case QueryCommand.QUERY:
                 return new QueryCommandProcessor(getFacebook(), getMessenger());
             case GroupCommand.RESET:
                 return new ResetCommandProcessor(getFacebook(), getMessenger());

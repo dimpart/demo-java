@@ -38,7 +38,6 @@ import chat.dim.Messenger;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.CustomizedContent;
-import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.GroupHistory;
@@ -89,7 +88,7 @@ public final class GroupHistoryHandler extends BaseCustomizedHandler {
         }
         Map<String, Object> info = content.copyMap(false);
         info.put("type", ContentType.COMMAND);
-        info.put("command", GroupCommand.QUERY);
+        info.put("command", QueryCommand.QUERY);
         Content query = Content.parse(info);
         if (query instanceof QueryCommand) {
             return messenger.processContent(query, rMsg);

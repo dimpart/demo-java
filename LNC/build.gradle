@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'chat.dim'
-version = '0.2.0'
+version = '0.2.1'
 //version = '1.0-SNAPSHOT'
 
 def mod = 'LNC'
@@ -19,8 +19,8 @@ def connUrl = 'scm:git:git://github.com/dimpart/demo-java.git'
 def devUrl = 'scm:git:ssh://github.com/dimpart/demo-java.git'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 repositories {
@@ -40,7 +40,7 @@ tasks.withType(Javadoc) {
     options {
         encoding = 'UTF-8'
         charSet = 'UTF-8'
-        links = ['http://docs.oracle.com/javase/7/docs/api']
+        links = ['https://docs.oracle.com/javase/7/docs/api']
     }
     options.addStringOption('Xdoclint:none', '-quiet')
 }

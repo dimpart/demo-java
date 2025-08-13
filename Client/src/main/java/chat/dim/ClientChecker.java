@@ -41,7 +41,6 @@ import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
-import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.MetaCommand;
@@ -121,7 +120,8 @@ public class ClientChecker extends EntityChecker {
         Date lastTime = getLastGroupHistoryTime(group);
         Log.info("querying members for group: " + group + ", last time: " + lastTime);
         // build query command for group members
-        QueryCommand command = GroupCommand.query(group, lastTime);
+        // TODO: use 'GroupHistory.queryGroupHistory(group, lastTime)' instead
+        Content command = QueryCommand.query(group, lastTime);
         boolean ok;
         // 1. check group bots
         ok = queryMembersFromAssistants(me, command);
@@ -150,7 +150,7 @@ public class ClientChecker extends EntityChecker {
         return pair != null && pair.second != null;
     }
 
-    protected boolean queryMembersFromAssistants(ID sender, QueryCommand command) {
+    protected boolean queryMembersFromAssistants(ID sender, Content command) {
         CommonFacebook facebook = getFacebook();
         CommonMessenger messenger = getMessenger();
         ID group = command.getGroup();
@@ -186,7 +186,7 @@ public class ClientChecker extends EntityChecker {
         return true;
     }
 
-    protected boolean queryMembersFromAdministrators(ID sender, QueryCommand command) {
+    protected boolean queryMembersFromAdministrators(ID sender, Content command) {
         CommonFacebook facebook = getFacebook();
         CommonMessenger messenger = getMessenger();
         ID group = command.getGroup();
@@ -222,7 +222,7 @@ public class ClientChecker extends EntityChecker {
         return true;
     }
 
-    protected boolean queryMembersFromOwner(ID sender, QueryCommand command) {
+    protected boolean queryMembersFromOwner(ID sender, Content command) {
         CommonFacebook facebook = getFacebook();
         CommonMessenger messenger = getMessenger();
         ID group = command.getGroup();

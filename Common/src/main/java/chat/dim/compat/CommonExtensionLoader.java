@@ -34,6 +34,8 @@ import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.MuteCommand;
 import chat.dim.protocol.ReportCommand;
+import chat.dim.protocol.group.QueryCommand;
+import chat.dim.protocol.group.QueryGroupCommand;
 
 /**
  *  Extensions Loader
@@ -75,6 +77,9 @@ public class CommonExtensionLoader extends ExtensionLoader {
         setCommandFactory(ReportCommand.REPORT, ReportCommand::new);
         setCommandFactory(ReportCommand.ONLINE, ReportCommand::new);
         setCommandFactory(ReportCommand.OFFLINE, ReportCommand::new);
+
+        // Group command (deprecated)
+        setCommandFactory(QueryCommand.QUERY, QueryGroupCommand::new);
     }
 
 }
