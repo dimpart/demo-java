@@ -32,9 +32,9 @@ package chat.dim.dbi;
 
 import java.util.List;
 
-import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.protocol.group.GroupCommand;
 import chat.dim.protocol.group.ResetCommand;
 import chat.dim.type.Pair;
 

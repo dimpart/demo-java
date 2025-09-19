@@ -33,9 +33,9 @@ package chat.dim;
 import java.util.HashMap;
 import java.util.Map;
 
-import chat.dim.crypto.EncryptKey;
 import chat.dim.log.Log;
 import chat.dim.msg.MessageUtils;
+import chat.dim.protocol.EncryptKey;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;

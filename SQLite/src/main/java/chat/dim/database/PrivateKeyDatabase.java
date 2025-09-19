@@ -33,14 +33,14 @@ package chat.dim.database;
 import java.util.ArrayList;
 import java.util.List;
 
-import chat.dim.crypto.DecryptKey;
-import chat.dim.crypto.PrivateKey;
 import chat.dim.dbi.PrivateKeyDBI;
 import chat.dim.mem.CacheHolder;
 import chat.dim.mem.CacheManager;
 import chat.dim.mem.CachePair;
 import chat.dim.mem.CachePool;
+import chat.dim.protocol.DecryptKey;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.PrivateKey;
 import chat.dim.sqlite.DatabaseConnector;
 import chat.dim.sqlite.account.PrivateKeyTable;
 

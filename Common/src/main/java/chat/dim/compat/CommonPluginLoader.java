@@ -25,6 +25,12 @@
  */
 package chat.dim.compat;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+import chat.dim.digest.MessageDigester;
+import chat.dim.digest.MD5;
+import chat.dim.digest.SHA1;
 import chat.dim.format.Base64;
 import chat.dim.format.DataCoder;
 import chat.dim.plugins.PluginLoader;
@@ -42,7 +48,7 @@ import chat.dim.type.SafeConverter;
 public class CommonPluginLoader extends PluginLoader {
 
     @Override
-    protected void load() {
+    public void load() {
         Converter.converter = new SafeConverter();
         super.load();
     }
@@ -64,6 +70,53 @@ public class CommonPluginLoader extends PluginLoader {
                 string = string.replace("\r", "");
                 string = string.replace("\n", "");
                 return java.util.Base64.getDecoder().decode(string);
+            }
+        };
+    }
+
+    @Override
+    protected void registerDigesters() {
+        super.registerDigesters();
+
+        registerMD5Digester();
+
+        registerSHA1Digester();
+    }
+    protected void registerMD5Digester() {
+        // MD5
+        MD5.digester = new MessageDigester() {
+
+            @Override
+            public byte[] digest(byte[] data) {
+                MessageDigest md;
+                try {
+                    md = MessageDigest.getInstance("MD5");
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+                md.reset();
+                md.update(data);
+                return md.digest();
+            }
+        };
+    }
+    protected void registerSHA1Digester() {
+        // SHA1
+        SHA1.digester = new MessageDigester() {
+
+            @Override
+            public byte[] digest(byte[] data) {
+                MessageDigest md;
+                try {
+                    md = MessageDigest.getInstance("SHA-1");
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+                md.reset();
+                md.update(data);
+                return md.digest();
             }
         };
     }

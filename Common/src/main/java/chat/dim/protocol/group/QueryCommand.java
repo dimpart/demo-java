@@ -32,7 +32,6 @@ package chat.dim.protocol.group;
 
 import java.util.Date;
 
-import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 
 /*

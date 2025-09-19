@@ -40,10 +40,10 @@ import chat.dim.log.Log;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ForwardContent;
-import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.protocol.group.GroupCommand;
 import chat.dim.type.Pair;
 
 public class GroupEmitter extends TripletsHelper {

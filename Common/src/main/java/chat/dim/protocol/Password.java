@@ -29,8 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import chat.dim.crypto.PlainKey;
-import chat.dim.crypto.SymmetricAlgorithms;
-import chat.dim.crypto.SymmetricKey;
 import chat.dim.digest.MD5;
 import chat.dim.digest.SHA256;
 import chat.dim.format.Base64;

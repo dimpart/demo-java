@@ -32,11 +32,11 @@ package chat.dim.compat;
 
 import java.util.Map;
 
+import chat.dim.ext.SharedAccountExtensions;
 import chat.dim.mkm.BTCMeta;
 import chat.dim.mkm.BaseMetaFactory;
 import chat.dim.mkm.DefaultMeta;
 import chat.dim.mkm.ETHMeta;
-import chat.dim.plugins.SharedAccountExtensions;
 import chat.dim.protocol.Meta;
 
 public final class CompatibleMetaFactory extends BaseMetaFactory {

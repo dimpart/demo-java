@@ -34,9 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import chat.dim.crypto.DecryptKey;
-import chat.dim.crypto.PrivateKey;
+import chat.dim.protocol.DecryptKey;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.PrivateKey;
 
 /**
  *  Account DBI

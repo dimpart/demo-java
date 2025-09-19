@@ -35,11 +35,11 @@ import java.util.List;
 import java.util.Map;
 
 import chat.dim.dbi.DocumentDBI;
-import chat.dim.format.TransportableData;
 import chat.dim.mkm.DocumentUtils;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentType;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.TransportableData;
 import chat.dim.sql.SQLConditions;
 import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;

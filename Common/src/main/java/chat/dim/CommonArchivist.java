@@ -36,8 +36,6 @@ import java.util.List;
 
 import chat.dim.core.Archivist;
 import chat.dim.core.Barrack;
-import chat.dim.crypto.EncryptKey;
-import chat.dim.crypto.VerifyKey;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.log.Log;
 import chat.dim.mem.MemoryCache;
@@ -47,8 +45,10 @@ import chat.dim.mkm.Group;
 import chat.dim.mkm.MetaUtils;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Document;
+import chat.dim.protocol.EncryptKey;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
+import chat.dim.protocol.VerifyKey;
 import chat.dim.protocol.Visa;
 import chat.dim.type.Duration;
 
@@ -191,8 +191,8 @@ public class CommonArchivist extends Barrack implements Archivist {
             // make sure the document time is not in the far future
             Date nearFuture = Duration.ofMinutes(30).addTo(new Date());
             if (docTime.after(nearFuture)) {
+                Log.error("document time error: " + docTime + " > " + nearFuture + ", " + identifier);
                 assert false : "document time error: " + docTime + ", " + doc;
-                Log.error("document time error: " + docTime + ", " + identifier);
                 return false;
             }
         }

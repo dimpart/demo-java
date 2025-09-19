@@ -2,7 +2,7 @@
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2025 Albert Moky
+ * Copyright (c) 2019 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,50 +23,13 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.compat;
+package chat.dim.digest;
 
-import chat.dim.plugins.ExtensionLoader;
-import chat.dim.plugins.PluginLoader;
+public final class MD5 {
 
-
-public class LibraryLoader implements Runnable {
-
-    private final ExtensionLoader extensionLoader;
-    private final PluginLoader pluginLoader;
-
-    private boolean loaded = false;
-
-    public LibraryLoader(ExtensionLoader extensionLoader, PluginLoader pluginLoader) {
-
-        if (extensionLoader == null) {
-            this.extensionLoader = new CommonExtensionLoader();
-        } else {
-            this.extensionLoader = extensionLoader;
-        }
-
-        if (pluginLoader == null) {
-            this.pluginLoader = new CommonPluginLoader();
-        } else {
-            this.pluginLoader = pluginLoader;
-        }
+    public static byte[] digest(byte[] data) {
+        return digester.digest(data);
     }
 
-    @Override
-    public void run() {
-        if (loaded) {
-            // no need to load it again
-            return;
-        } else {
-            // mark it to loaded
-            loaded = true;
-        }
-        // try to load all extensions
-        load();
-    }
-
-    protected void load() {
-        extensionLoader.load();
-        pluginLoader.load();
-    }
-
+    public static MessageDigester digester = null;
 }

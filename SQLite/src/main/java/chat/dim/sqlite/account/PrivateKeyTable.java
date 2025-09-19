@@ -32,11 +32,11 @@ package chat.dim.sqlite.account;
 
 import java.util.List;
 
-import chat.dim.crypto.DecryptKey;
-import chat.dim.crypto.PrivateKey;
 import chat.dim.dbi.PrivateKeyDBI;
 import chat.dim.format.JSON;
+import chat.dim.protocol.DecryptKey;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.PrivateKey;
 import chat.dim.sql.SQLConditions;
 import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;

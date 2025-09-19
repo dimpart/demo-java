@@ -33,16 +33,16 @@ package chat.dim;
 import java.util.List;
 
 import chat.dim.core.Archivist;
-import chat.dim.crypto.DecryptKey;
-import chat.dim.crypto.SignKey;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
+import chat.dim.protocol.DecryptKey;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
+import chat.dim.protocol.SignKey;
 import chat.dim.protocol.Visa;
 
 /**

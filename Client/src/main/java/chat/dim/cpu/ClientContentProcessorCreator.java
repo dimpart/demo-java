@@ -44,9 +44,9 @@ import chat.dim.dkd.ContentProcessor;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.ContentType;
-import chat.dim.protocol.GroupCommand;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
+import chat.dim.protocol.group.GroupCommand;
 import chat.dim.protocol.group.GroupHistory;
 import chat.dim.protocol.group.QueryCommand;
 

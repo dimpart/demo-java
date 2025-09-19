@@ -30,9 +30,9 @@
  */
 package chat.dim.sqlite.message;
 
-import chat.dim.crypto.SymmetricKey;
 import chat.dim.dbi.CipherKeyDBI;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.SymmetricKey;
 import chat.dim.sqlite.DataRowExtractor;
 import chat.dim.sqlite.DataTableHandler;
 import chat.dim.sqlite.DatabaseConnector;
