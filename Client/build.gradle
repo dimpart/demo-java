@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'chat.dim'
-version = '0.5.1'
+version = '0.5.2'
 //version '1.0-SNAPSHOT'
 
 def mod = 'Client'
@@ -31,7 +31,7 @@ repositories {
 }
 
 dependencies {
-    api group: 'chat.dim', name: 'Network', version: '0.5.1'
+    api group: 'chat.dim', name: 'Network', version: '0.5.2'
 
     testImplementation group: 'junit', name: 'junit', version: '4.12'
 }

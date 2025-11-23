@@ -153,7 +153,19 @@ public abstract class ClientFacebook extends CommonFacebook {
             return bots;
         }
         // get from bulletin document
-        return doc.getAssistants();
+        Object array = doc.getProperty("assistants");
+        if (array instanceof List) {
+            bots = ID.convert((List<?>) array);
+        } else {
+            assert array == null : "group bots error: " + array;
+            // get from 'assistant'
+            bots = new ArrayList<>();
+            ID single = ID.parse(doc.getProperty("assistant"));
+            if (single != null) {
+                bots.add(single);
+            }
+        }
+        return bots;
     }
 
     //

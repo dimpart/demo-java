@@ -150,7 +150,6 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     //  Group Assistants
     //
 
-    @Override
     public List<ID> getAssistants(ID identifier) {
         GroupBotsManager manager = GroupBotsManager.getInstance();
         return manager.getAssistants(identifier);

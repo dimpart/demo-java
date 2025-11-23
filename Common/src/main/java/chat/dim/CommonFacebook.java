@@ -245,6 +245,8 @@ public abstract class CommonFacebook extends Facebook {
     public abstract List<ID> getAdministrators(ID group);
     public abstract boolean saveAdministrators(List<ID> members, ID group);
 
+    public abstract List<ID> getAssistants(ID group);
+
     public abstract boolean saveMembers(List<ID> newMembers, ID group);
 
 }
