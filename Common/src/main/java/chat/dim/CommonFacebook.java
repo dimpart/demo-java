@@ -183,7 +183,7 @@ public abstract class CommonFacebook extends Facebook {
         // get name from document
         Document doc = getDocument(identifier, type);
         if (doc != null) {
-            String name = doc.getName();
+            String name = (String) doc.getProperty("name");
             if (name != null && name.length() > 0) {
                 return name;
             }
