@@ -28,12 +28,13 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.protocol.group;
+package chat.dim.dkd.group;
 
 import java.util.Date;
+import java.util.Map;
 
-import chat.dim.dkd.group.QueryGroupCommand;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.group.QueryCommand;
 
 /*
  *  NOTICE:
@@ -57,26 +58,26 @@ import chat.dim.protocol.ID;
  *  }
  *  </pre></blockquote>
  */
-public interface QueryCommand extends GroupCommand {
+public class QueryGroupCommand extends BaseGroupCommand implements QueryCommand {
 
-    String QUERY  = "query";
-
-    /**
-     *  Last group history time for querying
-     *
-     * @return time of last group history from sender
-     */
-    Date getLastTime();
-
-    //
-    //  Factories
-    //
-
-    static QueryCommand query(ID group) {
-        return new QueryGroupCommand(group);
+    public QueryGroupCommand(Map<String, Object> content) {
+        super(content);
     }
-    static QueryCommand query(ID group, Date lastTime) {
-        return new QueryGroupCommand(group, lastTime);
+
+    public QueryGroupCommand(ID group) {
+        super(QueryCommand.QUERY, group);
+    }
+
+    public QueryGroupCommand(ID group, Date lastTime) {
+        super(QueryCommand.QUERY, group);
+        if (lastTime != null) {
+            setDateTime("last_time", lastTime);
+        }
+    }
+
+    @Override
+    public Date getLastTime() {
+        return getDateTime("last_time");
     }
 
 }

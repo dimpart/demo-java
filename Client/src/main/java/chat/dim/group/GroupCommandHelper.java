@@ -136,11 +136,13 @@ public class GroupCommandHelper extends TripletsHelper {
         List<ID> members = content.getMembers();
         if (members == null) {
             members = new ArrayList<>();
+            /*/
             // get from 'member'
             ID single = content.getMember();
             if (single != null) {
                 members.add(single);
             }
+            /*/
         }
         return members;
     }

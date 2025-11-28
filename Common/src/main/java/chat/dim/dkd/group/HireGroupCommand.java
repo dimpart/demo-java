@@ -2,12 +2,12 @@
  *
  *  DIMP : Decentralized Instant Messaging Protocol
  *
- *                                Written in 2019 by Moky <albert.moky@gmail.com>
+ *                                Written in 2023 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 Albert Moky
+ * Copyright (c) 2023 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,55 +28,44 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.protocol.group;
+package chat.dim.dkd.group;
 
-import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
-import chat.dim.dkd.group.QueryGroupCommand;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.group.GroupCommand;
+import chat.dim.protocol.group.HireCommand;
 
-/*
- *  NOTICE:
- *      This command is just for querying group info,
- *      should not be saved in group history
- */
+public class HireGroupCommand extends BaseGroupCommand implements HireCommand {
 
-/**
- *  Query Group History
- *
- *  <blockquote><pre>
- *  data format: {
- *      'type' : i2s(0x88),
- *      'sn'   : 123,
- *
- *      'command' : "query",
- *      'time'    : 123.456,
- *
- *      'group'     : "{GROUP_ID}",
- *      'last_time' : 0
- *  }
- *  </pre></blockquote>
- */
-public interface QueryCommand extends GroupCommand {
-
-    String QUERY  = "query";
-
-    /**
-     *  Last group history time for querying
-     *
-     * @return time of last group history from sender
-     */
-    Date getLastTime();
-
-    //
-    //  Factories
-    //
-
-    static QueryCommand query(ID group) {
-        return new QueryGroupCommand(group);
+    public HireGroupCommand(Map<String, Object> content) {
+        super(content);
     }
-    static QueryCommand query(ID group, Date lastTime) {
-        return new QueryGroupCommand(group, lastTime);
+
+    public HireGroupCommand(ID group, List<ID> administrators) {
+        super(GroupCommand.HIRE, group);
+        assert administrators != null : "administrators should not empty here";
+        setAdministrators(administrators);
+    }
+
+    @Override
+    public List<ID> getAdministrators() {
+        Object members = get("administrators");
+        if (members instanceof List) {
+            return ID.convert((List<?>) members);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void setAdministrators(List<ID> members) {
+        if (members == null) {
+            remove("administrators");
+        } else {
+            put("administrators", ID.revert(members));
+        }
     }
 
 }

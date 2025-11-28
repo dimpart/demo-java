@@ -2,12 +2,12 @@
  *
  *  DIMP : Decentralized Instant Messaging Protocol
  *
- *                                Written in 2019 by Moky <albert.moky@gmail.com>
+ *                                Written in 2023 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 Albert Moky
+ * Copyright (c) 2023 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,56 +28,44 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.protocol.group;
+package chat.dim.dkd.group;
 
-import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
-import chat.dim.dkd.group.BaseGroupCommand;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.group.FireCommand;
+import chat.dim.protocol.group.GroupCommand;
 
-/*
- *  NOTICE:
- *      This command is just for querying group info,
- *      should not be saved in group history
- */
+public class FireGroupCommand extends BaseGroupCommand implements FireCommand {
 
-/**
- *  Query Group History
- *
- *  <blockquote><pre>
- *  data format: {
- *      'type' : i2s(0x88),
- *      'sn'   : 123,
- *
- *      'command' : "query",
- *      'time'    : 123.456,
- *
- *      'group'     : "{GROUP_ID}",
- *      'last_time' : 0
- *  }
- *  </pre></blockquote>
- */
-public class QueryGroupCommand extends BaseGroupCommand implements QueryCommand {
-
-    public QueryGroupCommand(Map<String, Object> content) {
+    public FireGroupCommand(Map<String, Object> content) {
         super(content);
     }
 
-    public QueryGroupCommand(ID group) {
-        super(QueryCommand.QUERY, group);
+    public FireGroupCommand(ID group, List<ID> administrators) {
+        super(GroupCommand.FIRE, group);
+        assert administrators != null : "administrators should not empty here";
+        setAdministrators(administrators);
     }
 
-    public QueryGroupCommand(ID group, Date lastTime) {
-        super(QueryCommand.QUERY, group);
-        if (lastTime != null) {
-            setDateTime("last_time", lastTime);
+    @Override
+    public List<ID> getAdministrators() {
+        Object members = get("administrators");
+        if (members instanceof List) {
+            return ID.convert((List<?>) members);
+        } else {
+            return null;
         }
     }
 
     @Override
-    public Date getLastTime() {
-        return getDateTime("last_time");
+    public void setAdministrators(List<ID> members) {
+        if (members == null) {
+            remove("administrators");
+        } else {
+            put("administrators", ID.revert(members));
+        }
     }
 
 }
