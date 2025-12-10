@@ -53,17 +53,17 @@ public class AppCustomizedProcessor extends CustomizedContentProcessor {
         super(facebook, messenger);
     }
 
-    public void setHandler(String app, String mod, CustomizedContentHandler handler) {
+    public void setContentHandler(String app, String mod, CustomizedContentHandler handler) {
         handlers.put(app + ":" + mod, handler);
     }
 
-    protected CustomizedContentHandler getHandler(String app, String mod) {
+    protected CustomizedContentHandler getContentHandler(String app, String mod) {
         return handlers.get(app + ":" + mod);
     }
 
     @Override
     protected CustomizedContentHandler filter(String app, String mod, CustomizedContent content, ReliableMessage rMsg) {
-        CustomizedContentHandler handler = getHandler(app, mod);
+        CustomizedContentHandler handler = getContentHandler(app, mod);
         if (handler != null) {
             return handler;
         }

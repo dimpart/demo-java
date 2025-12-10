@@ -38,7 +38,7 @@ allprojects {
 }
 
 dependencies {
-    implementation group: 'chat.dim', name: 'Client', version: '0.5.1'
+    implementation group: 'chat.dim', name: 'Client', version: '0.5.2'
 }
 ```
 
@@ -51,7 +51,7 @@ dependencies {
     <dependency>
         <groupId>chat.dim</groupId>
         <artifactId>Client</artifactId>
-        <version>0.5.1</version>
+        <version>0.5.2</version>
         <type>pom</type>
     </dependency>
 

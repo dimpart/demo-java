@@ -42,24 +42,24 @@ public class ClientPluginLoader extends CommonPluginLoader {
         ID.setFactory(new ID.Factory() {
 
             @Override
-            public ID generateIdentifier(Meta meta, int type, String terminal) {
-                return identifierFactory.generateIdentifier(meta, type, terminal);
+            public ID generateID(Meta meta, int type, String terminal) {
+                return identifierFactory.generateID(meta, type, terminal);
             }
 
             @Override
-            public ID createIdentifier(String name, Address address, String terminal) {
-                return identifierFactory.createIdentifier(name, address, terminal);
+            public ID createID(String name, Address address, String terminal) {
+                return identifierFactory.createID(name, address, terminal);
             }
 
             @Override
-            public ID parseIdentifier(String identifier) {
+            public ID parseID(String identifier) {
                 // try ANS record
                 ID id = ClientFacebook.ans.identifier(identifier);
                 if (id != null) {
                     return id;
                 }
                 // parse by original factory
-                return identifierFactory.parseIdentifier(identifier);
+                return identifierFactory.parseID(identifier);
             }
         });
 
