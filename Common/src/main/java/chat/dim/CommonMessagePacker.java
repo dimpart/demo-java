@@ -83,8 +83,10 @@ public abstract class CommonMessagePacker extends MessagePacker {
         Visa visa = MessageUtils.getVisa(rMsg);
         if (visa != null) {
             // first handshake?
-            ID did = visa.getIdentifier();
-            if (sender.equals(did)) {
+            ID did = ID.parse(visa.get("did"));
+            if (did == null) {
+                assert false : "visa error: " + visa;
+            } else if (sender.equals(did)) {
                 return true;
             } else {
                 assert false : "visa ID not match: " + sender + ", " + did;

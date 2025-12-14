@@ -144,7 +144,8 @@ public class Register {
     protected Visa createVisa(ID identifier, EncryptKey visaKey, SignKey idKey,
                               String nickname, PortableNetworkFile avatar) {
         assert identifier.isUser() : "user ID error: " + identifier;
-        Visa doc = new BaseVisa(identifier);
+        Visa doc = new BaseVisa();
+        doc.setString("did", identifier);
         // App ID
         doc.setProperty("app_id", "chat.dim.tarsier");
         // nickname

@@ -82,24 +82,24 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
                 String signature = resultSet.getString("signature");
                 ID identifier = ID.parse(did);
                 assert identifier != null : "did error: " + did;
-                if (type == null || type.length() == 0) {
-                    type = "*";
+                if (type == null || type.length() == 0 || type.equals("*")) {
+                    if (identifier.isGroup()) {
+                        type = DocumentType.BULLETIN;
+                    } else if (identifier.isUser()) {
+                        type = DocumentType.VISA;
+                    } else {
+                        type = DocumentType.PROFILE;
+                    }
                 }
                 Document doc;
                 if (data == null || signature == null) {
-                    doc = Document.create(type, identifier);
+                    doc = Document.create(type);
                 } else {
                     TransportableData ted = TransportableData.parse(signature);
                     assert ted != null : "signature error: " + signature;
-                    doc = Document.create(type, identifier, data, ted);
+                    doc = Document.create(type, data, ted);
                 }
-                if (type.equals("*")) {
-                    if (identifier.isGroup()) {
-                        type = DocumentType.BULLETIN;
-                    } else {
-                        type = DocumentType.VISA;
-                    }
-                }
+                doc.setString("did", identifier);
                 doc.put("type", type);
                 return doc;
             };

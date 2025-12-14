@@ -254,8 +254,8 @@ public class ClientChecker extends EntityChecker {
     @Override
     public boolean sendVisa(Visa visa, ID receiver, boolean updated) {
         CommonMessenger messenger = getMessenger();
-        ID me = visa.getIdentifier();
-        if (me.equals(receiver)) {
+        ID me = ID.parse(visa.get("did"));
+        if (me == null || me.equals(receiver)) {
             Log.warning("skip cycled message: " + receiver);
             return false;
         }
