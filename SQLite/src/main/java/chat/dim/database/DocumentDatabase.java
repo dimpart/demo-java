@@ -60,13 +60,13 @@ public class DocumentDatabase implements DocumentDBI {
     //
 
     @Override
-    public boolean saveDocument(Document doc) {
+    public boolean saveDocument(Document doc, ID entity) {
         // TODO: must check old records before calling this
-        ID identifier = doc.getIdentifier();
+        assert entity.equals(doc.get("did")) : " document ID not matched: " + entity + ", " + doc;
         // 1. clear for reload
-        documentCache.erase(identifier, 0);
+        documentCache.erase(entity, 0);
         // 2. update sqlite
-        return documentTable.saveDocument(doc);
+        return documentTable.saveDocument(doc, entity);
     }
 
     @Override

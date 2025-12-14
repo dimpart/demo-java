@@ -114,9 +114,9 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
         return facebook == null ? null : facebook.getBulletin(group);
     }
 
-    public boolean saveDocument(Document doc) {
+    public boolean saveDocument(Document doc, ID entity) {
         Archivist archivist = getArchivist();
-        return archivist != null && archivist.saveDocument(doc);
+        return archivist != null && archivist.saveDocument(doc, entity);
     }
 
     //

@@ -123,39 +123,40 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
     }
 
     @Override
-    public boolean saveDocument(Document doc) {
-        ID identifier = doc.getIdentifier();
+    public boolean saveDocument(Document doc, ID entity) {
+        ID did = ID.parse(doc.get("did"));
         String type = DocumentUtils.getDocumentType(doc);
         if (type == null) {
             type = "";
         }
         // check old documents
-        List<Document> documents = getDocuments(identifier);
+        List<Document> documents = getDocuments(entity);
         if (documents != null) {
             for (Document item : documents) {
-                if (identifier.equals(item.getIdentifier()) &&
+                if (did.equals(item.get("did")) &&
                         type.equals(DocumentUtils.getDocumentType(item))) {
                     // old record found, update it
-                    return updateDocument(doc);
+                    return updateDocument(doc, entity);
                 }
             }
         }
         // add new record
-        return insertDocument(doc);
+        return insertDocument(doc, entity);
     }
 
-    protected boolean updateDocument(Document doc) {
+    protected boolean updateDocument(Document doc, ID entity) {
         if (!prepare()) {
             // db error
             return false;
         }
-        ID identifier = doc.getIdentifier();
+        ID did = ID.parse(doc.get("did"));
+        assert did.getAddress().equals(entity.getAddress()) : "document ID not matched: " + entity + ", " + doc;
         String type = DocumentUtils.getDocumentType(doc);
         String data = doc.getString("data", "");
         String signature = doc.getString("signature", "");
         // build conditions
         SQLConditions conditions = new SQLConditions();
-        conditions.addCondition(null, "did", "=", identifier.toString());
+        conditions.addCondition(null, "did", "=", did.toString());
         conditions.addCondition(SQLConditions.Relation.AND, "type", "=", type);
         // fill values
         Map<String, Object> values = new HashMap<>();
@@ -164,17 +165,18 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
         return update(T_DOCUMENT, values, conditions) > 0;
     }
 
-    protected boolean insertDocument(Document doc) {
+    protected boolean insertDocument(Document doc, ID entity) {
         if (!prepare()) {
             // db error
             return false;
         }
-        ID identifier = doc.getIdentifier();
+        ID did = ID.parse(doc.get("did"));
+        assert did.getAddress().equals(entity.getAddress()) : "document ID not matched: " + entity + ", " + doc;
         String type = DocumentUtils.getDocumentType(doc);
         String data = doc.getString("data", "");
         String signature = doc.getString("signature", "");
         // new values
-        Object[] values = {identifier.toString(), type, data, signature};
+        Object[] values = {did.toString(), type, data, signature};
         return insert(T_DOCUMENT, INSERT_COLUMNS, values) > 0;
     }
 

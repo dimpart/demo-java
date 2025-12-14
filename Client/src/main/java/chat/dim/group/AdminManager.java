@@ -108,7 +108,7 @@ public class AdminManager extends TripletsHelper {
         if (signature == null) {
             assert false : "failed to sign document for group: " + group + ", owner: " + me;
             return false;
-        } else if (!delegate.saveDocument(bulletin)) {
+        } else if (!delegate.saveDocument(bulletin, group)) {
             assert false : "failed to save document for group: " + group;
             return false;
         } else {
@@ -142,7 +142,7 @@ public class AdminManager extends TripletsHelper {
         //
         //  1. create 'document' command, and send to current station
         //
-        ID group = doc.getIdentifier();
+        ID group = ID.parse(doc.get("did"));
         Meta meta = facebook.getMeta(group);
         Command command = DocumentCommand.response(group, meta, doc);
         messenger.sendContent(command, me, Station.ANY, 1);

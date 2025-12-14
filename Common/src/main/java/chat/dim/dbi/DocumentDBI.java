@@ -41,7 +41,7 @@ import chat.dim.protocol.ID;
  */
 public interface DocumentDBI {
 
-    boolean saveDocument(Document doc);
+    boolean saveDocument(Document doc, ID entity);
 
     List<Document> getDocuments(ID entity);
 }

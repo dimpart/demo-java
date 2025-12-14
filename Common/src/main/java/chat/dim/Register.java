@@ -91,7 +91,7 @@ public class Register {
         database.savePrivateKey(idKey, PrivateKeyDBI.META, identifier);
         database.savePrivateKey(msgKey, PrivateKeyDBI.VISA, identifier);
         database.saveMeta(meta, identifier);
-        database.saveDocument(visa);
+        database.saveDocument(visa, identifier);
         // OK
         return identifier;
     }
@@ -130,7 +130,7 @@ public class Register {
         //  Step 5: save meta & bulletin in local storage
         //
         database.saveMeta(meta, identifier);
-        database.saveDocument(doc);
+        database.saveDocument(doc, identifier);
         //
         //  Step 6: add founder as first member
         //
@@ -163,7 +163,8 @@ public class Register {
     protected Bulletin createBulletin(ID identifier, SignKey privateKey,
                                       String title, ID founder) {
         assert identifier.isGroup() : "group ID error: " + identifier;
-        Bulletin doc = new BaseBulletin(identifier);
+        Bulletin doc = new BaseBulletin();
+        doc.setString("did", identifier);
         // App ID
         doc.setProperty("app_id", "chat.dim.tarsier");
         // group founder

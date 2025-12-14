@@ -156,75 +156,83 @@ public class CommonArchivist extends Barrack implements Archivist {
     }
 
     @Override
-    public boolean saveDocument(Document doc) {
+    public boolean saveDocument(Document doc, ID did) {
         //
         //  1. check valid
         //
-        boolean valid = checkDocumentValid(doc);
+        boolean valid = checkDocumentValid(doc, did);
         if (!valid) {
-            assert false : "document not valid: " + doc.getIdentifier();
-            Log.warning("document not valid: " + doc.getIdentifier());
+            assert false : "document not valid: " + did;
+            Log.warning("document not valid: " + did);
             return false;
         }
         //
         //  2. check expired
         //
-        if (checkDocumentExpired(doc)) {
-            Log.info("drop expired document: " + doc.getIdentifier());
+        if (checkDocumentExpired(doc, did)) {
+            Log.info("drop expired document: " + did);
             return false;
         }
         //
         //  3. save into database
         //
-        return database.saveDocument(doc);
+        return database.saveDocument(doc, did);
     }
 
-    protected boolean checkDocumentValid(Document doc) {
-        ID identifier = doc.getIdentifier();
+    protected boolean checkDocumentValid(Document doc, ID did) {
         Date docTime = doc.getTime();
         // check document time
         if (docTime == null) {
             //assert false : "document error: " + doc;
-            Log.warning("document without time: " + identifier);
+            Log.warning("document without time: " + did);
         } else {
             // calibrate the clock
             // make sure the document time is not in the far future
             Date nearFuture = Duration.ofMinutes(30).addTo(new Date());
             if (docTime.after(nearFuture)) {
-                Log.error("document time error: " + docTime + " > " + nearFuture + ", " + identifier);
+                Log.error("document time error: " + docTime + " > " + nearFuture + ", " + did);
                 assert false : "document time error: " + docTime + ", " + doc;
                 return false;
             }
         }
         // check valid
-        return verifyDocument(doc);
+        return verifyDocument(doc, did);
     }
 
-    protected boolean verifyDocument(Document doc) {
+    protected boolean verifyDocument(Document doc, ID did) {
         if (doc.isValid()) {
             return true;
         }
-        ID identifier = doc.getIdentifier();
-        Facebook facebook = getFacebook();
-        assert facebook != null : "facebook lost";
-        Meta meta = facebook.getMeta(identifier);
-        if (meta == null) {
-            Log.warning("failed to get meta: " + identifier);
+        // check ID
+        ID identifier = ID.parse(doc.getString("did"));
+        if (identifier == null) {
+            assert false : "document ID not found: " + doc;
+            return false;
+        } else if (!identifier.getAddress().equals(did.getAddress())) {
+            // ID not matched
             return false;
         }
-        return doc.verify(meta.getPublicKey());
-    }
-
-    protected boolean checkDocumentExpired(Document doc) {
+        // verify with meta.key
         Facebook facebook = getFacebook();
         assert facebook != null : "facebook lost";
-        ID identifier = doc.getIdentifier();
+        Meta meta = facebook.getMeta(did);
+        if (meta == null) {
+            Log.warning("failed to get meta: " + did);
+            return false;
+        }
+        VerifyKey metaKey = meta.getPublicKey();
+        return doc.verify(metaKey);
+    }
+
+    protected boolean checkDocumentExpired(Document doc, ID did) {
+        Facebook facebook = getFacebook();
+        assert facebook != null : "facebook lost";
         String type = DocumentUtils.getDocumentType(doc);
         if (type == null) {
             type = "*";
         }
         // check old documents with type
-        List<Document> documents = facebook.getDocuments(identifier);
+        List<Document> documents = facebook.getDocuments(did);
         Document old = DocumentUtils.lastDocument(documents, type);
         return old != null && DocumentUtils.isExpired(doc, old);
     }

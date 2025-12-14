@@ -62,16 +62,15 @@ public class ClientArchivist extends CommonArchivist {
     }
 
     @Override
-    public boolean saveDocument(Document doc) {
-        boolean ok = super.saveDocument(doc);
+    public boolean saveDocument(Document doc, ID entity) {
+        boolean ok = super.saveDocument(doc, entity);
         if (ok && doc instanceof Bulletin) {
             // check administrators
             Object array = doc.getProperty("administrators");
             if (array instanceof List) {
-                ID group = doc.getIdentifier();
-                assert group.isGroup() : "group ID error: " + group;
+                assert entity.isGroup() : "group ID error: " + entity;
                 List<ID> admins = ID.convert((List<?>) array);
-                ok = database.saveAdministrators(admins, group);
+                ok = database.saveAdministrators(admins, entity);
             }
         }
         return ok;

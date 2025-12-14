@@ -209,7 +209,7 @@ public abstract class EntityChecker {
         Date lastTime = null;
         Date docTime;
         for (Document doc : documents) {
-            assert doc.getIdentifier().equals(identifier) : "document not match: " + identifier + ", " + doc;
+            assert identifier.equals(doc.get("did")) : "document not match: " + identifier + ", " + doc;
             docTime = doc.getTime();
             if (docTime == null) {
                 //assert false : "document error: " + doc;
