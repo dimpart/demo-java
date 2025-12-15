@@ -31,15 +31,20 @@
 package chat.dim;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import chat.dim.log.Log;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.msg.MessageUtils;
+import chat.dim.protocol.Document;
 import chat.dim.protocol.EncryptKey;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
+import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
+import chat.dim.protocol.VerifyKey;
 import chat.dim.protocol.Visa;
 
 public abstract class CommonMessagePacker extends MessagePacker {
@@ -67,7 +72,20 @@ public abstract class CommonMessagePacker extends MessagePacker {
     // for checking whether user's ready
     protected EncryptKey getVisaKey(ID user) {
         Facebook facebook = getFacebook();
-        return facebook.getPublicKeyForEncryption(user);
+        assert facebook != null : "facebook lost";
+        List<Document> documents = facebook.getDocuments(user);
+        Visa doc = DocumentUtils.lastVisa(documents);
+        if (doc != null/* && doc.isValid()*/) {
+            return doc.getPublicKey();
+        }
+        Meta meta = facebook.getMeta(user);
+        if (meta != null) {
+            VerifyKey metaKey = meta.getPublicKey();
+            if (metaKey instanceof EncryptKey) {
+                return (EncryptKey) metaKey;
+            }
+        }
+        return null;
     }
 
     /**

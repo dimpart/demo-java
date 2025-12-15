@@ -31,6 +31,7 @@
 package chat.dim;
 
 import java.util.Date;
+import java.util.Map;
 
 import chat.dim.compat.Compatible;
 import chat.dim.compat.CompatibleCompressor;
@@ -139,7 +140,7 @@ public class CommonMessenger extends Messenger implements Transmitter {
     //-------- InstantMessageDelegate
 
     @Override
-    public byte[] encryptKey(byte[] data, ID receiver, InstantMessage iMsg) {
+    public Map<String, byte[]> encryptKey(byte[] data, ID receiver, InstantMessage iMsg) {
         try {
             return super.encryptKey(data, receiver, iMsg);
         } catch (Exception e) {

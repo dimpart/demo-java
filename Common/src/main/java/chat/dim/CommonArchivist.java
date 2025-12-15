@@ -45,11 +45,9 @@ import chat.dim.mkm.Group;
 import chat.dim.mkm.MetaUtils;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Document;
-import chat.dim.protocol.EncryptKey;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.VerifyKey;
-import chat.dim.protocol.Visa;
 import chat.dim.type.Duration;
 
 public class CommonArchivist extends Barrack implements Archivist {
@@ -235,30 +233,6 @@ public class CommonArchivist extends Barrack implements Archivist {
         List<Document> documents = facebook.getDocuments(did);
         Document old = DocumentUtils.lastDocument(documents, type);
         return old != null && DocumentUtils.isExpired(doc, old);
-    }
-
-    @Override
-    public VerifyKey getMetaKey(ID user) {
-        Facebook facebook = getFacebook();
-        assert facebook != null : "facebook lost";
-        Meta meta = facebook.getMeta(user);
-        if (meta != null/* && meta.isValid()*/) {
-            return meta.getPublicKey();
-        }
-        //throw new NullPointerException("failed to get meta for ID: " + user);
-        return null;
-    }
-
-    @Override
-    public EncryptKey getVisaKey(ID user) {
-        Facebook facebook = getFacebook();
-        assert facebook != null : "facebook lost";
-        List<Document> documents = facebook.getDocuments(user);
-        Visa doc = DocumentUtils.lastVisa(documents);
-        if (doc != null/* && doc.isValid()*/) {
-            return doc.getPublicKey();
-        }
-        return null;
     }
 
     @Override
