@@ -44,6 +44,7 @@ import chat.dim.CommonMessenger;
 import chat.dim.EntityChecker;
 import chat.dim.Session;
 import chat.dim.log.Log;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.User;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.Envelope;
@@ -235,7 +236,7 @@ final class GroupBotsManager extends Runner {
         Visa visa;
         try {
             User me = facebook.getCurrentUser();
-            visa = me == null ? null : me.getVisa();
+            visa = me == null ? null : DocumentUtils.lastVisa(me.getDocuments());
             if (visa == null) {
                 Log.error("failed to get visa: " + me);
                 return false;

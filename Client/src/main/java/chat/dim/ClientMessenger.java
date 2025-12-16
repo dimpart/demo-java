@@ -34,10 +34,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import chat.dim.core.CipherKeyDelegate;
+import chat.dim.dkd.MessageUtils;
 import chat.dim.log.Log;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
-import chat.dim.msg.MessageUtils;
 import chat.dim.network.ClientSession;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
@@ -224,7 +225,7 @@ public abstract class ClientMessenger extends CommonMessenger {
             // update visa before first handshake
             updateVisa();
             Meta meta = user.getMeta();
-            Visa visa = user.getVisa();
+            Visa visa = DocumentUtils.lastVisa(user.getDocuments());
             // create instant message with meta & visa
             InstantMessage iMsg = InstantMessage.create(env, content);
             MessageUtils.setMeta(meta, iMsg);
@@ -261,7 +262,7 @@ public abstract class ClientMessenger extends CommonMessenger {
     public void broadcastDocuments(boolean updated) {
         User user = facebook.getCurrentUser();
         assert user != null : "current user not found";
-        Visa visa = user.getVisa();
+        Visa visa = DocumentUtils.lastVisa(user.getDocuments());
         if (visa == null) {
             assert false : "visa not found: " + user;
             return;

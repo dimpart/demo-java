@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import chat.dim.log.Log;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ContentType;
@@ -231,7 +232,7 @@ public abstract class ClientMessagePacker extends CommonMessagePacker {
             assert false : "failed to get current user";
             return false;
         }
-        Visa visa = user.getVisa();
+        Visa visa = DocumentUtils.lastVisa(user.getDocuments());
         if (visa == null || !visa.isValid()) {
             // FIXME: user visa not found?
             throw new NullPointerException("user visa error: " + user);

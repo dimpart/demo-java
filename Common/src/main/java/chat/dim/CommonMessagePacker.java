@@ -34,9 +34,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import chat.dim.core.Archivist;
+import chat.dim.dkd.MessageUtils;
 import chat.dim.log.Log;
 import chat.dim.mkm.DocumentUtils;
-import chat.dim.msg.MessageUtils;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EncryptKey;
 import chat.dim.protocol.ID;
@@ -51,6 +52,11 @@ public abstract class CommonMessagePacker extends MessagePacker {
 
     public CommonMessagePacker(CommonFacebook facebook, CommonMessenger messenger) {
         super(facebook, messenger);
+    }
+
+    protected Archivist getArchivist() {
+        Facebook facebook = getFacebook();
+        return facebook == null ? null : facebook.getArchivist();
     }
 
     /**
@@ -165,6 +171,37 @@ public abstract class CommonMessagePacker extends MessagePacker {
         return super.encryptMessage(iMsg);
     }
 
+    /**
+     *  Check meta &amp; visa
+     *
+     * @param rMsg - received message
+     * @return false on error
+     */
+    protected boolean checkAttachments(ReliableMessage rMsg) {
+        Archivist archivist = getArchivist();
+        if (archivist == null) {
+            assert false : "archivist not ready";
+            return false;
+        }
+        ID sender = rMsg.getSender();
+        // [Meta Protocol]
+        Meta meta = MessageUtils.getMeta(rMsg);
+        if (meta != null) {
+            archivist.saveMeta(meta, sender);
+        }
+        // [Visa Protocol]
+        Visa visa = MessageUtils.getVisa(rMsg);
+        if (visa != null) {
+            archivist.saveDocument(visa, sender);
+        }
+        //
+        //  TODO: check [Visa Protocol] before calling this
+        //        make sure the sender's meta(visa) exists
+        //        (do in by application)
+        //
+        return true;
+    }
+
     @Override
     public SecureMessage verifyMessage(ReliableMessage rMsg) {
         // 1. check receiver/group with local user
@@ -172,6 +209,10 @@ public abstract class CommonMessagePacker extends MessagePacker {
         if (!checkSender(rMsg)) {
             // sender not ready
             Log.warning("sender not ready: " + rMsg.getSender());
+            return null;
+        }
+        // make sure meta exists before verifying message
+        if (!checkAttachments(rMsg)) {
             return null;
         }
         return super.verifyMessage(rMsg);
