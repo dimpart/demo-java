@@ -40,17 +40,23 @@ import chat.dim.dbi.AccountDBI;
 import chat.dim.log.Log;
 import chat.dim.mem.MemoryCache;
 import chat.dim.mem.ThanosCache;
+import chat.dim.mkm.BaseGroup;
+import chat.dim.mkm.BaseUser;
+import chat.dim.mkm.Bot;
 import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.Group;
 import chat.dim.mkm.MetaUtils;
+import chat.dim.mkm.ServiceProvider;
+import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Document;
+import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.VerifyKey;
 import chat.dim.type.Duration;
 
-public class CommonArchivist extends Barrack implements Archivist {
+public class CommonArchivist implements Archivist, Barrack {
 
     public CommonArchivist(Facebook facebook, AccountDBI db) {
         super();
@@ -117,6 +123,32 @@ public class CommonArchivist extends Barrack implements Archivist {
     @Override
     public Group getGroup(ID identifier) {
         return groupCache.get(identifier);
+    }
+
+    @Override
+    public User createUser(ID uid) {
+        assert uid.isUser() : "user ID error: " + uid;
+        int network = uid.getType();
+        // check user type
+        if (EntityType.STATION.equals(network)) {
+            return new Station(uid);
+        } else if (EntityType.BOT.equals(network)) {
+            return new Bot(uid);
+        }
+        // general user, or 'anyone@anywhere'
+        return new BaseUser(uid);
+    }
+
+    @Override
+    public Group createGroup(ID gid) {
+        assert gid.isGroup() : "group ID error: " + gid;
+        int network = gid.getType();
+        // check group type
+        if (EntityType.ISP.equals(network)) {
+            return new ServiceProvider(gid);
+        }
+        // general group, or 'everyone@everywhere'
+        return new BaseGroup(gid);
     }
 
     //
@@ -198,6 +230,7 @@ public class CommonArchivist extends Barrack implements Archivist {
     }
 
     protected boolean verifyDocument(Document doc, ID did) {
+        /*/
         if (doc.isValid()) {
             return true;
         }
@@ -210,6 +243,7 @@ public class CommonArchivist extends Barrack implements Archivist {
             // ID not matched
             return false;
         }
+        /*/
         // verify with meta.key
         Facebook facebook = getFacebook();
         assert facebook != null : "facebook lost";
