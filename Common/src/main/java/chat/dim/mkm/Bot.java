@@ -57,23 +57,10 @@ public class Bot extends BaseUser {
     }
 
     /**
-     *  Get last property
+     *  Bot Document
      */
-    public Object getProfile(String key) {
-        List<Document> docs = documents;
-        if (docs == null) {
-            return null;
-        }
-        // TODO: sort by doc.time DESC
-        Object value;
-        for (Document doc : docs) {
-            value = doc.getProperty(key);
-            if (value != null) {
-                return value;
-            }
-        }
-        // property not found
-        return null;
+    public Document getProfile() {
+        return DocumentUtils.lastVisa(documents);
     }
 
     /**
@@ -82,7 +69,11 @@ public class Bot extends BaseUser {
      * @return ICP ID, bot group
      */
     public ID getProvider() {
-        return ID.parse(getProfile("provider"));
+        Document doc = getProfile();
+        if (doc == null) {
+            return null;
+        }
+        return ID.parse(doc.getProperty("provider"));
     }
 
 }

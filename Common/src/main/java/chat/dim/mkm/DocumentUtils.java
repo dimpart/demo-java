@@ -30,11 +30,17 @@
  */
 package chat.dim.mkm;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import chat.dim.ext.SharedAccountExtensions;
+import chat.dim.protocol.Address;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
+import chat.dim.protocol.DocumentCommand;
+import chat.dim.protocol.ID;
+import chat.dim.protocol.Meta;
 import chat.dim.protocol.Visa;
 
 public interface DocumentUtils {
@@ -147,6 +153,35 @@ public interface DocumentUtils {
             last = (Bulletin) doc;
         }
         return last;
+    }
+
+    static DocumentCommand response(ID did, Meta meta, Document document) {
+        List<Document> array = new ArrayList<>();
+        array.add(document);
+        return response(did, meta, array);
+    };
+
+    static DocumentCommand response(ID did, Meta meta, List<Document> documents) {
+        // check document ID
+        Address address = did.getAddress();
+        for (Document doc : documents) {
+            ID docID = ID.parse(doc.get("did"));
+            if (docID == null) {
+                assert false : "document ID not found: " + doc;
+                continue;
+            } else if (docID.equals(did)) {
+                // OK
+                continue;
+            }
+            if (docID.getAddress().equals(address)) {
+                // TODO: check ID.name
+                continue;
+            }
+            // error
+            assert false : "document ID not matched: " + docID + ", " + did;
+            return null;
+        }
+        return DocumentCommand.response(did, meta, documents);
     }
 
 }

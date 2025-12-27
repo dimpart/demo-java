@@ -41,7 +41,6 @@ import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Document;
-import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
@@ -154,7 +153,7 @@ public class GroupHistoryBuilder extends TripletsHelper {
         }
         ID me = user.getIdentifier();
         Meta meta = delegate.getMeta(group);
-        Command command = DocumentCommand.response(group, meta, doc);
+        Command command = DocumentUtils.response(group, meta, doc);
         ReliableMessage rMsg = packBroadcastMessage(me, command);
         return new Pair<>(doc, rMsg);
     }

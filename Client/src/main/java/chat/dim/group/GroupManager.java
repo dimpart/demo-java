@@ -36,12 +36,12 @@ import java.util.List;
 import chat.dim.CommonMessenger;
 import chat.dim.Register;
 import chat.dim.log.Log;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.ForwardContent;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
@@ -131,7 +131,7 @@ public class GroupManager extends TripletsHelper {
         Bulletin doc = delegate.getBulletin(group);
         Command content;
         if (doc != null) {
-            content = DocumentCommand.response(group, meta, doc);
+            content = DocumentUtils.response(group, meta, doc);
         } else if (meta != null) {
             content = MetaCommand.response(group, meta);
         } else {

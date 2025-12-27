@@ -31,8 +31,8 @@
 package chat.dim.mkm;
 
 import java.util.List;
-import java.util.Map;
 
+import chat.dim.crypto.EncryptedData;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
@@ -58,6 +58,8 @@ public class Station implements User {
     private String host;
     private int port;
 
+    private ID isp;
+
     protected List<Document> documents;
 
     public Station(ID sid, String host, int port) {
@@ -67,6 +69,7 @@ public class Station implements User {
         this.user = new BaseUser(sid);
         this.host = host;
         this.port = port;
+        this.isp = null;
         this.documents = null;
     }
 
@@ -106,41 +109,30 @@ public class Station implements User {
      */
     public void reload() {
         documents = getDocuments();
-        // update station host
-        if (host == null) {
-            String docHost = Converter.getString(getProfile("host"));
+        // update from last document
+        Document doc = getProfile();
+        if (doc != null) {
+            String docHost = Converter.getString(doc.getProperty("host"));
             if (docHost != null) {
                 host = docHost;
             }
-        }
-        // update station port
-        if (port == 0) {
-            Integer docPort = Converter.getInteger(getProfile("port"));
+            Integer docPort = Converter.getInteger(doc.getProperty("port"));
             if (docPort != null && docPort > 0) {
                 assert 16 < docPort && docPort < 65536 : "station port error: " + docPort;
                 port = docPort;
+            }
+            ID docISP = ID.parse(doc.getProperty("provider"));
+            if (docISP != null) {
+                isp = docISP;
             }
         }
     }
 
     /**
-     *  Get last property
+     *  Station Document
      */
-    public Object getProfile(String key) {
-        List<Document> docs = documents;
-        if (docs == null) {
-            return null;
-        }
-        // TODO: sort by doc.time DESC
-        Object value;
-        for (Document doc : docs) {
-            value = doc.getProperty(key);
-            if (value != null) {
-                return value;
-            }
-        }
-        // property not found
-        return null;
+    public Document getProfile() {
+        return DocumentUtils.lastVisa(documents);
     }
 
     /**
@@ -149,7 +141,7 @@ public class Station implements User {
      * @return ISP ID, station group
      */
     public ID getProvider() {
-        return ID.parse(getProfile("provider"));
+        return isp;
     }
 
     /**
@@ -218,12 +210,17 @@ public class Station implements User {
     }
 
     @Override
+    public List<String> getTerminals() {
+        return user.getTerminals();
+    }
+
+    @Override
     public boolean verify(byte[] data, byte[] signature) {
         return user.verify(data, signature);
     }
 
     @Override
-    public Map<String, byte[]> encrypt(byte[] plaintext) {
+    public EncryptedData encrypt(byte[] plaintext) {
         return user.encrypt(plaintext);
     }
 
@@ -233,8 +230,8 @@ public class Station implements User {
     }
 
     @Override
-    public byte[] decrypt(byte[] ciphertext) {
-        return user.decrypt(ciphertext);
+    public byte[] decrypt(EncryptedData data) {
+        return user.decrypt(data);
     }
 
     @Override

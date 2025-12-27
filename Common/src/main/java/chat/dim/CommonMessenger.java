@@ -40,6 +40,7 @@ import chat.dim.core.CipherKeyDelegate;
 import chat.dim.core.Compressor;
 import chat.dim.core.Packer;
 import chat.dim.core.Processor;
+import chat.dim.crypto.EncryptedData;
 import chat.dim.log.Log;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Command;
@@ -140,7 +141,7 @@ public class CommonMessenger extends Messenger implements Transmitter {
     //-------- InstantMessageDelegate
 
     @Override
-    public Map<String, byte[]> encryptKey(byte[] data, ID receiver, InstantMessage iMsg) {
+    public EncryptedData encryptKey(byte[] data, ID receiver, InstantMessage iMsg) {
         try {
             return super.encryptKey(data, receiver, iMsg);
         } catch (Exception e) {
@@ -148,6 +149,16 @@ public class CommonMessenger extends Messenger implements Transmitter {
             e.printStackTrace();
             return null;
         }
+    }
+
+    @Override
+    public Map<String, Object> encodeKey(EncryptedData data, ID receiver, InstantMessage iMsg) {
+        Map<String, Object> keys = super.encodeKey(data, receiver, iMsg);
+        if (keys != null) {
+            // check for wildcard
+            CompatibleOutgoing.fixEncodeKeys(keys, receiver, facebook);
+        }
+        return keys;
     }
 
     @Override

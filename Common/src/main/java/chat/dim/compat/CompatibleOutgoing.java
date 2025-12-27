@@ -32,13 +32,18 @@ package chat.dim.compat;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import chat.dim.Facebook;
 import chat.dim.mkm.DocumentUtils;
+import chat.dim.mkm.Identifier;
+import chat.dim.mkm.User;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.FileContent;
+import chat.dim.protocol.ID;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.MetaCommand;
 import chat.dim.protocol.NameCard;
@@ -148,6 +153,60 @@ public abstract class CompatibleOutgoing {
         Object document = content.get("document");
         if (document instanceof Map) {
             Compatible.fixID((Map<String, Object>) document);
+        }
+    }
+
+    public static void fixEncodeKeys(Map<String, Object> keys, ID receiver, Facebook facebook) {
+        // check for wildcard
+        String identifier = Identifier.concat(receiver.getName(), receiver.getAddress(), null);
+        Object base64 = keys.get(identifier);
+        if (base64 != null) {
+            // key data for normal ID ready
+            return;
+        } else if (!receiver.isUser()) {
+            assert false : "receiver error: " + receiver;
+            return;
+        }
+        // get terminals for user
+        User user = facebook.getUser(receiver);
+        if (user == null) {
+            assert false : "failed to get receiver: " + receiver;
+            return;
+        }
+        // check for user's terminals
+        List<String> terminals = user.getTerminals();
+        assert terminals != null && !terminals.isEmpty() : "terminals not found: " + user;
+        for (String target : terminals) {
+            if (target == null || target.isEmpty() || target.equals("*")) {
+                continue;
+            }
+            base64 = keys.get(identifier + "/" + target);
+            if (base64 != null) {
+                if (keys.size() == 1) {
+                    // only one target, replace it with naked ID
+                    keys.clear();
+                }
+                // got encoded key data for first terminal,
+                // set it for naked ID
+                keys.put(identifier, base64);
+                return;
+            }
+        }
+        // get first value for naked ID
+        Set<String> array = keys.keySet();
+        for (String item : array) {
+            base64 = keys.get(item);
+            if (base64 == null) {
+                assert false : "key error: " + item + ", " + keys;
+                continue;
+            } else if (array.size() == 1) {
+                // only one value, replace it with naked ID
+                keys.clear();
+            }
+            // got first encoded key data,
+            // set it for naked ID
+            keys.put(identifier, base64);
+            return;
         }
     }
 

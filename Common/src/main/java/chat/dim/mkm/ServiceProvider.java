@@ -58,30 +58,20 @@ public class ServiceProvider extends BaseGroup {
     }
 
     /**
-     *  Get last property
+     *  Provider Document
      */
-    public Object getProfile(String key) {
-        List<Document> docs = documents;
-        if (docs == null) {
-            return null;
-        }
-        // TODO: sort by doc.time DESC
-        Object value;
-        for (Document doc : docs) {
-            value = doc.getProperty(key);
-            if (value != null) {
-                return value;
-            }
-        }
-        // property not found
-        return null;
+    public Document getProfile() {
+        return DocumentUtils.lastVisa(documents);
     }
 
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getStations() {
-        Object stations = getProfile("stations");
-        if (stations instanceof List) {
-            return (List<Map<String, Object>>) stations;
+        Document doc = getProfile();
+        if (doc != null) {
+            Object stations = doc.getProperty("stations");
+            if (stations instanceof List) {
+                return (List<Map<String, Object>>) stations;
+            }
         }
         // TODO: load from local storage
         return null;

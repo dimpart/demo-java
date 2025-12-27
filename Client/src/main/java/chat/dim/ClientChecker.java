@@ -36,6 +36,7 @@ import java.util.List;
 
 import chat.dim.dbi.AccountDBI;
 import chat.dim.log.Log;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.Station;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
@@ -265,7 +266,7 @@ public class ClientChecker extends EntityChecker {
             return false;
         }
         Log.info("push visa document: " + me + " => " + receiver);
-        Content content = DocumentCommand.response(me, null, visa);
+        Content content = DocumentUtils.response(me, null, visa);
         Pair<InstantMessage, ReliableMessage> pair;
         pair = messenger.sendContent(content, me, receiver, 1);
         return pair != null && pair.second != null;
