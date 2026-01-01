@@ -31,8 +31,9 @@
 package chat.dim.mkm;
 
 import java.util.List;
+import java.util.Set;
 
-import chat.dim.crypto.EncryptedData;
+import chat.dim.crypto.EncryptedBundle;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
@@ -210,7 +211,7 @@ public class Station implements User {
     }
 
     @Override
-    public List<String> getTerminals() {
+    public Set<String> getTerminals() {
         return user.getTerminals();
     }
 
@@ -220,8 +221,8 @@ public class Station implements User {
     }
 
     @Override
-    public EncryptedData encrypt(byte[] plaintext) {
-        return user.encrypt(plaintext);
+    public EncryptedBundle encryptBundle(byte[] plaintext) {
+        return user.encryptBundle(plaintext);
     }
 
     @Override
@@ -230,8 +231,8 @@ public class Station implements User {
     }
 
     @Override
-    public byte[] decrypt(EncryptedData data) {
-        return user.decrypt(data);
+    public byte[] decryptBundle(EncryptedBundle data) {
+        return user.decryptBundle(data);
     }
 
     @Override

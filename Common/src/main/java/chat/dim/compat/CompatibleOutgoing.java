@@ -174,7 +174,7 @@ public abstract class CompatibleOutgoing {
             return;
         }
         // check for user's terminals
-        List<String> terminals = user.getTerminals();
+        Set<String> terminals = user.getTerminals();
         assert terminals != null && !terminals.isEmpty() : "terminals not found: " + user;
         for (String target : terminals) {
             if (target == null || target.isEmpty() || target.equals("*")) {
