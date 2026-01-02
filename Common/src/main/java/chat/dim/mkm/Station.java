@@ -34,13 +34,13 @@ import java.util.List;
 import java.util.Set;
 
 import chat.dim.crypto.EncryptedBundle;
+import chat.dim.data.Converter;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.Visa;
-import chat.dim.type.Converter;
 
 /**
  *  DIM Server

@@ -41,6 +41,7 @@ import chat.dim.core.Compressor;
 import chat.dim.core.Packer;
 import chat.dim.core.Processor;
 import chat.dim.crypto.EncryptedBundle;
+import chat.dim.data.Converter;
 import chat.dim.log.Log;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Command;
@@ -52,7 +53,6 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.SymmetricKey;
 import chat.dim.protocol.Visa;
-import chat.dim.type.Converter;
 import chat.dim.type.Pair;
 
 /**

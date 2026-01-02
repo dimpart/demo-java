@@ -35,6 +35,7 @@ import java.util.List;
 
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
+import chat.dim.data.Copier;
 import chat.dim.mkm.Group;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Bulletin;
@@ -43,7 +44,6 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.ReliableMessage;
-import chat.dim.type.Copier;
 
 
 // Singleton

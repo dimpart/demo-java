@@ -35,6 +35,7 @@ import java.util.List;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.data.Copier;
 import chat.dim.log.Log;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
@@ -42,7 +43,6 @@ import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.GroupCommand;
 import chat.dim.protocol.group.InviteCommand;
-import chat.dim.type.Copier;
 import chat.dim.type.Pair;
 import chat.dim.type.Triplet;
 

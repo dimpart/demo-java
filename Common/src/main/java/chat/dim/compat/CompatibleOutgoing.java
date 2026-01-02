@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import chat.dim.Facebook;
+import chat.dim.data.Converter;
 import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.Identifier;
 import chat.dim.mkm.User;
@@ -48,7 +49,6 @@ import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.MetaCommand;
 import chat.dim.protocol.NameCard;
 import chat.dim.protocol.ReceiptCommand;
-import chat.dim.type.Converter;
 
 
 // TODO: remove after all server/client upgraded

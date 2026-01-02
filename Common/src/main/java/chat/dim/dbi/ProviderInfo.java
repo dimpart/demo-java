@@ -35,10 +35,10 @@ import java.util.List;
 import java.util.Map;
 
 import chat.dim.TwinsHelper;
+import chat.dim.data.Converter;
 import chat.dim.mkm.Identifier;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
-import chat.dim.type.Converter;
 
 public class ProviderInfo {
 

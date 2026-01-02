@@ -27,6 +27,8 @@ package chat.dim.type;
 
 import java.util.Date;
 
+import chat.dim.base.BaseConverter;
+
 public class SafeConverter extends BaseConverter {
 
     @Override

@@ -28,6 +28,7 @@ package chat.dim.compat;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import chat.dim.data.Converter;
 import chat.dim.digest.MessageDigester;
 import chat.dim.digest.MD5;
 import chat.dim.digest.SHA1;
@@ -38,7 +39,6 @@ import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaType;
-import chat.dim.type.Converter;
 import chat.dim.type.SafeConverter;
 
 /**

@@ -34,10 +34,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import chat.dim.data.Converter;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.LoginCommand;
-import chat.dim.type.Converter;
 
 
 // TODO: remove after all server/client upgraded
