@@ -156,7 +156,8 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
         String signature = doc.getString("signature", "");
         // build conditions
         SQLConditions conditions = new SQLConditions();
-        conditions.addCondition(null, "did", "=", did.toString());
+        // TODO: add field 'vid' for terminal
+        conditions.addCondition(null, "did", "=", entity.toString());
         conditions.addCondition(SQLConditions.Relation.AND, "type", "=", type);
         // fill values
         Map<String, Object> values = new HashMap<>();
@@ -176,7 +177,8 @@ public class DocumentTable extends DataTableHandler<Document> implements Documen
         String data = doc.getString("data", "");
         String signature = doc.getString("signature", "");
         // new values
-        Object[] values = {did.toString(), type, data, signature};
+        // TODO: add field 'vid' for terminal
+        Object[] values = {entity.toString(), type, data, signature};
         return insert(T_DOCUMENT, INSERT_COLUMNS, values) > 0;
     }
 

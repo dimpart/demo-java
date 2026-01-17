@@ -231,8 +231,8 @@ public class Station implements User {
     }
 
     @Override
-    public byte[] decryptBundle(EncryptedBundle data) {
-        return user.decryptBundle(data);
+    public byte[] decryptBundle(EncryptedBundle bundle) {
+        return user.decryptBundle(bundle);
     }
 
     @Override

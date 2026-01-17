@@ -85,7 +85,7 @@ public abstract class CommonMessagePacker extends MessagePacker {
             return doc.getPublicKey();
         }
         Meta meta = facebook.getMeta(user);
-        if (meta != null) {
+        if (meta != null/* && meta.isValid()*/) {
             VerifyKey metaKey = meta.getPublicKey();
             if (metaKey instanceof EncryptKey) {
                 return (EncryptKey) metaKey;

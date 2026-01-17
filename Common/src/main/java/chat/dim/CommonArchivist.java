@@ -157,12 +157,11 @@ public class CommonArchivist implements Archivist, Barrack {
 
     @Override
     public boolean saveMeta(Meta meta, ID identifier) {
-        Facebook facebook = getFacebook();
-        assert facebook != null : "facebook lost";
         //
         //  1. check valid
         //
-        if (!checkMeta(meta, identifier)) {
+        boolean valid = checkMeta(meta, identifier);
+        if (!valid) {
             assert false : "meta not valid: " + identifier;
             Log.warning("meta not valid: " + identifier);
             return false;
@@ -170,6 +169,8 @@ public class CommonArchivist implements Archivist, Barrack {
         //
         //  2. check duplicated
         //
+        Facebook facebook = getFacebook();
+        assert facebook != null : "facebook lost";
         Meta old = facebook.getMeta(identifier);
         if (old != null) {
             Log.debug("meta duplicated: " + identifier);
