@@ -79,6 +79,7 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
      *  Add an upload task
      *
      * @param api      - remote URL
+     * @param enigma   - enigma prefix
      * @param secret   - authentication algorithm: hex(md5(data + secret + salt))
      * @param data     - file data
      * @param path     - temporary file path
@@ -87,7 +88,7 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
      * @param delegate - callback
      * @return remote URL for downloading when same file already uploaded to CDN
      */
-    public URL upload(URL api, byte[] secret, byte[] data, String path, String var, ID sender,
+    public URL upload(URL api, String enigma, byte[] secret, byte[] data, String path, String var, ID sender,
                       UploadDelegate delegate) throws IOException {
         // 1. check previous upload
         String filename = Paths.filename(path);
@@ -100,7 +101,7 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         int len = ExternalStorage.saveBinary(data, path);
         assert len == data.length : "failed to save binary: " + path;
         // 3. build request
-        addUploadRequest(new UploadRequest(api, path, secret, var, sender, delegate));
+        addUploadRequest(new UploadRequest(api, path, enigma, secret, var, sender, delegate));
         return null;
     }
 
@@ -285,11 +286,12 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
             return true;
         }
 
-        // hash: md5(data + secret + salt)
+        // hash: md5(md5(data) + secret + salt)
         byte[] data = ExternalStorage.loadBinary(path);
         byte[] secret = req.secret;
         byte[] salt = random_salt();
-        byte[] hash = MD5.digest(concat(data, secret, salt));
+        byte[] temp = concat(MD5.digest(data), secret, salt);
+        byte[] hash = MD5.digest(temp);
 
         // 4. build task
         String urlString = req.url.toString();
@@ -298,6 +300,12 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         urlString = Template.replace(urlString, "ID", address.toString());
         urlString = Template.replace(urlString, "MD5", Hex.encode(hash));
         urlString = Template.replace(urlString, "SALT", Hex.encode(salt));
+        // replace enigma
+        String enigma = req.enigma;
+        if (enigma != null) {
+            urlString = replaceEnigma(urlString, enigma);
+        }
+
         task = new UploadTask(new URL(urlString), req.name, filename, data, this);
 
         // 5. run it
@@ -305,6 +313,13 @@ public abstract class HTTPClient extends Runner implements UploadDelegate, Downl
         uploadingTask = task;
         task.run();
         return true;
+    }
+    private static String replaceEnigma(String url, String enigma) {
+        if (url.contains("{ENIGMA}")) {
+            return Template.replace(url, "ENIGMA", enigma);
+        }
+        // replaceQueryParam
+        return url + "&enigma=" + enigma;
     }
     private static byte[] concat(byte[] data, byte[] secret, byte[] salt) {
         byte[] buffer = new byte[data.length + secret.length + salt.length];

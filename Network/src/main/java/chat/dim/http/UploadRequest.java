@@ -50,7 +50,8 @@ import chat.dim.protocol.ID;
  */
 public class UploadRequest extends AbstractTask {
 
-    public final byte[] secret;     // authentication algorithm: hex(md5(data + secret + salt))
+    public final String enigma;
+    public final byte[] secret;     // authentication algorithm: hex(md5(md5(data) + secret + salt))
 
     public final String name;       // form var
 
@@ -58,8 +59,9 @@ public class UploadRequest extends AbstractTask {
 
     private final WeakReference<UploadDelegate> delegateRef;
 
-    public UploadRequest(URL url, String path, byte[] key, String var, ID from, UploadDelegate delegate) {
+    public UploadRequest(URL url, String path, String prefix, byte[] key, String var, ID from, UploadDelegate delegate) {
         super(url, path);
+        enigma = prefix;
         secret = key;
         name = var;
         sender = from;

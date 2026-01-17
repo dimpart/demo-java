@@ -256,7 +256,7 @@ public abstract class ClientMessagePacker extends CommonMessagePacker {
         // create text content
         Content content = TextContent.create("Failed to decrypt message.");
         content.putAll(TwinsHelper.newMap(
-                "template", "Failed to decrypt message (type=${type}) from \"${sender}\".",
+                "template", "Failed to decrypt message (type=${type}) from \"${sender}\", group: \"${group}\".",
                 "replacements", TwinsHelper.newMap(
                         "type", type,
                         "sender", sender.toString(),

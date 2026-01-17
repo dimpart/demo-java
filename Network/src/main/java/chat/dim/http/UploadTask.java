@@ -65,7 +65,7 @@ public class UploadTask extends UploadRequest implements Runnable {
     public final byte[] data;      // file data
 
     public UploadTask(URL url, String var, String fileName, byte[] fileData, UploadDelegate delegate) {
-        super(url, null, null, var, null, delegate);
+        super(url, null, null, null, var, null, delegate);
         filename = fileName;
         data = fileData;
     }
