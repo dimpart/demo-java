@@ -34,10 +34,7 @@ import java.util.List;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
-import chat.dim.group.GroupDelegate;
-import chat.dim.group.SharedGroupManager;
 import chat.dim.protocol.Content;
-import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 
 public class ReceiptCommandProcessor extends BaseCommandProcessor {
@@ -49,10 +46,6 @@ public class ReceiptCommandProcessor extends BaseCommandProcessor {
     @Override
     public List<Content> processContent(Content content, ReliableMessage rMsg) {
         //assert content instanceof ReceiptCommand : "receipt command error: " + content;
-        if (content instanceof ReceiptCommand) {
-            GroupDelegate delegate = SharedGroupManager.getInstance().getDelegate();
-            delegate.updateRespondTime((ReceiptCommand) content, rMsg.getEnvelope());
-        }
         // no need to response receipt command
         return null;
     }

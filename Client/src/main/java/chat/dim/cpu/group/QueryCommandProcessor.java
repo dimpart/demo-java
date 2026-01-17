@@ -50,7 +50,7 @@ import chat.dim.type.Triplet;
  *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
  *      1. query for group members-list
- *      2. any existed member or assistant can query group members-list
+ *      2. any existed member can query group members-list
  */
 public class QueryCommandProcessor extends GroupCommandProcessor {
 
@@ -80,12 +80,10 @@ public class QueryCommandProcessor extends GroupCommandProcessor {
         }
 
         ID sender = rMsg.getSender();
-        List<ID> bots = getAssistants(group);
         boolean isMember = members.contains(sender);
-        boolean isBot = bots != null && bots.contains(sender);
 
         // 2. check permission
-        boolean canQuery = isMember || isBot;
+        boolean canQuery = isMember; // || isBot;
         if (!canQuery) {
             return respondReceipt("Permission denied.", rMsg.getEnvelope(), command, newMap(
                     "template", "Not allowed to query members of group: ${gid}",

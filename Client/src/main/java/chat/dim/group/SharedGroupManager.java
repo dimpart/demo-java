@@ -176,11 +176,6 @@ public final class SharedGroupManager implements Group.DataSource {
         return delegate.getOwner(group);
     }
 
-    public List<ID> getAssistants(ID group) {
-        GroupDelegate delegate = getDelegate();
-        return delegate.getAssistants(group);
-    }
-
     @Override
     public List<ID> getMembers(ID group) {
         GroupDelegate delegate = getDelegate();

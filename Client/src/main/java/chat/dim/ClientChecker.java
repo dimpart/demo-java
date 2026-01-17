@@ -124,22 +124,17 @@ public class ClientChecker extends EntityChecker {
         // TODO: use 'GroupHistory.queryGroupHistory(group, lastTime)' instead
         Content command = QueryCommand.query(group, lastTime);
         boolean ok;
-        // 1. check group bots
-        ok = queryMembersFromAssistants(me, command);
-        if (ok) {
-            return true;
-        }
-        // 2. check administrators
+        // 1. check administrators
         ok = queryMembersFromAdministrators(me, command);
         if (ok) {
             return true;
         }
-        // 3. check group owner
+        // 2. check group owner
         ok = queryMembersFromOwner(me, command);
         if (ok) {
             return true;
         }
-        // all failed, try last active member
+        // 3. all failed, try last active member
         Pair<InstantMessage, ReliableMessage> pair = null;
         ID lastMember = getLastActiveMember(group);
         if (lastMember != null) {
@@ -149,42 +144,6 @@ public class ClientChecker extends EntityChecker {
         }
         Log.error("group not ready: " + group);
         return pair != null && pair.second != null;
-    }
-
-    protected boolean queryMembersFromAssistants(ID sender, Content command) {
-        CommonFacebook facebook = getFacebook();
-        CommonMessenger messenger = getMessenger();
-        ID group = command.getGroup();
-        assert group != null : "group command error: " + command;
-        List<ID> bots = facebook.getAssistants(group);
-        if (bots == null || bots.isEmpty()) {
-            Log.warning("assistants not designated for group: " + group);
-            return false;
-        }
-        int success = 0;
-        Pair<InstantMessage, ReliableMessage> pair;
-        // querying members from bots
-        Log.info("querying members from bots: " + bots + ", group: " + group);
-        for (ID receiver : bots) {
-            if (sender.equals(receiver)) {
-                Log.warning("ignore cycled querying: " + sender + ", group: " + group);
-                continue;
-            }
-            pair = messenger.sendContent(command, sender, receiver, 1);
-            if (pair != null && pair.second != null) {
-                success += 1;
-            }
-        }
-        if (success == 0) {
-            // failed
-            return false;
-        }
-        ID lastMember = getLastActiveMember(group);
-        if (lastMember != null && !bots.contains(lastMember)) {
-            Log.info("querying members from: " + lastMember + ", group: " + group);
-            messenger.sendContent(command, sender, lastMember, 1);
-        }
-        return true;
     }
 
     protected boolean queryMembersFromAdministrators(ID sender, Content command) {

@@ -54,9 +54,6 @@ public class GroupCommandProcessor extends HistoryCommandProcessor {
     protected ID getOwner(ID group) {
         return delegate.getOwner(group);
     }
-    protected List<ID> getAssistants(ID group) {
-        return delegate.getAssistants(group);
-    }
 
     protected List<ID> getAdministrators(ID group) {
         return delegate.getAdministrators(group);

@@ -148,23 +148,7 @@ public class AdminManager extends TripletsHelper {
         messenger.sendContent(command, me, Station.ANY, 1);
 
         //
-        //  2. check group bots
-        //
-        List<ID> bots = delegate.getAssistants(group);
-        if (bots != null && bots.size() > 0) {
-            // group bots exist, let them to deliver to all other members
-            for (ID item : bots) {
-                if (me.equals(item)) {
-                    assert false : "should not be a bot here: " + me;
-                    continue;
-                }
-                messenger.sendContent(command, me, item, 1);
-            }
-            return true;
-        }
-
-        //
-        //  3. broadcast to all members
+        //  2. broadcast to all members
         //
         List<ID> members = delegate.getMembers(group);
         if (members == null || members.isEmpty()) {

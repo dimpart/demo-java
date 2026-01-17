@@ -49,7 +49,7 @@ import chat.dim.type.Triplet;
  *  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
  *      1. reset group members
- *      2. only group owner or assistant can reset group members
+ *      2. only group owner or administrators can reset group members
  *
  *      3. specially, if the group members info lost,
  *         means you may not known who's the group owner immediately (and he may be not online),

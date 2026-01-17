@@ -44,16 +44,13 @@ import chat.dim.mkm.MetaUtils;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
-import chat.dim.protocol.Envelope;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
-import chat.dim.protocol.ReceiptCommand;
 
 public class GroupDelegate extends TwinsHelper implements Group.DataSource {
 
     public GroupDelegate(CommonFacebook facebook, CommonMessenger messenger) {
         super(facebook, messenger);
-        GroupBotsManager.getInstance().setMessenger(messenger);
     }
 
     @Override
@@ -147,30 +144,6 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     }
 
     //
-    //  Group Assistants
-    //
-
-    public List<ID> getAssistants(ID identifier) {
-        GroupBotsManager manager = GroupBotsManager.getInstance();
-        return manager.getAssistants(identifier);
-    }
-
-    public ID getFastestAssistant(ID identifier) {
-        GroupBotsManager manager = GroupBotsManager.getInstance();
-        return manager.getFastestAssistant(identifier);
-    }
-
-    public void setCommonAssistants(List<ID> bots) {
-        GroupBotsManager manager = GroupBotsManager.getInstance();
-        manager.setCommonAssistants(bots);
-    }
-
-    public boolean updateRespondTime(ReceiptCommand content, Envelope envelope) {
-        GroupBotsManager manager = GroupBotsManager.getInstance();
-        return manager.updateRespondTime(content, envelope);
-    }
-
-    //
     //  Administrators
     //
 
@@ -223,11 +196,6 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     public boolean isAdministrator(ID user, ID group) {
         List<ID> admins = getAdministrators(group);
         return admins != null && admins.contains(user);
-    }
-
-    public boolean isAssistant(ID user, ID group) {
-        List<ID> bots = getAssistants(group);
-        return bots != null && bots.contains(user);
     }
 
 }

@@ -137,37 +137,6 @@ public abstract class ClientFacebook extends CommonFacebook {
         return members;
     }
 
-    @Override
-    public List<ID> getAssistants(ID group) {
-        assert group.isGroup() : "group ID error: " + group;
-        // check bulletin document
-        Bulletin doc = getBulletin(group);
-        if (doc == null) {
-            // the assistants should be set in the bulletin document of group
-            return null;
-        }
-        // check local storage
-        List<ID> bots = database.getAssistants(group);
-        if (bots != null && !bots.isEmpty()) {
-            // got from local storage
-            return bots;
-        }
-        // get from bulletin document
-        Object array = doc.getProperty("assistants");
-        if (array instanceof List) {
-            bots = ID.convert((List<?>) array);
-        } else {
-            assert array == null : "group bots error: " + array;
-            // get from 'assistant'
-            bots = new ArrayList<>();
-            ID single = ID.parse(doc.getProperty("assistant"));
-            if (single != null) {
-                bots.add(single);
-            }
-        }
-        return bots;
-    }
-
     //
     //  Organizational Structure
     //

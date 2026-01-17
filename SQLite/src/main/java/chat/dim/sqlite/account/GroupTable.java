@@ -70,16 +70,6 @@ public class GroupTable extends DataTableHandler<ID> implements GroupDBI {
     }
 
     @Override
-    public List<ID> getAssistants(ID group) {
-        return null;
-    }
-
-    @Override
-    public boolean saveAssistants(List<ID> bots, ID group) {
-        return false;
-    }
-
-    @Override
     public List<ID> getAdministrators(ID group) {
         return null;
     }

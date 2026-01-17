@@ -51,12 +51,6 @@ public interface GroupDBI {
     boolean saveMembers(List<ID> members, ID group);
 
     //
-    //  bots for group
-    //
-    List<ID> getAssistants(ID group);
-    boolean saveAssistants(List<ID> bots, ID group);
-
-    //
     //  group admins
     //
     List<ID> getAdministrators(ID group);

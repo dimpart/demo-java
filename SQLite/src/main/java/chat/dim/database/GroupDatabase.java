@@ -49,7 +49,6 @@ public class GroupDatabase implements GroupDBI {
     private final CachePool<ID, ID> founderCache;
     private final CachePool<ID, ID> ownerCache;
     private final CachePool<ID, List<ID>> membersCache;
-    private final CachePool<ID, List<ID>> assistantsCache;
 
     public GroupDatabase(DatabaseConnector sqliteConnector) {
         super();
@@ -58,7 +57,6 @@ public class GroupDatabase implements GroupDBI {
         founderCache    = man.getPool("founder");
         ownerCache      = man.getPool("owner");
         membersCache    = man.getPool("members");
-        assistantsCache = man.getPool("assistants");
     }
 
     //
@@ -189,52 +187,6 @@ public class GroupDatabase implements GroupDBI {
         membersCache.update(group, members, 3600 * 1000, now);
         // 2. update sqlite
         return groupTable.saveMembers(members, group);
-    }
-
-    @Override
-    public List<ID> getAssistants(ID group) {
-        long now = System.currentTimeMillis();
-        List<ID> value = null;
-        CacheHolder<List<ID>> holder = null;
-        // 1. check memory cache
-        CachePair<List<ID>> pair = assistantsCache.fetch(group, now);
-        if (pair != null) {
-            value = pair.value;
-            holder = pair.holder;
-        }
-        if (value == null) {
-            // cache empty
-            if (holder == null) {
-                // cache not load yet, wait to load
-                assistantsCache.update(group, null, 128 * 1000, now);
-            } else {
-                if (holder.isAlive(now)) {
-                    // cache not exists
-                    return new ArrayList<>();
-                }
-                // cache expired, wait to load
-                holder.renewal(128 * 1000, now);
-            }
-            // 2. check sqlite
-            value = groupTable.getAssistants(group);
-            if (value == null) {
-                // placeholder
-                value = new ArrayList<>();
-            }
-            // update memory cache
-            assistantsCache.update(group, value, 3600 * 1000, now);
-        }
-        // OK, return cached value
-        return value;
-    }
-
-    @Override
-    public boolean saveAssistants(List<ID> bots, ID group) {
-        long now = System.currentTimeMillis();
-        // 1. update memory cache
-        assistantsCache.update(group, bots, 3600 * 1000, now);
-        // 2. update sqlite
-        return groupTable.saveAssistants(bots, group);
     }
 
     @Override

@@ -206,14 +206,12 @@ public class GroupManager extends TripletsHelper {
         //
         boolean isOwner = me.equals(first);
         boolean isAdmin = delegate.isAdministrator(me, group);
-        boolean isBot = delegate.isAssistant(me, group);
         boolean canReset = isOwner || isAdmin;
         if (!canReset) {
             assert false : "cannot reset members of group: " + group;
             return false;
         }
         // only the owner or admin can reset group members
-        assert !isBot : "group bot cannot reset members: " + group + ", " + me;
 
         //
         //  2. build 'reset' command
@@ -245,17 +243,9 @@ public class GroupManager extends TripletsHelper {
         List<ReliableMessage> messages = builder.buildGroupHistories(group);
         ForwardContent forward = ForwardContent.create(messages);
 
-        List<ID> bots = delegate.getAssistants(group);
-        if (bots != null && bots.size() > 0) {
-            // let the group bots know the newest member ID list,
-            // so they can split group message correctly for us.
-            return sendCommand(forward, bots);          // to all assistants
-        } else {
-            // group bots not exist,
-            // send the command to all members
-            sendCommand(forward, newMembers);           // to new members
-            sendCommand(forward, expelList);            // to removed members
-        }
+        // send the command to all members
+        sendCommand(forward, newMembers);           // to new members
+        sendCommand(forward, expelList);            // to removed members
 
         return true;
     }
@@ -323,12 +313,6 @@ public class GroupManager extends TripletsHelper {
         //
         //  3. forward group command(s)
         //
-        List<ID> bots = delegate.getAssistants(group);
-        if (bots != null && bots.size() > 0) {
-            // let the group bots know the newest member ID list,
-            // so they can split group message correctly for us.
-            return sendCommand(forward, bots);          // to all assistants
-        }
 
         // forward 'invite' to old members
         sendCommand(forward, oldMembers);               // to old members
@@ -367,7 +351,6 @@ public class GroupManager extends TripletsHelper {
 
         boolean isOwner = delegate.isOwner(me, group);
         boolean isAdmin = delegate.isAdministrator(me, group);
-        boolean isBot = delegate.isAssistant(me, group);
         boolean isMember = members.contains(me);
 
         //
@@ -380,7 +363,6 @@ public class GroupManager extends TripletsHelper {
             assert false : "administrator cannot quit from group: " + group;
             return false;
         }
-        assert !isBot : "group bot cannot quit: " + group + ", " + me;
 
         //
         //  2. update local storage
@@ -409,16 +391,9 @@ public class GroupManager extends TripletsHelper {
         //
         //  4. forward 'quit' command
         //
-        List<ID> bots = delegate.getAssistants(group);
-        if (bots != null && bots.size() > 0) {
-            // let the group bots know the newest member ID list,
-            // so they can split group message correctly for us.
-            return sendCommand(forward, bots);          // to group bots
-        } else {
-            // group bots not exist,
-            // send the command to all members directly
-            return sendCommand(forward, members);       // to all members
-        }
+
+        // send the command to all members directly
+        return sendCommand(forward, members);       // to all members
     }
 
     private boolean sendCommand(Content content, ID receiver) {

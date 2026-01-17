@@ -115,7 +115,7 @@ public class GroupEmitter extends TripletsHelper {
 
     public ReliableMessage sendInstantMessage(InstantMessage iMsg, int priority) {
         //
-        //  0. check group
+        //  1. check group
         //
         Content content = iMsg.getContent();
         ID group = content.getGroup();
@@ -133,16 +133,6 @@ public class GroupEmitter extends TripletsHelper {
         /// NOTICE: even if the message content is a FileContent,
         ///         there is no need to process the file data here too, because
         ///         the message packer will handle it before encryption.
-
-        //
-        //  1. check group bots
-        //
-        ID prime = delegate.getFastestAssistant(group);
-        if (prime != null) {
-            // group bots found, forward this message to any bot to let it split for me;
-            // this can reduce my jobs.
-            return forwardMessage(prime, group, iMsg, priority);
-        }
 
         //
         //  2. check group members
