@@ -34,6 +34,7 @@ import chat.dim.format.UTF8;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
+import chat.dim.protocol.TransportableData;
 import chat.dim.protocol.VerifyKey;
 
 public interface MetaUtils {
@@ -86,14 +87,14 @@ public interface MetaUtils {
             //         just compare the key.data to check matching
             return false;
         }
-        byte[] fingerprint = meta.getFingerprint();
-        if (fingerprint == null || fingerprint.length == 0) {
+        TransportableData fingerprint = meta.getFingerprint();
+        if (fingerprint == null || fingerprint.isEmpty()) {
             // fingerprint should not be empty here
             return false;
         }
         // check whether keys equal by verifying signature
         byte[] data = UTF8.encode(seed);
-        return pKey.verify(data, fingerprint);
+        return pKey.verify(data, fingerprint.getBytes());
     }
 
 }

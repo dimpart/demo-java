@@ -96,7 +96,8 @@ public final class Password {
      * @return digest
      */
     public static String digest(SymmetricKey password) {
-        byte[] key = password.getData();  // 32 bytes
+        TransportableData pwd = password.getData();
+        byte[] key = pwd.getBytes();      // 32 bytes
         byte[] dig = MD5.digest(key);     // 16 bytes
         byte[] pre = prefix(dig);         //  6 bytes
         return Base64.encode(pre);        //  8 chars

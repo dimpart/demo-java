@@ -45,9 +45,9 @@ import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaType;
-import chat.dim.protocol.PortableNetworkFile;
 import chat.dim.protocol.PrivateKey;
 import chat.dim.protocol.SignKey;
+import chat.dim.protocol.TransportableFile;
 import chat.dim.protocol.Visa;
 
 public class Register {
@@ -66,7 +66,7 @@ public class Register {
      * @param avatar   - photo URL
      * @return user ID
      */
-    public ID createUser(String nickname, PortableNetworkFile avatar) {
+    public ID createUser(String nickname, TransportableFile avatar) {
         //
         //  Step 1: generate private key (with asymmetric algorithm)
         //
@@ -142,7 +142,7 @@ public class Register {
     }
 
     protected Visa createVisa(ID identifier, EncryptKey visaKey, SignKey idKey,
-                              String nickname, PortableNetworkFile avatar) {
+                              String nickname, TransportableFile avatar) {
         assert identifier.isUser() : "user ID error: " + identifier;
         Visa doc = new BaseVisa();
         doc.setString("did", identifier);
