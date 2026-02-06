@@ -116,7 +116,8 @@ public abstract class CommonFacebook extends Facebook {
     }
 
     @Override
-    public ID selectLocalUser(ID receiver) {
+    public ID selectUser(ID receiver) {
+        assert receiver.isUser() || receiver.isBroadcast() : "user ID error: " + receiver;
         User user = currentUser;
         if (user != null) {
             ID current = user.getIdentifier();
@@ -124,24 +125,29 @@ public abstract class CommonFacebook extends Facebook {
                 // broadcast message can be decrypted by anyone, so
                 // just return current user here
                 return current;
-            } else if (receiver.isGroup()) {
-                // group message (recipient not designated)
-                //
-                // the messenger will check group info before decrypting message,
-                // so we can trust that the group's meta & members MUST exist here.
-                List<ID> members = getMembers(receiver);
-                if (members == null || members.isEmpty()) {
-                    assert false : "members not found: " + receiver;
-                    return null;
-                } else if (members.contains(current)) {
-                    return current;
-                }
             } else if (receiver.equals(current)) {
                 return current;
             }
         }
         // check local users
-        return super.selectLocalUser(receiver);
+        return super.selectUser(receiver);
+    }
+
+    @Override
+    public ID selectMember(List<ID> members) {
+        assert members != null && !members.isEmpty() : "group members not found";
+        User user = currentUser;
+        if (user != null) {
+            // group message (recipient not designated)
+            ID current = user.getIdentifier();
+            // the messenger will check group info before decrypting message,
+            // so we can trust that the group's meta & members MUST exist here.
+            if (members.contains(current)) {
+                return current;
+            }
+        }
+        // check local users
+        return super.selectMember(members);
     }
 
     //

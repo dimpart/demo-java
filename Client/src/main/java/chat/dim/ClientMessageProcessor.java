@@ -35,6 +35,7 @@ import java.util.List;
 
 import chat.dim.cpu.ClientContentProcessorCreator;
 import chat.dim.dkd.ContentProcessor;
+import chat.dim.mkm.User;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.HandshakeCommand;
@@ -121,15 +122,14 @@ public class ClientMessageProcessor extends CommonMessageProcessor {
             // urgent command
             return responses;
         }
-        Facebook facebook = getFacebook();
         CommonMessenger messenger = getMessenger();
-        if (facebook == null || messenger == null) {
-            assert false : "twins not ready: " + facebook + ", " + messenger;
+        if (messenger == null) {
+            assert false : "messenger not ready";
             return null;
         }
         ID sender = rMsg.getSender();
         ID receiver = rMsg.getReceiver();
-        ID user = facebook.selectLocalUser(receiver);
+        User user = selectLocalUser(receiver);
         if (user == null) {
             assert false : "receiver error: " + receiver;
             return null;
@@ -153,7 +153,7 @@ public class ClientMessageProcessor extends CommonMessageProcessor {
                 }
             }
             // normal response
-            messenger.sendContent(res, user, sender, 1);
+            messenger.sendContent(res, user.getIdentifier(), sender, 1);
         }
         // DON'T respond to station directly
         return null;
