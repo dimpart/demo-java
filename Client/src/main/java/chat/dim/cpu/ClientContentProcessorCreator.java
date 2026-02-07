@@ -32,7 +32,6 @@ package chat.dim.cpu;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
-import chat.dim.cpu.app.GroupHistoryHandler;
 import chat.dim.cpu.group.ExpelCommandProcessor;
 import chat.dim.cpu.group.InviteCommandProcessor;
 import chat.dim.cpu.group.JoinCommandProcessor;
@@ -47,7 +46,6 @@ import chat.dim.protocol.ContentType;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.group.GroupCommand;
-import chat.dim.protocol.group.GroupHistory;
 import chat.dim.protocol.group.QueryCommand;
 
 public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
@@ -56,34 +54,36 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
         super(facebook, messenger);
     }
 
-    protected AppCustomizedProcessor createCustomizedContentProcessor(Facebook facebook, Messenger messenger) {
-        AppCustomizedProcessor cpu = new AppCustomizedProcessor(facebook, messenger);
-
-        // 'chat.dim.group:history'
-        cpu.setContentHandler(
-                GroupHistory.APP,
-                GroupHistory.MOD,
-                new GroupHistoryHandler(facebook, messenger)
-        );
-
-        return cpu;
-    }
-
     @Override
     public ContentProcessor createContentProcessor(String msgType) {
         switch (msgType) {
 
             // application customized
-            case ContentType.APPLICATION:
             case "application":
-            case ContentType.CUSTOMIZED:
             case "customized":
-                return createCustomizedContentProcessor(getFacebook(), getMessenger());
+                return new CustomizedContentProcessor(getFacebook(), getMessenger());
+
+            // forward content
+            case "forward":
+                return new ForwardContentProcessor(getFacebook(), getMessenger());
+
+            // array content
+            case "array":
+                return new ArrayContentProcessor(getFacebook(), getMessenger());
+
+            // default commands
+            case "command":
+                return new BaseCommandProcessor(getFacebook(), getMessenger());
 
             // history command
             case ContentType.HISTORY:
             case "history":
                 return new HistoryCommandProcessor(getFacebook(), getMessenger());
+
+            // unknown content
+            case "*":
+                // must return a default processor for unknown type
+                return new BaseContentProcessor(getFacebook(), getMessenger());
         }
         // others
         return super.createContentProcessor(msgType);

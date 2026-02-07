@@ -33,12 +33,10 @@ package chat.dim.cpu.app;
 import java.util.List;
 import java.util.Map;
 
-import chat.dim.Facebook;
 import chat.dim.Messenger;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.CustomizedContent;
-import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.GroupHistory;
 import chat.dim.protocol.group.QueryCommand;
@@ -61,31 +59,25 @@ import chat.dim.protocol.group.QueryCommand;
  */
 public final class GroupHistoryHandler extends BaseCustomizedHandler {
 
-    public GroupHistoryHandler(Facebook facebook, Messenger messenger) {
-        super(facebook, messenger);
-    }
-
     @Override
-    public List<Content> handleAction(String act, ID sender, CustomizedContent content, ReliableMessage rMsg) {
+    public List<Content> handleContent(CustomizedContent content, ReliableMessage rMsg,
+                                       Messenger messenger) {
         if (content.getGroup() == null) {
-            assert false : "group command error: " + content + ", sender: " + sender;
+            assert false : "group command error: " + content + ", sender: " + rMsg.getSender();
             return respondReceipt("Group command error.", rMsg.getEnvelope(), content, null);
         }
+        String act = content.getAction();
         if (GroupHistory.ACT_QUERY.equals(act)) {
             assert GroupHistory.APP.equals(content.getApplication());
             assert GroupHistory.MOD.equals(content.getModule());
-            return transformQueryCommand(content, rMsg);
+            return transformQueryCommand(content, rMsg, messenger);
         }
-        assert false : "unknown action: " + act + ", " + content + ", sender: " + sender;
-        return super.handleAction(act, sender, content, rMsg);
+        assert false : "unknown action: " + act + ", " + content + ", sender: " + rMsg.getSender();
+        return super.handleContent(content, rMsg, messenger);
     }
 
-    private List<Content> transformQueryCommand(CustomizedContent content, ReliableMessage rMsg) {
-        Messenger messenger = getMessenger();
-        if (messenger == null) {
-            assert false : "messenger lost";
-            return null;
-        }
+    private List<Content> transformQueryCommand(CustomizedContent content, ReliableMessage rMsg,
+                                                Messenger messenger) {
         Map<String, Object> info = content.copyMap(false);
         info.put("type", ContentType.COMMAND);
         info.put("command", QueryCommand.QUERY);

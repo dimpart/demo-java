@@ -2,7 +2,7 @@
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2025 Albert Moky
+ * Copyright (c) 2026 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,48 +25,30 @@
  */
 package chat.dim.compat;
 
-import chat.dim.plugins.ExtensionLoader;
-import chat.dim.plugins.PluginLoader;
+import chat.dim.cpu.app.AppCustomizedFilter;
+import chat.dim.cpu.app.GroupHistoryHandler;
+import chat.dim.cpu.app.SharedCustomizedFilter;
+import chat.dim.protocol.group.GroupHistory;
 
-
-public class LibraryLoader implements Runnable {
-
-    private final ExtensionLoader extensionLoader;
-    private final PluginLoader pluginLoader;
-
-    private boolean loaded = false;
-
-    public LibraryLoader(ExtensionLoader extensionLoader, PluginLoader pluginLoader) {
-
-        if (extensionLoader == null) {
-            this.extensionLoader = new ClientExtensionLoader();
-        } else {
-            this.extensionLoader = extensionLoader;
-        }
-
-        if (pluginLoader == null) {
-            this.pluginLoader = new ClientPluginLoader();
-        } else {
-            this.pluginLoader = pluginLoader;
-        }
-    }
+public class ClientExtensionLoader extends CommonExtensionLoader {
 
     @Override
-    public void run() {
-        if (loaded) {
-            // no need to load it again
-            return;
-        } else {
-            // mark it to loaded
-            loaded = true;
-        }
-        // try to load all extensions
-        load();
+    public void load() {
+        super.load();
+        registerCustomizedHandlers();
     }
 
-    protected void load() {
-        extensionLoader.load();
-        pluginLoader.load();
+    protected void registerCustomizedHandlers() {
+        AppCustomizedFilter filter = new AppCustomizedFilter();
+
+        // 'chat.dim.group:history'
+        filter.setContentHandler(
+                GroupHistory.APP,
+                GroupHistory.MOD,
+                new GroupHistoryHandler()
+        );
+
+        SharedCustomizedFilter.filter = filter;
     }
 
 }
