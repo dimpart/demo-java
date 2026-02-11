@@ -38,8 +38,8 @@ import chat.dim.core.Archivist;
 import chat.dim.core.Barrack;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.log.Log;
-import chat.dim.mem.MemoryCache;
-import chat.dim.mem.ThanosCache;
+import chat.dim.mem.SharedAccountCache;
+import chat.dim.mem.SharedEntityCache;
 import chat.dim.mkm.BaseGroup;
 import chat.dim.mkm.BaseUser;
 import chat.dim.mkm.Bot;
@@ -72,17 +72,6 @@ public class CommonArchivist implements Archivist, Barrack {
         return facebookRef.get();
     }
 
-    // memory caches
-    protected final MemoryCache<ID, User>   userCache = createUserCache();
-    protected final MemoryCache<ID, Group> groupCache = createGroupCache();
-
-    protected MemoryCache<ID, User> createUserCache() {
-        return new ThanosCache<>();
-    }
-    protected MemoryCache<ID, Group> createGroupCache() {
-        return new ThanosCache<>();
-    }
-
     /**
      * Call it when received 'UIApplicationDidReceiveMemoryWarningNotification',
      * this will remove 50% of cached objects
@@ -90,8 +79,8 @@ public class CommonArchivist implements Archivist, Barrack {
      * @return number of survivors
      */
     public int reduceMemory() {
-        int cnt1 = userCache.reduceMemory();
-        int cnt2 = groupCache.reduceMemory();
+        int cnt1 = SharedAccountCache.reduceMemory();
+        int cnt2 = SharedEntityCache.reduceMemory();
         return cnt1 + cnt2;
     }
 
@@ -104,7 +93,7 @@ public class CommonArchivist implements Archivist, Barrack {
         if (user.getDataSource() == null) {
             user.setDataSource(getFacebook());
         }
-        userCache.put(user.getIdentifier(), user);
+        SharedEntityCache.userCache.put(user.getIdentifier(), user);
     }
 
     @Override
@@ -112,17 +101,17 @@ public class CommonArchivist implements Archivist, Barrack {
         if (group.getDataSource() == null) {
             group.setDataSource(getFacebook());
         }
-        groupCache.put(group.getIdentifier(), group);
+        SharedEntityCache.groupCache.put(group.getIdentifier(), group);
     }
 
     @Override
     public User getUser(ID identifier) {
-        return userCache.get(identifier);
+        return SharedEntityCache.userCache.get(identifier);
     }
 
     @Override
     public Group getGroup(ID identifier) {
-        return groupCache.get(identifier);
+        return SharedEntityCache.groupCache.get(identifier);
     }
 
     @Override

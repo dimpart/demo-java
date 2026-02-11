@@ -46,27 +46,44 @@ public final class CompatibleMetaFactory extends BaseMetaFactory {
     }
 
     @Override
-    public Meta parseMeta(Map<String, Object> meta) {
+    public Meta parseMeta(Map<String, Object> info) {
+        // check 'type', 'key', 'seed', 'fingerprint'
+        if (info.get("type") == null || info.get("key") == null) {
+            // meta.type should not be empty
+            // meta.key should not be empty
+            assert false : "meta error: " + info;
+            return null;
+        } else if (info.get("seed") == null) {
+            if (info.get("fingerprint") != null) {
+                assert false : "meta error: " + info;
+                return null;
+            }
+        } else if (info.get("fingerprint") == null) {
+            assert false : "meta error: " + info;
+            return null;
+        }
+
+        // create meta for type
         Meta out;
-        String type = SharedAccountExtensions.helper.getMetaType(meta, "");
+        String type = SharedAccountExtensions.helper.getMetaType(info, "");
         switch (type) {
 
             case "MKM":
             case "mkm":
             case "1":
-                out = new DefaultMeta(meta);
+                out = new DefaultMeta(info);
                 break;
 
             case "BTC":
             case "btc":
             case "2":
-                out = new BTCMeta(meta);
+                out = new BTCMeta(info);
                 break;
 
             case "ETH":
             case "eth":
             case "4":
-                out = new ETHMeta(meta);
+                out = new ETHMeta(info);
                 break;
 
             default:

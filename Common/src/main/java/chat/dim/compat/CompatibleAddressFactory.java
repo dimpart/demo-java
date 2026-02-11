@@ -30,7 +30,7 @@
  */
 package chat.dim.compat;
 
-import chat.dim.mem.ThanosCache;
+import chat.dim.mem.SharedAccountCache;
 import chat.dim.mkm.BTCAddress;
 import chat.dim.mkm.BaseAddressFactory;
 import chat.dim.mkm.ETHAddress;
@@ -45,9 +45,7 @@ public class CompatibleAddressFactory extends BaseAddressFactory {
      * @return number of survivors
      */
     public int reduceMemory() {
-        int finger = 0;
-        finger = ThanosCache.thanos(addresses, finger);
-        return finger >> 1;
+        return SharedAccountCache.addressCache.reduceMemory();
     }
 
     @Override

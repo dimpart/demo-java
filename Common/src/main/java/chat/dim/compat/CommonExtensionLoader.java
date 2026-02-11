@@ -25,7 +25,6 @@
  */
 package chat.dim.compat;
 
-import chat.dim.dkd.app.AppCustomizedContent;
 import chat.dim.dkd.group.FireGroupCommand;
 import chat.dim.dkd.group.HireGroupCommand;
 import chat.dim.dkd.group.QueryGroupCommand;
@@ -33,6 +32,8 @@ import chat.dim.dkd.group.ResignGroupCommand;
 import chat.dim.plugins.ExtensionLoader;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.BlockCommand;
+import chat.dim.protocol.Command;
+import chat.dim.protocol.Content;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
@@ -47,14 +48,70 @@ import chat.dim.protocol.group.QueryCommand;
  */
 public class CommonExtensionLoader extends ExtensionLoader {
 
+    private void copyContentFactory(String type, String alias) {
+        Content.Factory factory = Content.getFactory(type);
+        assert factory != null : "content factory not exists: " + type;
+        Content.setFactory(alias, factory);
+    }
+
+    @Override
+    protected void registerContentFactories() {
+        super.registerContentFactories();
+
+        // Text
+        copyContentFactory(ContentType.TEXT, "text");
+
+        // File
+        copyContentFactory(ContentType.FILE, "file");
+        // Image
+        copyContentFactory(ContentType.IMAGE, "image");
+        // Audio
+        copyContentFactory(ContentType.AUDIO, "audio");
+        // Video
+        copyContentFactory(ContentType.VIDEO, "video");
+
+        // Web Page
+        copyContentFactory(ContentType.PAGE, "page");
+
+        // Name Card
+        copyContentFactory(ContentType.NAME_CARD, "card");
+
+        // Quote
+        copyContentFactory(ContentType.QUOTE, "quote");
+
+        // Money
+        copyContentFactory(ContentType.MONEY, "money");
+        copyContentFactory(ContentType.TRANSFER, "transfer");
+        // ...
+
+        // Command
+        copyContentFactory(ContentType.COMMAND, "command");
+
+        // History Command
+        copyContentFactory(ContentType.HISTORY, "history");
+
+        // Content Array
+        copyContentFactory(ContentType.ARRAY, "array");
+
+        // Combine and Forward
+        copyContentFactory(ContentType.COMBINE_FORWARD, "combine");
+
+        // Top-Secret
+        copyContentFactory(ContentType.FORWARD, "forward");
+
+        // unknown content type
+        copyContentFactory(ContentType.ANY, "*");
+    }
+
     @Override
     protected void registerCustomizedFactories() {
+        super.registerCustomizedFactories();
 
         // Application Customized
-        setContentFactory(ContentType.CUSTOMIZED, "customized", AppCustomizedContent::new);
-        setContentFactory(ContentType.APPLICATION, "application", AppCustomizedContent::new);
+        copyContentFactory(ContentType.CUSTOMIZED, "customized");
+        copyContentFactory(ContentType.CUSTOMIZED, "application");
+        copyContentFactory(ContentType.CUSTOMIZED, ContentType.APPLICATION);
 
-        //super.registerCustomizedFactories();
     }
 
     /**
@@ -65,29 +122,29 @@ public class CommonExtensionLoader extends ExtensionLoader {
         super.registerCommandFactories();
 
         // ANS
-        setCommandFactory(AnsCommand.ANS, AnsCommand::new);
+        Command.setFactory(AnsCommand.ANS, AnsCommand::new);
 
         // Handshake
-        setCommandFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
+        Command.setFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
         // Login
-        setCommandFactory(LoginCommand.LOGIN, LoginCommand::new);
+        Command.setFactory(LoginCommand.LOGIN, LoginCommand::new);
 
         // Mute
-        setCommandFactory(MuteCommand.MUTE, MuteCommand::new);
+        Command.setFactory(MuteCommand.MUTE, MuteCommand::new);
         // Block
-        setCommandFactory(BlockCommand.BLOCK, BlockCommand::new);
+        Command.setFactory(BlockCommand.BLOCK, BlockCommand::new);
 
         // Report
-        setCommandFactory(ReportCommand.REPORT,  ReportCommand::new);
-        setCommandFactory(ReportCommand.ONLINE,  ReportCommand::new);
-        setCommandFactory(ReportCommand.OFFLINE, ReportCommand::new);
+        Command.setFactory(ReportCommand.REPORT,  ReportCommand::new);
+        Command.setFactory(ReportCommand.ONLINE,  ReportCommand::new);
+        Command.setFactory(ReportCommand.OFFLINE, ReportCommand::new);
 
         // Group command (deprecated)
-        setCommandFactory(QueryCommand.QUERY,   QueryGroupCommand::new);
+        Command.setFactory(QueryCommand.QUERY,   QueryGroupCommand::new);
         // Group Admin Commands
-        setCommandFactory(GroupCommand.HIRE,    HireGroupCommand::new);
-        setCommandFactory(GroupCommand.FIRE,    FireGroupCommand::new);
-        setCommandFactory(GroupCommand.RESIGN,  ResignGroupCommand::new);
+        Command.setFactory(GroupCommand.HIRE,    HireGroupCommand::new);
+        Command.setFactory(GroupCommand.FIRE,    FireGroupCommand::new);
+        Command.setFactory(GroupCommand.RESIGN,  ResignGroupCommand::new);
     }
 
 }

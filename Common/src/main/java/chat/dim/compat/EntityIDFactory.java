@@ -30,7 +30,7 @@
  */
 package chat.dim.compat;
 
-import chat.dim.mem.ThanosCache;
+import chat.dim.mem.SharedAccountCache;
 import chat.dim.mkm.IdentifierFactory;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.ID;
@@ -44,9 +44,7 @@ public final class EntityIDFactory extends IdentifierFactory {
      * @return number of survivors
      */
     public int reduceMemory() {
-        int finger = 0;
-        finger = ThanosCache.thanos(identifiers, finger);
-        return finger >> 1;
+        return SharedAccountCache.idCache.reduceMemory();
     }
 
     @Override

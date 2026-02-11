@@ -2,12 +2,12 @@
  *
  *  DIMP : Decentralized Instant Messaging Protocol
  *
- *                                Written in 2025 by Moky <albert.moky@gmail.com>
+ *                                Written in 2026 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2025 Albert Moky
+ * Copyright (c) 2026 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,15 +30,26 @@
  */
 package chat.dim.mem;
 
-public interface MemoryCache <K, V> {
+import chat.dim.mkm.Group;
+import chat.dim.mkm.User;
+import chat.dim.protocol.ID;
 
-    V get(K key);
+public final class SharedEntityCache {
 
-    V put(K key, V value);
+    public static final MemoryCache<ID, User> userCache = new ThanosCache<>();
+
+    public static final MemoryCache<ID, Group> groupCache = new ThanosCache<>();
 
     /**
-     *  Garbage Collection
+     * Call it when received 'UIApplicationDidReceiveMemoryWarningNotification',
+     * this will remove 50% of cached objects
+     *
+     * @return number of survivors
      */
-    int reduceMemory();
+    public static int reduceMemory() {
+        int cnt1 = userCache.reduceMemory();
+        int cnt2 = groupCache.reduceMemory();
+        return cnt1 + cnt2;
+    }
 
 }
