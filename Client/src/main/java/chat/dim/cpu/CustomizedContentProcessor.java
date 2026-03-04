@@ -2,12 +2,12 @@
  *
  *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
- *                                Written in 2026 by Moky <albert.moky@gmail.com>
+ *                                Written in 2022 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2026 Albert Moky
+ * Copyright (c) 2022 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,41 +28,43 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.cpu.app;
+package chat.dim.cpu;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
+import chat.dim.Facebook;
+import chat.dim.Messenger;
+import chat.dim.cpu.app.CustomizedContentHandler;
+import chat.dim.cpu.app.SharedCustomizedFilter;
+import chat.dim.protocol.Content;
 import chat.dim.protocol.CustomizedContent;
 import chat.dim.protocol.ReliableMessage;
 
-public class AppCustomizedFilter implements CustomizedContentFilter {
+/**
+ *  Customized Content Processing Unit
+ *  <p>
+ *      Handle content for application customized
+ *  </p>
+ */
+public class CustomizedContentProcessor extends BaseContentProcessor {
 
-    private final Map<String, CustomizedContentHandler> handlers;
-
-    private final CustomizedContentHandler defaultHandler;
-
-    public AppCustomizedFilter() {
-        super();
-        handlers = new HashMap<>();
-        defaultHandler = new BaseCustomizedHandler();
-    }
-
-    public void setContentHandler(String app, String mod, CustomizedContentHandler handler) {
-        handlers.put(app + ":" + mod, handler);
-    }
-
-    protected CustomizedContentHandler getContentHandler(String app, String mod) {
-        return handlers.get(app + ":" + mod);
+    public CustomizedContentProcessor(Facebook facebook, Messenger messenger) {
+        super(facebook, messenger);
     }
 
     @Override
-    public CustomizedContentHandler filterContent(CustomizedContent content, ReliableMessage rMsg) {
-        //String app = content.getApplication();
-        String app = content.getString("app");
-        String mod = content.getModule();
-        CustomizedContentHandler handler = getContentHandler(app, mod);
-        return handler == null ? defaultHandler : handler;
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
+        assert content instanceof CustomizedContent : "customized content error: " + content;
+        CustomizedContent customized = (CustomizedContent) content;
+        // get handler for 'app' & 'mod'
+        CustomizedContentHandler handler = SharedCustomizedFilter.filter.filterContent(customized, rMsg);
+        if (handler == null) {
+            assert false : "should not happen";
+            return null;
+        }
+        // handle the action
+        Messenger messenger = getMessenger();
+        return handler.handleContent(customized, rMsg, messenger);
     }
 
 }

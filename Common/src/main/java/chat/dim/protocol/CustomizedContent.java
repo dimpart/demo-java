@@ -2,12 +2,12 @@
  *
  *  DIMP : Decentralized Instant Messaging Protocol
  *
- *                                Written in 2019 by Moky <albert.moky@gmail.com>
+ *                                Written in 2022 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 Albert Moky
+ * Copyright (c) 2022 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,26 +30,41 @@
  */
 package chat.dim.protocol;
 
-/**
- *  Handshake State
- */
-public enum HandshakeState {
-    START,    // C -> S, without session key(or session expired)
-    AGAIN,    // S -> C, with new session key
-    RESTART,  // C -> S, with new session key
-    SUCCESS;  // S -> C, handshake accepted
+import chat.dim.dkd.app.AppCustomizedContent;
 
-    public static HandshakeState checkState(String title, String session) {
-        assert title != null : "handshake title should not be empty";
-        if (title.equals("DIM!")/* || text.equals("OK!")*/) {
-            return SUCCESS;
-        } else if (title.equals("DIM?")) {
-            return AGAIN;
-        } else if (session == null) {
-            return START;
-        } else {
-            return RESTART;
-        }
+/**
+ *  Customized Content
+ *
+ *  <blockquote><pre>
+ *  data format: {
+ *      "type" : i2s(0xCC),
+ *      "sn"   : 123,
+ *
+ *      "app"   : "{APP_ID}",  // application (e.g.: "chat.dim.sechat")
+ *      "mod"   : "{MODULE}",  // module name (e.g.: "drift_bottle")
+ *      "act"   : "{ACTION}",  // action name (3.g.: "throw")
+ *      "extra" : info         // action parameters
+ *  }
+ *  </pre></blockquote>
+ */
+public interface CustomizedContent extends Content {
+
+    // get Module Name
+    String getModule();
+
+    // get Action Name
+    String getAction();
+
+    //
+    //  Factory methods
+    //
+
+    static CustomizedContent create(String app, String mod, String act) {
+        return new AppCustomizedContent(app, mod, act);
+    }
+
+    static CustomizedContent create(String type, String app, String mod, String act) {
+        return new AppCustomizedContent(type, app, mod, act);
     }
 
 }

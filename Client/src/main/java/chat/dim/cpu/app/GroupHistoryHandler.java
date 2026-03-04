@@ -68,7 +68,7 @@ public final class GroupHistoryHandler extends BaseCustomizedHandler {
         }
         String act = content.getAction();
         if (GroupHistory.ACT_QUERY.equals(act)) {
-            assert GroupHistory.APP.equals(content.getApplication());
+            //assert GroupHistory.APP.equals(content.getApplication());
             assert GroupHistory.MOD.equals(content.getModule());
             return transformQueryCommand(content, rMsg, messenger);
         }

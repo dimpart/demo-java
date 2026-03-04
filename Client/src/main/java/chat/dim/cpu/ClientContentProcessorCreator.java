@@ -59,6 +59,8 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
         switch (msgType) {
 
             // application customized
+            case ContentType.APPLICATION:
+            case ContentType.CUSTOMIZED:
             case "application":
             case "customized":
                 return new CustomizedContentProcessor(getFacebook(), getMessenger());

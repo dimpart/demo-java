@@ -30,9 +30,7 @@
  */
 package chat.dim.protocol;
 
-import java.util.Map;
-
-import chat.dim.dkd.cmd.BaseCommand;
+import chat.dim.dkd.BaseHandshakeCommand;
 
 /**
  *  Handshake command message
@@ -48,67 +46,32 @@ import chat.dim.dkd.cmd.BaseCommand;
  *  }
  *  </pre></blockquote>
  */
-public class HandshakeCommand extends BaseCommand {
+public interface HandshakeCommand extends Command {
 
-    public final static String HANDSHAKE = "handshake";
+    String HANDSHAKE = "handshake";
 
-    public HandshakeCommand(Map<String, Object> content) {
-        super(content);
-    }
+    String getTitle();
+    String getSessionKey();
 
-    public HandshakeCommand(String text, String session) {
-        super(HANDSHAKE);
-        // text message
-        assert text != null : "new handshake command error";
-        put("title", text);
-        // session key
-        if (session != null) {
-            put("session", session);
-        }
-    }
-
-    public String getTitle() {
-        return getString("title", null);
-    }
-
-    public String getSessionKey() {
-        return getString("session", null);
-    }
-
-    public HandshakeState getState() {
-        return checkState(getTitle(), getSessionKey());
-    }
-
-    private static HandshakeState checkState(String text, String session) {
-        assert text != null : "handshake title should not be empty";
-        if (text.equals("DIM!")/* || text.equals("OK!")*/) {
-            return HandshakeState.SUCCESS;
-        } else if (text.equals("DIM?")) {
-            return HandshakeState.AGAIN;
-        } else if (session == null) {
-            return HandshakeState.START;
-        } else {
-            return HandshakeState.RESTART;
-        }
-    }
+    HandshakeState getState();
 
     //
     //  Factories
     //
 
-    public static HandshakeCommand start() {
-        return new HandshakeCommand("Hello world!", null);
+    static HandshakeCommand start() {
+        return new BaseHandshakeCommand("Hello world!", null);
     }
 
-    public static HandshakeCommand restart(String sessionKey) {
-        return new HandshakeCommand("Hello world!", sessionKey);
+    static HandshakeCommand restart(String sessionKey) {
+        return new BaseHandshakeCommand("Hello world!", sessionKey);
     }
 
-    public static HandshakeCommand again(String sessionKey) {
-        return new HandshakeCommand("DIM?", sessionKey);
+    static HandshakeCommand again(String sessionKey) {
+        return new BaseHandshakeCommand("DIM?", sessionKey);
     }
 
-    public static HandshakeCommand success(String sessionKey) {
-        return new HandshakeCommand("DIM!", sessionKey);
+    static HandshakeCommand success(String sessionKey) {
+        return new BaseHandshakeCommand("DIM!", sessionKey);
     }
 }

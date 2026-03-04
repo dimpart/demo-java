@@ -1,13 +1,13 @@
 /* license: https://mit-license.org
  *
- *  DIMP : Decentralized Instant Messaging Protocol
+ *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
- *                                Written in 2019 by Moky <albert.moky@gmail.com>
+ *                                Written in 2022 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 Albert Moky
+ * Copyright (c) 2022 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,28 +28,27 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.protocol;
+package chat.dim.cpu.app;
+
+import java.util.List;
+
+import chat.dim.Messenger;
+import chat.dim.protocol.Content;
+import chat.dim.protocol.CustomizedContent;
+import chat.dim.protocol.ReliableMessage;
 
 /**
- *  Handshake State
+ *  Handler for Customized Content
  */
-public enum HandshakeState {
-    START,    // C -> S, without session key(or session expired)
-    AGAIN,    // S -> C, with new session key
-    RESTART,  // C -> S, with new session key
-    SUCCESS;  // S -> C, handshake accepted
+public interface CustomizedContentHandler {
 
-    public static HandshakeState checkState(String title, String session) {
-        assert title != null : "handshake title should not be empty";
-        if (title.equals("DIM!")/* || text.equals("OK!")*/) {
-            return SUCCESS;
-        } else if (title.equals("DIM?")) {
-            return AGAIN;
-        } else if (session == null) {
-            return START;
-        } else {
-            return RESTART;
-        }
-    }
-
+    /**
+     *  Do your job
+     *
+     * @param content   - customized content
+     * @param rMsg      - network message
+     * @param messenger - message transceiver
+     * @return responses
+     */
+    List<Content> handleContent(CustomizedContent content, ReliableMessage rMsg, Messenger messenger);
 }

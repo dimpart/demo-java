@@ -28,28 +28,45 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.protocol;
+package chat.dim.dkd;
 
-/**
- *  Handshake State
- */
-public enum HandshakeState {
-    START,    // C -> S, without session key(or session expired)
-    AGAIN,    // S -> C, with new session key
-    RESTART,  // C -> S, with new session key
-    SUCCESS;  // S -> C, handshake accepted
+import java.util.Map;
 
-    public static HandshakeState checkState(String title, String session) {
-        assert title != null : "handshake title should not be empty";
-        if (title.equals("DIM!")/* || text.equals("OK!")*/) {
-            return SUCCESS;
-        } else if (title.equals("DIM?")) {
-            return AGAIN;
-        } else if (session == null) {
-            return START;
-        } else {
-            return RESTART;
+import chat.dim.dkd.cmd.BaseCommand;
+import chat.dim.protocol.HandshakeCommand;
+import chat.dim.protocol.HandshakeState;
+
+
+public class BaseHandshakeCommand extends BaseCommand implements HandshakeCommand {
+
+    public BaseHandshakeCommand(Map<String, Object> content) {
+        super(content);
+    }
+
+    public BaseHandshakeCommand(String text, String session) {
+        super(HANDSHAKE);
+        // text message
+        assert text != null : "new handshake command error";
+        put("title", text);
+        // session key
+        if (session != null) {
+            put("session", session);
         }
+    }
+
+    @Override
+    public String getTitle() {
+        return getString("title", null);
+    }
+
+    @Override
+    public String getSessionKey() {
+        return getString("session", null);
+    }
+
+    @Override
+    public HandshakeState getState() {
+        return HandshakeState.checkState(getTitle(), getSessionKey());
     }
 
 }

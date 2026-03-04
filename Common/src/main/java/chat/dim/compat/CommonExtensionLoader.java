@@ -25,6 +25,8 @@
  */
 package chat.dim.compat;
 
+import chat.dim.dkd.BaseHandshakeCommand;
+import chat.dim.dkd.app.AppCustomizedContent;
 import chat.dim.dkd.group.FireGroupCommand;
 import chat.dim.dkd.group.HireGroupCommand;
 import chat.dim.dkd.group.QueryGroupCommand;
@@ -101,11 +103,15 @@ public class CommonExtensionLoader extends ExtensionLoader {
 
         // unknown content type
         copyContentFactory(ContentType.ANY, "*");
+
+        registerCustomizedFactories();
     }
 
-    @Override
     protected void registerCustomizedFactories() {
-        super.registerCustomizedFactories();
+
+        // Application Customized
+        Content.setFactory(ContentType.CUSTOMIZED, AppCustomizedContent::new);
+        //Content.setFactory(ContentType.APPLICATION, "application", AppCustomizedContent::new);
 
         // Application Customized
         copyContentFactory(ContentType.CUSTOMIZED, "customized");
@@ -125,7 +131,7 @@ public class CommonExtensionLoader extends ExtensionLoader {
         Command.setFactory(AnsCommand.ANS, AnsCommand::new);
 
         // Handshake
-        Command.setFactory(HandshakeCommand.HANDSHAKE, HandshakeCommand::new);
+        Command.setFactory(HandshakeCommand.HANDSHAKE, BaseHandshakeCommand::new);
         // Login
         Command.setFactory(LoginCommand.LOGIN, LoginCommand::new);
 
