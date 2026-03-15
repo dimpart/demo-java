@@ -36,6 +36,7 @@ import chat.dim.mkm.BaseAddressFactory;
 import chat.dim.mkm.ETHAddress;
 import chat.dim.protocol.Address;
 
+
 public class CompatibleAddressFactory extends BaseAddressFactory {
 
     /**
@@ -50,14 +51,9 @@ public class CompatibleAddressFactory extends BaseAddressFactory {
 
     @Override
     protected Address parse(String address) {
-        if (address == null) {
-            //throw new NullPointerException("address empty");
-            assert false : "address empty";
-            return null;
-        }
-        int len = address.length();
+        int len = address == null ? 0 : address.length();
         if (len == 0) {
-            assert false : "address empty";
+            assert false : "address empty: " + address;
             return null;
         } else if (len == 8) {
             // "anywhere"

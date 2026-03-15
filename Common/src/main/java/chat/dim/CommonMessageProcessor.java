@@ -39,6 +39,7 @@ import chat.dim.protocol.Content;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.ReliableMessage;
 
+
 public abstract class CommonMessageProcessor extends MessageProcessor {
 
     public CommonMessageProcessor(CommonFacebook facebook, CommonMessenger messenger) {
@@ -78,9 +79,9 @@ public abstract class CommonMessageProcessor extends MessageProcessor {
             }
             ID sender = rMsg.getSender();
             docUpdated = checker.setLastDocumentTime(sender, lastDocumentTime);
-            // check whether needs update
+            // check whether it needs update now
             if (docUpdated) {
-                // checking for new isa
+                // checking for new visa
                 Facebook facebook = getFacebook();
                 facebook.getDocuments(sender);
             }

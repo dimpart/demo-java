@@ -32,23 +32,72 @@ import chat.dim.dkd.group.HireGroupCommand;
 import chat.dim.dkd.group.QueryGroupCommand;
 import chat.dim.dkd.group.ResignGroupCommand;
 import chat.dim.plugins.ExtensionLoader;
+import chat.dim.protocol.Address;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.BlockCommand;
 import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.HandshakeCommand;
+import chat.dim.protocol.ID;
 import chat.dim.protocol.LoginCommand;
+import chat.dim.protocol.Meta;
+import chat.dim.protocol.MetaType;
 import chat.dim.protocol.MuteCommand;
 import chat.dim.protocol.ReportCommand;
 import chat.dim.protocol.group.GroupCommand;
 import chat.dim.protocol.group.QueryCommand;
+
 
 /**
  *  Extensions Loader
  *  ~~~~~~~~~~~~~~~~~
  */
 public class CommonExtensionLoader extends ExtensionLoader {
+
+    /**
+     *  ID factory
+     */
+    @Override
+    public void registerIDFactory() {
+
+        ID.setFactory(new EntityIDFactory());
+
+    }
+
+    /**
+     *  Address factory
+     */
+    @Override
+    public void registerAddressFactory() {
+
+        Address.setFactory(new CompatibleAddressFactory());
+
+    }
+
+    /**
+     *  Meta factories
+     */
+    @Override
+    public void registerMetaFactories() {
+
+        Meta.Factory mkm = new CompatibleMetaFactory(MetaType.MKM);
+        Meta.Factory btc = new CompatibleMetaFactory(MetaType.BTC);
+        Meta.Factory eth = new CompatibleMetaFactory(MetaType.ETH);
+
+        Meta.setFactory("1", mkm);
+        Meta.setFactory("2", btc);
+        Meta.setFactory("4", eth);
+
+        Meta.setFactory("mkm", mkm);
+        Meta.setFactory("btc", btc);
+        Meta.setFactory("eth", eth);
+
+        Meta.setFactory("MKM", mkm);
+        Meta.setFactory("BTC", btc);
+        Meta.setFactory("ETH", eth);
+
+    }
 
     private void copyContentFactory(String type, String alias) {
         Content.Factory factory = Content.getFactory(type);
@@ -57,7 +106,7 @@ public class CommonExtensionLoader extends ExtensionLoader {
     }
 
     @Override
-    protected void registerContentFactories() {
+    public void registerContentFactories() {
         super.registerContentFactories();
 
         // Text
@@ -124,7 +173,7 @@ public class CommonExtensionLoader extends ExtensionLoader {
      *  Command factories
      */
     @Override
-    protected void registerCommandFactories() {
+    public void registerCommandFactories() {
         super.registerCommandFactories();
 
         // ANS

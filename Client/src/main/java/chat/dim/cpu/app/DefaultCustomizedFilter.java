@@ -33,13 +33,14 @@ package chat.dim.cpu.app;
 import chat.dim.protocol.CustomizedContent;
 import chat.dim.protocol.ReliableMessage;
 
+
 public class DefaultCustomizedFilter implements CustomizedContentFilter {
 
     private final CustomizedContentHandler defaultHandler;
 
     public DefaultCustomizedFilter() {
         super();
-        defaultHandler = new BaseCustomizedHandler();
+        defaultHandler = new BaseCustomizedContentHandler();
     }
 
     @Override

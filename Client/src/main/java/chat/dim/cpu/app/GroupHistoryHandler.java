@@ -41,6 +41,7 @@ import chat.dim.protocol.ReliableMessage;
 import chat.dim.protocol.group.GroupHistory;
 import chat.dim.protocol.group.QueryCommand;
 
+
 /*  Command Transform:
 
     +===============================+===============================+
@@ -57,7 +58,7 @@ import chat.dim.protocol.group.QueryCommand;
     |   "last_time" : 0             |   "last_time" : 0             |
     +===============================+===============================+
  */
-public final class GroupHistoryHandler extends BaseCustomizedHandler {
+public final class GroupHistoryHandler extends BaseCustomizedContentHandler {
 
     @Override
     public List<Content> handleContent(CustomizedContent content, ReliableMessage rMsg,

@@ -36,6 +36,10 @@ import java.util.Map;
 import chat.dim.protocol.CustomizedContent;
 import chat.dim.protocol.ReliableMessage;
 
+
+/**
+ *  General CustomizedContent Filter
+ */
 public class AppCustomizedFilter implements CustomizedContentFilter {
 
     private final Map<String, CustomizedContentHandler> handlers;
@@ -45,7 +49,7 @@ public class AppCustomizedFilter implements CustomizedContentFilter {
     public AppCustomizedFilter() {
         super();
         handlers = new HashMap<>();
-        defaultHandler = new BaseCustomizedHandler();
+        defaultHandler = new BaseCustomizedContentHandler();
     }
 
     public void setContentHandler(String app, String mod, CustomizedContentHandler handler) {
@@ -62,7 +66,12 @@ public class AppCustomizedFilter implements CustomizedContentFilter {
         String app = content.getString("app");
         String mod = content.getModule();
         CustomizedContentHandler handler = getContentHandler(app, mod);
-        return handler == null ? defaultHandler : handler;
+        if (handler != null) {
+            return handler;
+        }
+        // if the application has too many modules, I suggest you to
+        // use different handler to do the jobs for each module.
+        return defaultHandler;
     }
 
 }

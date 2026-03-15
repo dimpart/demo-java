@@ -38,6 +38,7 @@ import chat.dim.protocol.DecryptKey;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.PrivateKey;
 
+
 /**
  *  Account DBI
  *  ~~~~~~~~~~~
@@ -120,9 +121,14 @@ public interface PrivateKeyDBI {
         } else if (index > 0) {
             // move to the front
             privateKeys.remove(index);
-        } else if (privateKeys.size() > 2) {
-            // keep only last three records
-            privateKeys.remove(privateKeys.size() - 1);
+        } else {
+            // private key not found,
+            // prepare to insert
+            int size = privateKeys.size();
+            if (size > 2) {
+                // keep only last three records
+                privateKeys.remove(size - 1);
+            }
         }
         privateKeys.add(0, key);
         return privateKeys;

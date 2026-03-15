@@ -49,6 +49,7 @@ import chat.dim.type.Pair;
 import chat.dim.utils.FrequencyChecker;
 import chat.dim.utils.RecentTimeChecker;
 
+
 public abstract class EntityChecker {
 
     // each query will be expired after 10 minutes
@@ -129,7 +130,7 @@ public abstract class EntityChecker {
      *
      * @param identifier - entity ID
      * @param meta       - exists meta
-     * @return ture on querying
+     * @return true on querying
      */
     public boolean checkMeta(ID identifier, Meta meta) {
         if (needsQueryMeta(identifier, meta)) {
@@ -292,30 +293,30 @@ public abstract class EntityChecker {
      *  Request for meta with entity ID
      *  (call 'isMetaQueryExpired()' before sending command)
      *
-     * @param identifier - entity ID
+     * @param did - entity ID
      * @return false on duplicated
      */
-    public abstract boolean queryMeta(ID identifier);
+    public abstract boolean queryMeta(ID did);
 
     /**
      *  Request for documents with entity ID
      *  (call 'isDocumentQueryExpired()' before sending command)
      *
-     * @param identifier - entity ID
-     * @param documents  - exist documents
+     * @param did  - entity ID
+     * @param docs - exist documents
      * @return false on duplicated
      */
-    public abstract boolean queryDocuments(ID identifier, List<Document> documents);
+    public abstract boolean queryDocuments(ID did, List<Document> docs);
 
     /**
      *  Request for group members with group ID
      *  (call 'isMembersQueryExpired()' before sending command)
      *
-     * @param group      - group ID
-     * @param members    - exist members
+     * @param gid     - group ID
+     * @param members - exist members
      * @return false on duplicated
      */
-    public abstract boolean queryMembers(ID group, List<ID> members);
+    public abstract boolean queryMembers(ID gid, List<ID> members);
 
     // -------- Responding
 

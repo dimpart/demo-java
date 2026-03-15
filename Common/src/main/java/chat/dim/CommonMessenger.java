@@ -55,6 +55,7 @@ import chat.dim.protocol.SymmetricKey;
 import chat.dim.protocol.Visa;
 import chat.dim.type.Pair;
 
+
 /**
  *  Common Messenger with Session &amp; Database
  */
@@ -223,7 +224,7 @@ public class CommonMessenger extends Messenger implements Transmitter {
         // attach sender document time
         Date lastDocumentTime = doc.getTime();
         if (lastDocumentTime == null) {
-            assert false : "command error: " + doc.toMap();
+            assert false : "document error: " + doc.toMap();
         } else {
             iMsg.setDateTime("SDT", lastDocumentTime);
         }
@@ -288,7 +289,7 @@ public class CommonMessenger extends Messenger implements Transmitter {
             assert false : "failed to serialize message: " + rMsg;
             return false;
         }
-        // 2. call gate keeper to send the message data package
+        // 2. call gatekeeper to send the message data package
         //    put message package into the waiting queue of current session
         return session.queueMessagePackage(rMsg, data, priority);
     }

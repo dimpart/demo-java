@@ -39,6 +39,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import chat.dim.type.Duration;
 
+
 /**
  *  Frequency checker for duplicated queries
  */
@@ -68,13 +69,13 @@ public class FrequencyChecker <K> {
         return true;
     }
     public boolean isExpired(K key, Date now, boolean force) {
+        if (now == null) {
+            now = new Date();
+        }
         boolean expired;
         Lock writeLock = lock.writeLock();
         writeLock.lock();
         try {
-            if (now == null) {
-                now = new Date();
-            }
             // if force == true:
             //     ignore last updated time, force to update now
             // else:

@@ -30,8 +30,12 @@
  */
 package chat.dim.cpu.app;
 
+
+/**
+ *  CustomizedContent Extensions
+ */
 public final class SharedCustomizedFilter {
 
-    public static CustomizedContentFilter filter = new DefaultCustomizedFilter();
+    public static CustomizedContentFilter customizedFilter = new DefaultCustomizedFilter();
 
 }

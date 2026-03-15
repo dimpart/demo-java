@@ -50,18 +50,19 @@ import chat.dim.protocol.Visa;
 import chat.dim.protocol.group.QueryCommand;
 import chat.dim.type.Pair;
 
+
 public class ClientChecker extends EntityChecker {
 
-    private final WeakReference<CommonFacebook> barrack;
+    private final WeakReference<ClientFacebook> barrack;
     private WeakReference<CommonMessenger> transceiver;
 
-    public ClientChecker(CommonFacebook facebook, AccountDBI db) {
+    public ClientChecker(ClientFacebook facebook, AccountDBI db) {
         super(db);
         barrack = new WeakReference<>(facebook);
         transceiver = null;
     }
 
-    protected CommonFacebook getFacebook() {
+    protected ClientFacebook getFacebook() {
         return barrack.get();
     }
 
@@ -111,7 +112,7 @@ public class ClientChecker extends EntityChecker {
             Log.debug("members query not expired yet: " + group);
             return false;
         }
-        CommonFacebook facebook = getFacebook();
+        ClientFacebook facebook = getFacebook();
         User user = facebook.getCurrentUser();
         if (user == null) {
             assert false : "failed to get current user";
@@ -147,7 +148,7 @@ public class ClientChecker extends EntityChecker {
     }
 
     protected boolean queryMembersFromAdministrators(ID sender, Content command) {
-        CommonFacebook facebook = getFacebook();
+        ClientFacebook facebook = getFacebook();
         CommonMessenger messenger = getMessenger();
         ID group = command.getGroup();
         assert group != null : "group command error: " + command;
@@ -183,7 +184,7 @@ public class ClientChecker extends EntityChecker {
     }
 
     protected boolean queryMembersFromOwner(ID sender, Content command) {
-        CommonFacebook facebook = getFacebook();
+        ClientFacebook facebook = getFacebook();
         CommonMessenger messenger = getMessenger();
         ID group = command.getGroup();
         assert group != null : "group command error: " + command;

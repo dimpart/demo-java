@@ -45,6 +45,7 @@ import chat.dim.protocol.Meta;
 import chat.dim.protocol.SignKey;
 import chat.dim.protocol.Visa;
 
+
 /**
  *  Common Facebook with Database
  */
@@ -243,14 +244,5 @@ public abstract class CommonFacebook extends Facebook {
     public SignKey getPrivateKeyForVisaSignature(ID user) {
         return database.getPrivateKeyForVisaSignature(user);
     }
-
-    //
-    //  Organizational Structure
-    //
-
-    public abstract List<ID> getAdministrators(ID group);
-    public abstract boolean saveAdministrators(List<ID> members, ID group);
-
-    public abstract boolean saveMembers(List<ID> newMembers, ID group);
 
 }

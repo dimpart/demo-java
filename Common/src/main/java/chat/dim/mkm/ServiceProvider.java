@@ -37,6 +37,7 @@ import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 
+
 /**
  *  DIM Station Owner
  */
@@ -51,7 +52,7 @@ public class ServiceProvider extends BaseGroup {
     }
 
     /**
-     *  Reload bot info
+     *  Reload SP info
      */
     public void reload() {
         documents = getDocuments();

@@ -25,12 +25,19 @@
  */
 package chat.dim.compat;
 
+import chat.dim.ClientFacebook;
 import chat.dim.cpu.app.AppCustomizedFilter;
 import chat.dim.cpu.app.GroupHistoryHandler;
 import chat.dim.cpu.app.SharedCustomizedFilter;
+import chat.dim.protocol.Address;
+import chat.dim.protocol.ID;
+import chat.dim.protocol.Meta;
 import chat.dim.protocol.group.GroupHistory;
 
+
 public class ClientExtensionLoader extends CommonExtensionLoader {
+
+    private ID.Factory identifierFactory;
 
     @Override
     public void load() {
@@ -48,7 +55,38 @@ public class ClientExtensionLoader extends CommonExtensionLoader {
                 new GroupHistoryHandler()
         );
 
-        SharedCustomizedFilter.filter = filter;
+        SharedCustomizedFilter.customizedFilter = filter;
+    }
+
+    @Override
+    public void registerIDFactory() {
+
+        identifierFactory = new EntityIDFactory();
+
+        ID.setFactory(new ID.Factory() {
+
+            @Override
+            public ID generateID(Meta meta, int type, String terminal) {
+                return identifierFactory.generateID(meta, type, terminal);
+            }
+
+            @Override
+            public ID createID(String name, Address address, String terminal) {
+                return identifierFactory.createID(name, address, terminal);
+            }
+
+            @Override
+            public ID parseID(String identifier) {
+                // try ANS record
+                ID id = ClientFacebook.ans.identifier(identifier);
+                if (id != null) {
+                    return id;
+                }
+                // parse by original factory
+                return identifierFactory.parseID(identifier);
+            }
+        });
+
     }
 
 }

@@ -39,6 +39,7 @@ import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 
+
 /**
  *  Client Facebook with Address Name Service
  */
@@ -141,7 +142,6 @@ public abstract class ClientFacebook extends CommonFacebook {
     //  Organizational Structure
     //
 
-    @Override
     public List<ID> getAdministrators(ID group) {
         assert group.isGroup() : "group ID error: " + group;
         // check bulletin document
@@ -157,12 +157,10 @@ public abstract class ClientFacebook extends CommonFacebook {
         return database.getAdministrators(group);
     }
 
-    @Override
     public boolean saveAdministrators(List<ID> members, ID group) {
         return database.saveAdministrators(members, group);
     }
 
-    @Override
     public boolean saveMembers(List<ID> newMembers, ID group) {
         return database.saveMembers(newMembers, group);
     }

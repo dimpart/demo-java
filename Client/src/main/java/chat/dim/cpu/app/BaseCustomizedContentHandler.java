@@ -31,11 +31,11 @@
 package chat.dim.cpu.app;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import chat.dim.Messenger;
+import chat.dim.TwinsHelper;
 import chat.dim.cpu.BaseContentProcessor;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.CustomizedContent;
@@ -47,9 +47,9 @@ import chat.dim.protocol.ReliableMessage;
 /**
  *  Default Handler
  */
-public class BaseCustomizedHandler implements CustomizedContentHandler {
+public class BaseCustomizedContentHandler implements CustomizedContentHandler {
 
-    public BaseCustomizedHandler() {
+    public BaseCustomizedContentHandler() {
         super();
     }
 
@@ -59,9 +59,9 @@ public class BaseCustomizedHandler implements CustomizedContentHandler {
         String app = content.getString("app");
         String mod = content.getModule();
         String act = content.getAction();
-        return respondReceipt("Content not support.", rMsg.getEnvelope(), content, newMap(
+        return respondReceipt("Content not support.", rMsg.getEnvelope(), content, TwinsHelper.newMap(
                 "template", "Customized content (app: ${app}, mod: ${mod}, act: ${act}) not support yet!",
-                "replacements", newMap(
+                "replacements", TwinsHelper.newMap(
                         "app", app,
                         "mod", mod,
                         "act", act
@@ -79,33 +79,6 @@ public class BaseCustomizedHandler implements CustomizedContentHandler {
         List<Content> responses = new ArrayList<>();
         responses.add(res);
         return responses;
-    }
-
-    //
-    //  Mapping
-    //
-
-    /**
-     *  Create a new map with key values
-     *
-     * @param keyValues - key1, value1, key2, value2, ...
-     * @return map
-     */
-    public static Map<String, Object> newMap(Object... keyValues) {
-        Map<String, Object> info = new HashMap<>();
-        Object key, value;
-        for (int i = 1; i < keyValues.length; i += 2) {
-            key = keyValues[i - 1];
-            value = keyValues[i];
-            if (key == null || value == null) {
-                assert value == null : "map key should not be empty";
-                continue;
-            } else {
-                assert key instanceof String : "key error: " + key;
-            }
-            info.put((String) key, value);
-        }
-        return info;
     }
 
 }

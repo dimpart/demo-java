@@ -34,13 +34,29 @@ import java.util.Map;
 
 import chat.dim.protocol.ID;
 
+
 /**
  *  Message DBI
  *  ~~~~~~~~~~~
  */
 public interface GroupKeysDBI {
 
+    /**
+     *  Get encrypted message keys for group
+     *
+     * @param group  - group ID
+     * @param sender - member ID
+     * @return encoded message keys
+     */
     Map<String, Object> getGroupKeys(ID group, ID sender);
 
+    /**
+     *  Save encrypted message keys for group
+     *
+     * @param group  - group ID
+     * @param sender - member ID
+     * @param keys   - encoded message keys
+     * @return true on success
+     */
     boolean saveGroupKeys(ID group, ID sender, Map<String, Object> keys);
 }

@@ -33,6 +33,7 @@ package chat.dim.compat;
 import chat.dim.protocol.Address;
 import chat.dim.type.ConstantString;
 
+
 /**
  *  Unsupported Address
  *  ~~~~~~~~~~~~~~~~~~~
@@ -45,7 +46,7 @@ public final class UnknownAddress extends ConstantString implements Address {
 
     @Override
     public int getNetwork() {
-        return 0;
+        return 0;  // EntityType.USER;
     }
 
 }

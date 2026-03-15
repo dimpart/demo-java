@@ -35,11 +35,8 @@ import chat.dim.digest.SHA1;
 import chat.dim.format.Base64;
 import chat.dim.format.DataCoder;
 import chat.dim.plugins.PluginLoader;
-import chat.dim.protocol.Address;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.Meta;
-import chat.dim.protocol.MetaType;
 import chat.dim.type.SafeConverter;
+
 
 /**
  *  Plugin Loader
@@ -54,7 +51,7 @@ public class CommonPluginLoader extends PluginLoader {
     }
 
     @Override
-    protected void registerBase64Coder() {
+    public void registerBase64Coder() {
         // Base64 coding
         Base64.coder = new DataCoder() {
 
@@ -75,8 +72,8 @@ public class CommonPluginLoader extends PluginLoader {
     }
 
     @Override
-    protected void registerDigesters() {
-        super.registerDigesters();
+    protected void loadDigesters() {
+        super.loadDigesters();
 
         registerMD5Digester();
 
@@ -119,47 +116,6 @@ public class CommonPluginLoader extends PluginLoader {
                 return md.digest();
             }
         };
-    }
-
-    /**
-     *  ID factory
-     */
-    @Override
-    protected void registerIDFactory() {
-
-        ID.setFactory(new EntityIDFactory());
-    }
-
-    /**
-     *  Address factory
-     */
-    @Override
-    protected void registerAddressFactory() {
-
-        Address.setFactory(new CompatibleAddressFactory());
-    }
-
-    /**
-     *  Meta factories
-     */
-    @Override
-    protected void registerMetaFactories() {
-
-        Meta.Factory mkm = new CompatibleMetaFactory(MetaType.MKM);
-        Meta.Factory btc = new CompatibleMetaFactory(MetaType.BTC);
-        Meta.Factory eth = new CompatibleMetaFactory(MetaType.ETH);
-
-        Meta.setFactory("1", mkm);
-        Meta.setFactory("2", btc);
-        Meta.setFactory("4", eth);
-
-        Meta.setFactory("mkm", mkm);
-        Meta.setFactory("btc", btc);
-        Meta.setFactory("eth", eth);
-
-        Meta.setFactory("MKM", mkm);
-        Meta.setFactory("BTC", btc);
-        Meta.setFactory("ETH", eth);
     }
 
 }

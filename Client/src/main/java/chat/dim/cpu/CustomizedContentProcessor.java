@@ -34,11 +34,13 @@ import java.util.List;
 
 import chat.dim.Facebook;
 import chat.dim.Messenger;
+import chat.dim.cpu.app.CustomizedContentFilter;
 import chat.dim.cpu.app.CustomizedContentHandler;
 import chat.dim.cpu.app.SharedCustomizedFilter;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.CustomizedContent;
 import chat.dim.protocol.ReliableMessage;
+
 
 /**
  *  Customized Content Processing Unit
@@ -56,8 +58,9 @@ public class CustomizedContentProcessor extends BaseContentProcessor {
     public List<Content> processContent(Content content, ReliableMessage rMsg) {
         assert content instanceof CustomizedContent : "customized content error: " + content;
         CustomizedContent customized = (CustomizedContent) content;
+        CustomizedContentFilter filter = SharedCustomizedFilter.customizedFilter;
         // get handler for 'app' & 'mod'
-        CustomizedContentHandler handler = SharedCustomizedFilter.filter.filterContent(customized, rMsg);
+        CustomizedContentHandler handler = filter.filterContent(customized, rMsg);
         if (handler == null) {
             assert false : "should not happen";
             return null;
