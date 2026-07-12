@@ -31,6 +31,9 @@ import java.util.Date;
 import java.util.Locale;
 
 public final class TimeUtils {
+    private TimeUtils() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     /**
      *  Now

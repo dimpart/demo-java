@@ -39,7 +39,10 @@ import chat.dim.format.UTF8;
 /**
  *  RAM access
  */
-public abstract class ExternalStorage {
+public final class ExternalStorage {
+    private ExternalStorage() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     /**
      *  Forbid the gallery from scanning media files

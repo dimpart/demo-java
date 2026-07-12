@@ -41,6 +41,9 @@ import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 
 public final class Anonymous {
+    private Anonymous() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     public static String getName(ID identifier) {
         String name = identifier.getName();

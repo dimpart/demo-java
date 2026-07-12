@@ -52,7 +52,10 @@ import chat.dim.protocol.ReceiptCommand;
 
 
 // TODO: remove after all server/client upgraded
-public abstract class CompatibleOutgoing {
+public final class CompatibleOutgoing {
+    private CompatibleOutgoing() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     @SuppressWarnings("unchecked")
     public static void fixContent(Content content) {

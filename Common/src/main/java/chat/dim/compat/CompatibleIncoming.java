@@ -41,7 +41,10 @@ import chat.dim.protocol.LoginCommand;
 
 
 // TODO: remove after all server/client upgraded
-public abstract class CompatibleIncoming {
+public final class CompatibleIncoming {
+    private CompatibleIncoming() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     @SuppressWarnings("unchecked")
     public static void fixContent(Map<String, Object> content) {

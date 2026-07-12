@@ -153,8 +153,8 @@ public class CommonMessenger extends Messenger implements Transmitter {
     }
 
     @Override
-    public Map<String, Object> encodeKey(EncryptedBundle data, ID receiver, InstantMessage iMsg) {
-        Map<String, Object> keys = super.encodeKey(data, receiver, iMsg);
+    public Map<String, Object> encodeKeys(EncryptedBundle data, ID receiver, InstantMessage iMsg) {
+        Map<String, Object> keys = super.encodeKeys(data, receiver, iMsg);
         if (keys != null && !keys.isEmpty()) {
             // check for wildcard
             CompatibleOutgoing.fixEncodeKeys(keys, receiver, facebook);

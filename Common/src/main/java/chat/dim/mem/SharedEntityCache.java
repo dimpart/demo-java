@@ -35,6 +35,9 @@ import chat.dim.mkm.User;
 import chat.dim.protocol.ID;
 
 public final class SharedEntityCache {
+    private SharedEntityCache() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     public static final MemoryCache<ID, User> userCache = new ThanosCache<>();
 

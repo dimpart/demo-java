@@ -35,6 +35,9 @@ package chat.dim.cpu.app;
  *  CustomizedContent Extensions
  */
 public final class SharedCustomizedFilter {
+    private SharedCustomizedFilter() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     public static CustomizedContentFilter customizedFilter = new DefaultCustomizedFilter();
 

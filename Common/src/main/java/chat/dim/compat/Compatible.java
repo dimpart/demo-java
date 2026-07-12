@@ -41,7 +41,10 @@ import chat.dim.protocol.ReliableMessage;
 
 
 // TODO: remove after all server/client upgraded
-public abstract class Compatible {
+public final class Compatible {
+    private Compatible() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     @SuppressWarnings("unchecked")
     public static void fixMetaAttachment(ReliableMessage rMsg) {

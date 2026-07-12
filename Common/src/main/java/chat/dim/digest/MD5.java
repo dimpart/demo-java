@@ -26,6 +26,9 @@
 package chat.dim.digest;
 
 public final class MD5 {
+    private MD5() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     public static byte[] digest(byte[] data) {
         return digester.digest(data);

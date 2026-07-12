@@ -41,6 +41,9 @@ import chat.dim.format.UTF8;
  *  </p>
  */
 public final class Password {
+    private Password() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     private static final int KEY_SIZE = 32;
     //private static final int BLOCK_SIZE = 16;

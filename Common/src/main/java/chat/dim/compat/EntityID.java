@@ -106,4 +106,76 @@ final class EntityID extends ConstantString implements ID {
         return EntityType.isGroup(getType());
     }
 
+    @Override
+    public boolean isSameAs(Object other) {
+        ID did = ID.parse(other);
+        if (did == null) {
+            // should not happen
+            return false;
+        } else if (this == did) {
+            // same object
+            return true;
+        }
+        //
+        //  1. check address
+        //
+        Address thisAddress = getAddress();
+        Address thatAddress = did.getAddress();
+        if (!thisAddress.equals(thatAddress)) {
+            // addresses not equal,
+            // sure not the same entity
+            return false;
+        }
+        //
+        //  2. check name
+        //
+        String thisName = getName();
+        String thatName = did.getName();
+        if (thisName == null || thisName.isEmpty()) {
+            // names empty
+            return thatName == null || thatName.isEmpty();
+        } else if (thatName == null || thatName.isEmpty()) {
+            // names not equal
+            return false;
+        }
+        // both names are not empty,
+        // check if they are equal
+        return thisName.equals(thatName);
+    }
+
+    @Override
+    public ID withoutTerminal() {
+        // check old terminal (device)
+        String device = getTerminal();
+        if (device == null/* || device.isEmpty()*/) {
+            // nothing changed
+            return this;
+        }
+        // create new ID without terminal
+        return ID.create(getName(), getAddress(), null);
+    }
+
+    @Override
+    public ID withTerminal(String terminal) {
+        // check old terminal (device)
+        String device = getTerminal();
+        if (terminal == null || terminal.isEmpty()) {
+            // should not happen
+            if (device == null || device.isEmpty()) {
+                return this;
+            } else {
+                return ID.create(getName(), getAddress(), null);
+            }
+        }
+        // new terminal not empty (normally),
+        // try to add/replace terminal
+        if (terminal.equals(device)) {
+            // old terminal equals to the new terminal,
+            // nothing changed
+            return this;
+        }
+        // create new ID with terminal
+        return ID.create(getName(), getAddress(), terminal);
+    }
+
 }

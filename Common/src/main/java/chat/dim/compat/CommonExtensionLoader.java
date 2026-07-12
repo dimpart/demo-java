@@ -25,12 +25,20 @@
  */
 package chat.dim.compat;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import chat.dim.crypto.EncryptedBundle;
 import chat.dim.dkd.BaseHandshakeCommand;
 import chat.dim.dkd.app.AppCustomizedContent;
 import chat.dim.dkd.group.FireGroupCommand;
 import chat.dim.dkd.group.HireGroupCommand;
 import chat.dim.dkd.group.QueryGroupCommand;
 import chat.dim.dkd.group.ResignGroupCommand;
+import chat.dim.msg.MessagePackerFactory;
+import chat.dim.msg.SecureMessageDelegate;
+import chat.dim.msg.SecureMessagePacker;
+import chat.dim.msg.SharedMessagePacker;
 import chat.dim.plugins.ExtensionLoader;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.AnsCommand;
@@ -40,11 +48,13 @@ import chat.dim.protocol.Content;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.LoginCommand;
 import chat.dim.protocol.Meta;
 import chat.dim.protocol.MetaType;
 import chat.dim.protocol.MuteCommand;
 import chat.dim.protocol.ReportCommand;
+import chat.dim.protocol.SecureMessage;
 import chat.dim.protocol.group.GroupCommand;
 import chat.dim.protocol.group.QueryCommand;
 
@@ -54,6 +64,56 @@ import chat.dim.protocol.group.QueryCommand;
  *  ~~~~~~~~~~~~~~~~~
  */
 public class CommonExtensionLoader extends ExtensionLoader {
+
+    @Override
+    public void load() {
+        super.load();
+
+        loadMessagePackerFactory();
+    }
+
+    protected void loadMessagePackerFactory() {
+        // fix for 'message.key'
+        SharedMessagePacker.packerFactory = new MessagePackerFactory() {
+
+            @Override
+            public SecureMessagePacker createSecureMessagePacker(SecureMessageDelegate delegate) {
+                return new SecureMessagePacker(delegate) {
+
+                    @Override
+                    protected EncryptedBundle decodeKeys(SecureMessage sMsg, ID receiver) {
+                        Map<String, Object> msgKeys = sMsg.getEncryptedKeys();
+                        if (msgKeys == null) {
+                            // get from 'key'
+                            Object base64 = sMsg.get("key");
+                            if (base64 == null) {
+                                // broadcast message?
+                                // reused key?
+                                return null;
+                            }
+                            msgKeys = new HashMap<>();
+                            msgKeys.put(receiver.toString(), base64);
+                        }
+                        SecureMessageDelegate transformer = getDelegate();
+                        if (transformer == null) {
+                            assert false : "secure message delegate not found";
+                            return null;
+                        }
+                        return transformer.decodeKeys(msgKeys, receiver, sMsg);
+                    }
+
+                    @Override
+                    public InstantMessage decryptMessage(SecureMessage sMsg, ID receiver) {
+                        InstantMessage iMsg = super.decryptMessage(sMsg, receiver);
+                        if (iMsg != null) {
+                            iMsg.remove("key");
+                        }
+                        return iMsg;
+                    }
+                };
+            }
+        };
+    }
 
     /**
      *  ID factory

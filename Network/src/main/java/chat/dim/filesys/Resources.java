@@ -38,7 +38,10 @@ import chat.dim.format.UTF8;
 /**
  *  ROM access
  */
-public abstract class Resources {
+public final class Resources {
+    private Resources() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     private static byte[] load(String path) throws IOException {
         Resource resource = new Resource();

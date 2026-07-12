@@ -26,6 +26,9 @@
 package chat.dim.threading;
 
 public final class BackgroundThreads {
+    private BackgroundThreads() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     //
     //  Tasks

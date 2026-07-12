@@ -26,6 +26,9 @@
 package chat.dim.digest;
 
 public final class SHA1 {
+    private SHA1() {
+        throw new AssertionError("Utility class cannot be instantiated");
+    }
 
     public static byte[] digest(byte[] data) {
         return digester.digest(data);
