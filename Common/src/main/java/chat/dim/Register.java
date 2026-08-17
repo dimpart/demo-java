@@ -78,7 +78,7 @@ public class Register {
         //
         //  Step 3: generate ID with meta
         //
-        ID identifier = ID.generate(meta, EntityType.USER.value, null);
+        ID identifier = ID.generate(meta, EntityType.USER.value);
         //
         //  Step 4: generate visa with ID and sign with private key
         //
@@ -121,7 +121,7 @@ public class Register {
         //
         //  Step 3: generate ID with meta
         //
-        ID identifier = ID.generate(meta, EntityType.GROUP.value, null);
+        ID identifier = ID.generate(meta, EntityType.GROUP.value);
         //
         //  Step 4: generate bulletin with ID and sign with founder's private key
         //

@@ -66,8 +66,8 @@ public class ClientExtensionLoader extends CommonExtensionLoader {
         ID.setFactory(new ID.Factory() {
 
             @Override
-            public ID generateID(Meta meta, int type, String terminal) {
-                return identifierFactory.generateID(meta, type, terminal);
+            public ID generateID(Meta meta, int type) {
+                return identifierFactory.generateID(meta, type);
             }
 
             @Override
