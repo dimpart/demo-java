@@ -30,13 +30,18 @@
  */
 package chat.dim;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import chat.dim.dkd.ContentProcessor;
 import chat.dim.dkd.ContentProcessorFactory;
+import chat.dim.mkm.User;
+import chat.dim.protocol.ArrayContent;
 import chat.dim.protocol.Content;
+import chat.dim.protocol.Envelope;
 import chat.dim.protocol.ID;
+import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
 
 
@@ -61,6 +66,49 @@ public abstract class CommonMessageProcessor extends MessageProcessor {
         return new ContentProcessorFactory(creator);
     }
     protected abstract ContentProcessor.Creator createCreator(Facebook facebook, Messenger messenger);
+
+    @Override
+    public List<InstantMessage> processInstantMessage(InstantMessage iMsg, ReliableMessage rMsg) {
+        Messenger messenger = getMessenger();
+        assert messenger != null : "twins not ready";
+        // 1. process content
+        List<Content> responses = messenger.processContent(iMsg.getContent(), rMsg);
+        if (responses == null || responses.isEmpty()) {
+            // nothing to respond
+            return null;
+        }
+        // 2. select a local user to build message
+        ID sender = iMsg.getSender();
+        ID receiver = iMsg.getReceiver();
+        User user = selectLocalUser(receiver);
+        if (user == null) {
+            assert false : "receiver error: " + receiver;
+            return null;
+        }
+        // 3. pack all responses in one message
+        Envelope env = Envelope.create(user.getIdentifier(), sender, null);
+        Content body;
+        if (responses.size() == 1) {
+            body = responses.get(0);
+        } else {
+            body = ArrayContent.create(responses);
+        }
+        iMsg = InstantMessage.create(env, body);
+        List<InstantMessage> messages = new ArrayList<>();
+        messages.add(iMsg);
+        return messages;
+    }
+
+    @Override
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
+        List<Content> responses = super.processContent(content, rMsg);
+
+        // check sender's document times from the message
+        // to make sure the user info synchronized
+        checkVisaTime(content, rMsg);
+
+        return responses;
+    }
 
     private boolean checkVisaTime(Content content, ReliableMessage rMsg) {
         EntityChecker checker = getEntityChecker();
@@ -89,14 +137,4 @@ public abstract class CommonMessageProcessor extends MessageProcessor {
         return docUpdated;
     }
 
-    @Override
-    public List<Content> processContent(Content content, ReliableMessage rMsg) {
-        List<Content> responses = super.processContent(content, rMsg);
-
-        // check sender's document times from the message
-        // to make sure the user info synchronized
-        checkVisaTime(content, rMsg);
-
-        return responses;
-    }
 }

@@ -31,9 +31,7 @@
 package chat.dim.compat;
 
 import chat.dim.mem.SharedAccountCache;
-import chat.dim.mkm.BTCAddress;
 import chat.dim.mkm.BaseAddressFactory;
-import chat.dim.mkm.ETHAddress;
 import chat.dim.protocol.Address;
 
 
@@ -51,38 +49,25 @@ public class CompatibleAddressFactory extends BaseAddressFactory {
 
     @Override
     protected Address parse(String address) {
-        int len = address == null ? 0 : address.length();
-        if (len == 0) {
-            assert false : "address empty: " + address;
-            return null;
-        } else if (len == 8) {
-            // "anywhere"
-            if (Address.ANYWHERE.equalsIgnoreCase(address)) {
-                return Address.ANYWHERE;
+        try {
+            Address res = super.parse(address);
+            if (res != null) {
+                return res;
             }
-        } else if (len == 10) {
-            // "everywhere"
-            if (Address.EVERYWHERE.equalsIgnoreCase(address)) {
-                return Address.EVERYWHERE;
-            }
-        }
-        Address res;
-        if (26 <= len && len <= 35) {
-            res = BTCAddress.parse(address);
-        } else if (len == 42) {
-            res = ETHAddress.parse(address);
-        } else {
-            //throw new AssertionError("invalid address: " + address);
-            res = null;
+        } catch (Exception e) {
+            // FIXME:
+            e.printStackTrace();
+            assert false : "invalid address: " + address;
         }
         //
         //  TODO: parse for other types of address
         //
-        if (res == null && 4 <= len && len <= 64) {
-            res = new UnknownAddress(address);
+        int len = address == null ? 0 : address.length();
+        if (4 <= len && len <= 64) {
+            return new UnknownAddress(address);
         }
-        assert res != null : "invalid address: " + address;
-        return res;
+        assert false : "invalid address: " + address;
+        return null;
     }
 
 }

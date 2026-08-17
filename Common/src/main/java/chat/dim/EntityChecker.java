@@ -37,6 +37,7 @@ import java.util.Map;
 
 import chat.dim.dbi.AccountDBI;
 import chat.dim.log.Log;
+import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.MetaUtils;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.ID;
@@ -204,22 +205,12 @@ public abstract class EntityChecker {
     }
 
     public Date getLastDocumentTime(ID identifier, List<Document> documents) {
-        if (documents == null || documents.isEmpty()) {
+        Document last = DocumentUtils.lastDocument(documents, null);
+        if (last == null) {
+            Log.warning("failed to get last document: " + identifier + ", " + documents);
             return null;
         }
-        Date lastTime = null;
-        Date docTime;
-        for (Document doc : documents) {
-            assert identifier.equals(doc.get("did")) : "document not match: " + identifier + ", " + doc;
-            docTime = doc.getTime();
-            if (docTime == null) {
-                //assert false : "document error: " + doc;
-                Log.warning("document without time: " + doc);
-            } else if (lastTime == null || lastTime.before(docTime)) {
-                lastTime = docTime;
-            }
-        }
-        return lastTime;
+        return last.getTime();
     }
 
     //
