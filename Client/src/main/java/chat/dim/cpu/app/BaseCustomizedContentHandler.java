@@ -37,10 +37,10 @@ import java.util.Map;
 import chat.dim.Messenger;
 import chat.dim.TwinsHelper;
 import chat.dim.cpu.BaseContentProcessor;
+import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.CustomizedContent;
 import chat.dim.protocol.Envelope;
-import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.ReliableMessage;
 
 
@@ -75,7 +75,7 @@ public class BaseCustomizedContentHandler implements CustomizedContentHandler {
 
     protected List<Content> respondReceipt(String text, Envelope envelope, Content content, Map<String, Object> extra) {
         // create base receipt command with text & original envelope
-        ReceiptCommand res = BaseContentProcessor.createReceipt(text, envelope, content, extra);
+        Command res = BaseContentProcessor.createReceipt(text, envelope, content, extra);
         List<Content> responses = new ArrayList<>();
         responses.add(res);
         return responses;

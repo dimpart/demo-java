@@ -41,14 +41,14 @@ import chat.dim.cpu.group.ResetCommandProcessor;
 import chat.dim.cpu.group.ResignCommandProcessor;
 import chat.dim.dkd.ContentProcessor;
 import chat.dim.protocol.AnsCommand;
-import chat.dim.protocol.Command;
 import chat.dim.protocol.ContentType;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.LoginCommand;
+import chat.dim.protocol.ReceiptCommand;
 import chat.dim.protocol.group.GroupCommand;
 import chat.dim.protocol.group.QueryCommand;
 
-public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
+public class ClientContentProcessorCreator extends CommonContentProcessorCreator {
 
     public ClientContentProcessorCreator(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
@@ -95,7 +95,7 @@ public class ClientContentProcessorCreator extends BaseContentProcessorCreator {
     public ContentProcessor createCommandProcessor(String type, String name) {
         switch (name) {
 
-            case Command.RECEIPT:
+            case ReceiptCommand.RECEIPT:
                 return new ReceiptCommandProcessor(getFacebook(), getMessenger());
             case HandshakeCommand.HANDSHAKE:
                 return new HandshakeCommandProcessor(getFacebook(), getMessenger());

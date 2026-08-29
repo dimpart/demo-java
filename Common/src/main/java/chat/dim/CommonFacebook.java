@@ -32,7 +32,6 @@ package chat.dim;
 
 import java.util.List;
 
-import chat.dim.core.Archivist;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.mkm.DocumentUtils;
 import chat.dim.mkm.User;
@@ -77,8 +76,7 @@ public abstract class CommonFacebook extends Facebook {
         this.checker = checker;
     }
 
-    @Override
-    public Archivist getArchivist() {
+    public CommonArchivist getArchivist() {
         return barrack;
     }
 

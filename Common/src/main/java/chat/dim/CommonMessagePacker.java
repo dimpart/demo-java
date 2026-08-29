@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import chat.dim.core.Archivist;
 import chat.dim.dkd.MessageUtils;
 import chat.dim.log.Log;
 import chat.dim.mkm.DocumentUtils;
@@ -54,8 +53,14 @@ public abstract class CommonMessagePacker extends MessagePacker {
         super(facebook, messenger);
     }
 
-    protected Archivist getArchivist() {
-        Facebook facebook = getFacebook();
+    protected CommonFacebook getFacebook() {
+        Facebook facebook = super.getFacebook();
+        assert facebook instanceof CommonFacebook : "facebook error: " + facebook;
+        return (CommonFacebook) facebook;
+    }
+
+    protected CommonArchivist getArchivist() {
+        CommonFacebook facebook = getFacebook();
         return facebook == null ? null : facebook.getArchivist();
     }
 
@@ -178,7 +183,7 @@ public abstract class CommonMessagePacker extends MessagePacker {
      * @return false on error
      */
     protected boolean checkAttachments(ReliableMessage rMsg) {
-        Archivist archivist = getArchivist();
+        CommonArchivist archivist = getArchivist();
         if (archivist == null) {
             assert false : "archivist not ready";
             return false;

@@ -33,11 +33,10 @@ package chat.dim.group;
 import java.util.List;
 
 import chat.dim.ClientFacebook;
+import chat.dim.CommonArchivist;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
-import chat.dim.Facebook;
 import chat.dim.TwinsHelper;
-import chat.dim.core.Archivist;
 import chat.dim.log.Log;
 import chat.dim.mkm.Group;
 import chat.dim.mkm.MetaUtils;
@@ -63,8 +62,8 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
         return (CommonMessenger) super.getMessenger();
     }
 
-    protected Archivist getArchivist() {
-        Facebook facebook = getFacebook();
+    protected CommonArchivist getArchivist() {
+        ClientFacebook facebook = getFacebook();
         return facebook == null ? null : facebook.getArchivist();
     }
 
@@ -112,7 +111,7 @@ public class GroupDelegate extends TwinsHelper implements Group.DataSource {
     }
 
     public boolean saveDocument(Document doc, ID entity) {
-        Archivist archivist = getArchivist();
+        CommonArchivist archivist = getArchivist();
         return archivist != null && archivist.saveDocument(doc, entity);
     }
 

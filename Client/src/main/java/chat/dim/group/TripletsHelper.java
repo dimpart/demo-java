@@ -30,9 +30,9 @@
  */
 package chat.dim.group;
 
+import chat.dim.CommonArchivist;
 import chat.dim.CommonFacebook;
 import chat.dim.CommonMessenger;
-import chat.dim.core.Archivist;
 import chat.dim.dbi.AccountDBI;
 
 
@@ -52,7 +52,7 @@ abstract class TripletsHelper {
         return delegate.getMessenger();
     }
 
-    protected Archivist getArchivist() {
+    protected CommonArchivist getArchivist() {
         CommonFacebook facebook = getFacebook();
         return facebook == null ? null : facebook.getArchivist();
     }

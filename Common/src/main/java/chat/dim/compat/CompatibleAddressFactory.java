@@ -30,6 +30,7 @@
  */
 package chat.dim.compat;
 
+import chat.dim.mem.MemoryCache;
 import chat.dim.mem.SharedAccountCache;
 import chat.dim.mkm.BaseAddressFactory;
 import chat.dim.protocol.Address;
@@ -44,7 +45,8 @@ public class CompatibleAddressFactory extends BaseAddressFactory {
      * @return number of survivors
      */
     public int reduceMemory() {
-        return SharedAccountCache.addressCache.reduceMemory();
+        MemoryCache<String, Address> cache = SharedAccountCache.addressCache;
+        return cache.reduceMemory();
     }
 
     @Override

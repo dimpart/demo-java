@@ -34,7 +34,6 @@ import java.lang.ref.WeakReference;
 import java.util.Date;
 import java.util.List;
 
-import chat.dim.core.Archivist;
 import chat.dim.core.Barrack;
 import chat.dim.dbi.AccountDBI;
 import chat.dim.log.Log;
@@ -56,7 +55,7 @@ import chat.dim.protocol.Meta;
 import chat.dim.protocol.VerifyKey;
 import chat.dim.type.Duration;
 
-public class CommonArchivist implements Archivist, Barrack {
+public class CommonArchivist implements Barrack {
 
     public CommonArchivist(Facebook facebook, AccountDBI db) {
         super();
@@ -144,15 +143,21 @@ public class CommonArchivist implements Archivist, Barrack {
     //  Archivist
     //
 
-    @Override
-    public boolean saveMeta(Meta meta, ID identifier) {
+    /**
+     *  Save meta for entity ID (must verify first)
+     *
+     * @param did  - entity ID
+     * @param meta - entity meta
+     * @return true on success
+     */
+    public boolean saveMeta(Meta meta, ID did) {
         //
         //  1. check valid
         //
-        boolean valid = checkMeta(meta, identifier);
+        boolean valid = checkMeta(meta, did);
         if (!valid) {
-            assert false : "meta not valid: " + identifier;
-            Log.warning("meta not valid: " + identifier);
+            assert false : "meta not valid: " + did;
+            Log.warning("meta not valid: " + did);
             return false;
         }
         //
@@ -160,27 +165,33 @@ public class CommonArchivist implements Archivist, Barrack {
         //
         Facebook facebook = getFacebook();
         assert facebook != null : "facebook lost";
-        Meta old = facebook.getMeta(identifier);
+        Meta old = facebook.getMeta(did);
         if (old != null) {
-            Log.debug("meta duplicated: " + identifier);
+            Log.debug("meta duplicated: " + did);
             return true;
         }
         //
         //  3. save into database
         //
-        return database.saveMeta(meta, identifier);
+        return database.saveMeta(meta, did);
     }
 
     protected boolean checkMeta(Meta meta, ID identifier) {
         return meta.isValid() && MetaUtils.matches(identifier, meta);
     }
 
-    @Override
-    public boolean saveDocument(Document doc, ID did) {
+    /**
+     *  Save entity document with ID (must verify first)
+     *
+     * @param did      - entity ID
+     * @param document - entity document
+     * @return true on success
+     */
+    public boolean saveDocument(Document document, ID did) {
         //
         //  1. check valid
         //
-        boolean valid = checkDocumentValid(doc, did);
+        boolean valid = checkDocumentValid(document, did);
         if (!valid) {
             assert false : "document not valid: " + did;
             Log.warning("document not valid: " + did);
@@ -189,14 +200,14 @@ public class CommonArchivist implements Archivist, Barrack {
         //
         //  2. check expired
         //
-        if (checkDocumentExpired(doc, did)) {
+        if (checkDocumentExpired(document, did)) {
             Log.info("drop expired document: " + did);
             return false;
         }
         //
         //  3. save into database
         //
-        return database.saveDocument(doc, did);
+        return database.saveDocument(document, did);
     }
 
     protected boolean checkDocumentValid(Document doc, ID did) {

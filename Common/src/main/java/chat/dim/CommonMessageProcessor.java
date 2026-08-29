@@ -38,11 +38,13 @@ import chat.dim.dkd.ContentProcessor;
 import chat.dim.dkd.ContentProcessorFactory;
 import chat.dim.mkm.User;
 import chat.dim.protocol.ArrayContent;
+import chat.dim.protocol.Command;
 import chat.dim.protocol.Content;
 import chat.dim.protocol.Envelope;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.InstantMessage;
 import chat.dim.protocol.ReliableMessage;
+import chat.dim.protocol.group.GroupCommand;
 
 
 public abstract class CommonMessageProcessor extends MessageProcessor {
@@ -63,7 +65,30 @@ public abstract class CommonMessageProcessor extends MessageProcessor {
     @Override
     protected ContentProcessor.Factory createFactory(Facebook facebook, Messenger messenger) {
         ContentProcessor.Creator creator = createCreator(facebook, messenger);
-        return new ContentProcessorFactory(creator);
+        return new ContentProcessorFactory(creator) {
+
+            @Override
+            public ContentProcessor getContentProcessor(Content content) {
+                ContentProcessor cpu;
+                String msgType = content.getType();
+                if (content instanceof Command) {
+                    String cmd = ((Command) content).getCmd();
+                    // assert cmd != null && !cmd.isEmpty() : "command name error: " + cmd;
+                    cpu = getCommandProcessor(msgType, cmd);
+                    if (cpu != null) {
+                        return cpu;
+                    } else if (content instanceof GroupCommand/* || content.containsKey("group")*/) {
+                        // assert !name.equals("group") : "command name error: " + content;
+                        cpu = getCommandProcessor(msgType, "group");
+                        if (cpu != null) {
+                            return cpu;
+                        }
+                    }
+                }
+                // content processor
+                return getContentProcessor(msgType);
+            }
+        };
     }
     protected abstract ContentProcessor.Creator createCreator(Facebook facebook, Messenger messenger);
 

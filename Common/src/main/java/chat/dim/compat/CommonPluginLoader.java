@@ -28,13 +28,13 @@ package chat.dim.compat;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import chat.dim.PluginLoader;
 import chat.dim.data.Converter;
 import chat.dim.digest.MessageDigester;
 import chat.dim.digest.MD5;
 import chat.dim.digest.SHA1;
 import chat.dim.format.Base64;
 import chat.dim.format.DataCoder;
-import chat.dim.plugins.PluginLoader;
 import chat.dim.type.SafeConverter;
 
 

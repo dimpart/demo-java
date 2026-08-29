@@ -32,7 +32,6 @@ package chat.dim.dkd;
 
 import java.util.Map;
 
-import chat.dim.dkd.cmd.BaseCommand;
 import chat.dim.protocol.HandshakeCommand;
 import chat.dim.protocol.HandshakeState;
 

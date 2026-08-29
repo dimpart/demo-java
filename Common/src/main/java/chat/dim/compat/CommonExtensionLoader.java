@@ -28,6 +28,7 @@ package chat.dim.compat;
 import java.util.HashMap;
 import java.util.Map;
 
+import chat.dim.ExtensionLoader;
 import chat.dim.crypto.EncryptedBundle;
 import chat.dim.dkd.BaseHandshakeCommand;
 import chat.dim.dkd.app.AppCustomizedContent;
@@ -39,7 +40,6 @@ import chat.dim.msg.MessagePackerFactory;
 import chat.dim.msg.SecureMessageDelegate;
 import chat.dim.msg.SecureMessagePacker;
 import chat.dim.msg.SharedMessagePacker;
-import chat.dim.plugins.ExtensionLoader;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.AnsCommand;
 import chat.dim.protocol.BlockCommand;

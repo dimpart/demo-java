@@ -35,9 +35,10 @@ import java.util.List;
 import java.util.Map;
 
 import chat.dim.data.Converter;
-import chat.dim.protocol.Command;
 import chat.dim.protocol.ContentType;
+import chat.dim.protocol.DocumentCommand;
 import chat.dim.protocol.LoginCommand;
+import chat.dim.protocol.MetaCommand;
 
 
 // TODO: remove after all server/client upgraded
@@ -84,12 +85,12 @@ public final class CompatibleIncoming {
             return;
         }
 
-        if (cmd.equals(Command.DOCUMENTS) || cmd.equals("document")) {
+        if (cmd.equals(DocumentCommand.DOCUMENTS) || cmd.equals("document")) {
             // 2. cmd: 'document' -> 'documents'
             fixDocs(content);
         }
 
-        if (cmd.equals(Command.META) || cmd.equals(Command.DOCUMENTS) || cmd.equals("document")) {
+        if (cmd.equals(MetaCommand.META) || cmd.equals(DocumentCommand.DOCUMENTS) || cmd.equals("document")) {
             // 3. 'ID' <-> 'did'
             Compatible.fixID(content);
 

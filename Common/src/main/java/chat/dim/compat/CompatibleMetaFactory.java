@@ -32,6 +32,7 @@ package chat.dim.compat;
 
 import java.util.Map;
 
+import chat.dim.ext.GeneralAccountHelper;
 import chat.dim.ext.SharedAccountExtensions;
 import chat.dim.mkm.BTCMeta;
 import chat.dim.mkm.BaseMetaFactory;
@@ -65,7 +66,8 @@ public final class CompatibleMetaFactory extends BaseMetaFactory {
 
         // create meta for type
         Meta out;
-        String type = SharedAccountExtensions.helper.getMetaType(info, "");
+        GeneralAccountHelper helper = SharedAccountExtensions.helper;
+        String type = helper.getMetaType(info, "");
         switch (type) {
 
             case "MKM":

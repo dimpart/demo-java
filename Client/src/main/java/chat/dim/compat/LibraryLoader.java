@@ -25,8 +25,8 @@
  */
 package chat.dim.compat;
 
-import chat.dim.plugins.ExtensionLoader;
-import chat.dim.plugins.PluginLoader;
+import chat.dim.ExtensionLoader;
+import chat.dim.PluginLoader;
 
 
 public class LibraryLoader implements Runnable {

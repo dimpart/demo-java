@@ -1,8 +1,13 @@
 /* license: https://mit-license.org
+ *
+ *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
+ *
+ *                                Written in 2022 by Moky <albert.moky@gmail.com>
+ *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 Albert Moky
+ * Copyright (c) 2022 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,46 +28,34 @@
  * SOFTWARE.
  * ==============================================================================
  */
-package chat.dim.protocol;
+package chat.dim.cpu;
 
-import java.util.Map;
+import chat.dim.Facebook;
+import chat.dim.Messenger;
+import chat.dim.dkd.ContentProcessor;
+import chat.dim.protocol.DocumentCommand;
+import chat.dim.protocol.MetaCommand;
 
-import chat.dim.dkd.BaseCommand;
+public class CommonContentProcessorCreator extends BaseContentProcessorCreator {
 
-/**
- *  Report Command
- *
- *  <blockquote><pre>
- *  data format: {
- *      type : 0x88,
- *      sn   : 123,
- *
- *      command : "report",
- *      title   : "online",      // or "offline"
- *      //---- extra info
- *      time    : 1234567890,    // timestamp
- *  }
- *  </pre></blockquote>
- */
-public class ReportCommand extends BaseCommand {
-
-    public static final String REPORT = "report";
-    public static final String ONLINE = "online";
-    public static final String OFFLINE = "offline";
-
-    public ReportCommand(Map<String, Object> content) {
-        super(content);
+    public CommonContentProcessorCreator(Facebook facebook, Messenger messenger) {
+        super(facebook, messenger);
     }
 
-    public ReportCommand(String title) {
-        super(REPORT);
-        setTitle(title);
+    @Override
+    public ContentProcessor createCommandProcessor(String msgType, String cmdName) {
+        switch (cmdName) {
+
+            // meta command
+            case MetaCommand.META:
+                return new MetaCommandProcessor(getFacebook(), getMessenger());
+
+            // document command
+            case DocumentCommand.DOCUMENTS:
+                return new DocumentCommandProcessor(getFacebook(), getMessenger());
+        }
+        assert false : "unsupported command: " + cmdName;
+        return null;
     }
 
-    public void setTitle(String title) {
-        put("title", title);
-    }
-    public String getTitle() {
-        return getString("title", null);
-    }
 }
