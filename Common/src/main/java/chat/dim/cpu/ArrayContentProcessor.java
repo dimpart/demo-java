@@ -30,49 +30,41 @@
  */
 package chat.dim.cpu;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import chat.dim.Facebook;
 import chat.dim.Messenger;
-import chat.dim.dkd.ContentProcessor;
-import chat.dim.protocol.ContentType;
-import chat.dim.protocol.DocumentCommand;
-import chat.dim.protocol.MetaCommand;
+import chat.dim.protocol.ArrayContent;
+import chat.dim.protocol.Content;
+import chat.dim.protocol.ReliableMessage;
 
-public class CommonContentProcessorCreator extends BaseContentProcessorCreator {
+public class ArrayContentProcessor extends BaseContentProcessor {
 
-    public CommonContentProcessorCreator(Facebook facebook, Messenger messenger) {
+    public ArrayContentProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
     }
 
     @Override
-    public ContentProcessor createContentProcessor(String msgType) {
-        switch (msgType) {
-
-            // forward content
-            case ContentType.FORWARD:
-                return new ForwardContentProcessor(getFacebook(), getMessenger());
-
-            // array content
-            case ContentType.ARRAY:
-                return new ArrayContentProcessor(getFacebook(), getMessenger());
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
+        assert content instanceof ArrayContent : "array content error: " + content;
+        List<Content> array = ((ArrayContent) content).getContents();
+        // call messenger to process it
+        Messenger messenger = getMessenger();
+        List<Content> responses = new ArrayList<>();
+        Content res;
+        List<Content> results;
+        for (Content item : array) {
+            results = messenger.processContent(item, rMsg);
+            if (results == null) {
+                res = ArrayContent.create(new ArrayList<>());
+            } else if (results.size() == 1) {
+                res = results.get(0);
+            } else {
+                res = ArrayContent.create(results);
+            }
+            responses.add(res);
         }
-        // others
-        return super.createContentProcessor(msgType);
+        return responses;
     }
-
-    @Override
-    public ContentProcessor createCommandProcessor(String msgType, String cmdName) {
-        switch (cmdName) {
-
-            // meta command
-            case MetaCommand.META:
-                return new MetaCommandProcessor(getFacebook(), getMessenger());
-
-            // document command
-            case DocumentCommand.DOCUMENTS:
-                return new DocumentCommandProcessor(getFacebook(), getMessenger());
-        }
-        assert false : "unsupported command: " + cmdName;
-        return null;
-    }
-
 }

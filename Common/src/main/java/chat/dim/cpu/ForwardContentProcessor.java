@@ -2,12 +2,12 @@
  *
  *  DIM-SDK : Decentralized Instant Messaging Software Development Kit
  *
- *                                Written in 2022 by Moky <albert.moky@gmail.com>
+ *                                Written in 2019 by Moky <albert.moky@gmail.com>
  *
  * ==============================================================================
  * The MIT License (MIT)
  *
- * Copyright (c) 2022 Albert Moky
+ * Copyright (c) 2019 Albert Moky
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,49 +30,41 @@
  */
 package chat.dim.cpu;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import chat.dim.Facebook;
 import chat.dim.Messenger;
-import chat.dim.dkd.ContentProcessor;
-import chat.dim.protocol.ContentType;
-import chat.dim.protocol.DocumentCommand;
-import chat.dim.protocol.MetaCommand;
+import chat.dim.protocol.Content;
+import chat.dim.protocol.ForwardContent;
+import chat.dim.protocol.ReliableMessage;
 
-public class CommonContentProcessorCreator extends BaseContentProcessorCreator {
+public class ForwardContentProcessor extends BaseContentProcessor {
 
-    public CommonContentProcessorCreator(Facebook facebook, Messenger messenger) {
+    public ForwardContentProcessor(Facebook facebook, Messenger messenger) {
         super(facebook, messenger);
     }
 
     @Override
-    public ContentProcessor createContentProcessor(String msgType) {
-        switch (msgType) {
-
-            // forward content
-            case ContentType.FORWARD:
-                return new ForwardContentProcessor(getFacebook(), getMessenger());
-
-            // array content
-            case ContentType.ARRAY:
-                return new ArrayContentProcessor(getFacebook(), getMessenger());
+    public List<Content> processContent(Content content, ReliableMessage rMsg) {
+        assert content instanceof ForwardContent : "forward content error: " + content;
+        List<ReliableMessage> secrets = ((ForwardContent) content).getSecrets();
+        // call messenger to process it
+        Messenger messenger = getMessenger();
+        List<Content> responses = new ArrayList<>();
+        Content res;
+        List<ReliableMessage> results;
+        for (ReliableMessage item : secrets) {
+            results = messenger.processReliableMessage(item);
+            if (results == null) {
+               res = ForwardContent.create(new ArrayList<>());
+            } else if (results.size() == 1) {
+                res = ForwardContent.create(results.get(0));
+            } else {
+                res = ForwardContent.create(results);
+            }
+            responses.add(res);
         }
-        // others
-        return super.createContentProcessor(msgType);
+        return responses;
     }
-
-    @Override
-    public ContentProcessor createCommandProcessor(String msgType, String cmdName) {
-        switch (cmdName) {
-
-            // meta command
-            case MetaCommand.META:
-                return new MetaCommandProcessor(getFacebook(), getMessenger());
-
-            // document command
-            case DocumentCommand.DOCUMENTS:
-                return new DocumentCommandProcessor(getFacebook(), getMessenger());
-        }
-        assert false : "unsupported command: " + cmdName;
-        return null;
-    }
-
 }
