@@ -25,11 +25,9 @@
  */
 package chat.dim.compat;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Set;
 
 import chat.dim.ExtensionLoader;
-import chat.dim.crypto.EncryptedBundle;
 import chat.dim.dkd.BaseHandshakeCommand;
 import chat.dim.dkd.app.AppCustomizedContent;
 import chat.dim.dkd.group.FireGroupCommand;
@@ -80,6 +78,7 @@ public class CommonExtensionLoader extends ExtensionLoader {
             public SecureMessagePacker createSecureMessagePacker(SecureMessageDelegate delegate) {
                 return new SecureMessagePacker(delegate) {
 
+                    /*/
                     @Override
                     protected EncryptedBundle decodeKeys(SecureMessage sMsg, ID receiver) {
                         Map<String, Object> msgKeys = sMsg.getEncryptedKeys();
@@ -101,10 +100,11 @@ public class CommonExtensionLoader extends ExtensionLoader {
                         }
                         return transformer.decodeKeys(msgKeys, receiver, sMsg);
                     }
+                    /*/
 
                     @Override
-                    public InstantMessage decryptMessage(SecureMessage sMsg, ID receiver) {
-                        InstantMessage iMsg = super.decryptMessage(sMsg, receiver);
+                    public InstantMessage decryptMessage(SecureMessage sMsg, ID receiver, Set<String> terminals) {
+                        InstantMessage iMsg = super.decryptMessage(sMsg, receiver, terminals);
                         if (iMsg != null) {
                             iMsg.remove("key");
                         }

@@ -31,7 +31,6 @@
 package chat.dim;
 
 import java.util.Date;
-import java.util.Map;
 
 import chat.dim.compat.Compatible;
 import chat.dim.compat.CompatibleCompressor;
@@ -40,8 +39,8 @@ import chat.dim.core.CipherKeyDelegate;
 import chat.dim.core.Compressor;
 import chat.dim.core.Packer;
 import chat.dim.core.Processor;
-import chat.dim.crypto.EncryptedBundle;
 import chat.dim.data.Converter;
+import chat.dim.dkd.EncryptedBundle;
 import chat.dim.log.Log;
 import chat.dim.mkm.User;
 import chat.dim.protocol.Command;
@@ -152,6 +151,7 @@ public class CommonMessenger extends Messenger implements Transmitter {
         }
     }
 
+    /*/
     @Override
     public Map<String, Object> encodeKeys(EncryptedBundle data, ID receiver, InstantMessage iMsg) {
         Map<String, Object> keys = super.encodeKeys(data, receiver, iMsg);
@@ -161,6 +161,7 @@ public class CommonMessenger extends Messenger implements Transmitter {
         }
         return keys;
     }
+    /*/
 
     @Override
     public byte[] serializeKey(SymmetricKey password, InstantMessage iMsg) {

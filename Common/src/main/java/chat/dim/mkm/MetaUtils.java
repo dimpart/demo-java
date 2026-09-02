@@ -50,21 +50,26 @@ public interface MetaUtils {
      */
     static boolean matches(ID did, Meta meta) {
         assert meta.isValid() : "meta not valid: " + meta;
-        // check ID.name
-        String seed = meta.getSeed();
-        String name = did.getName();
-        if (name == null || name.isEmpty()) {
-            if (seed != null && seed.length() > 0) {
+        if (meta instanceof BaseMeta) {
+            // check ID.name
+            String seed = meta.getSeed();
+            String name = did.getName();
+            if (name == null || name.isEmpty()) {
+                if (seed != null && seed.length() > 0) {
+                    return false;
+                }
+            } else if (!name.equals(seed)) {
                 return false;
             }
-        } else if (!name.equals(seed)) {
-            return false;
+            // check ID.address
+            Address old = did.getAddress();
+            Address gen = meta.generateID(old.getNetwork()).getAddress();
+            assert gen != null : "failed to generate address: " + old;
+            return old.equals(gen);
         }
-        // check ID.address
-        Address old = did.getAddress();
-        //assert old != null : "ID error: " + did;
-        Address gen = Address.generate(meta, old.getNetwork());
-        assert gen != null : "failed to generate address: " + old;
+        ID old = did.withoutTerminal();
+        ID gen = meta.generateID(did.getType());
+        assert gen != null : "failed to generate ID: " + did;
         return old.equals(gen);
     }
 

@@ -38,7 +38,7 @@ import chat.dim.dbi.AccountDBI;
 import chat.dim.dbi.PrivateKeyDBI;
 import chat.dim.mkm.BaseBulletin;
 import chat.dim.mkm.BaseVisa;
-import chat.dim.protocol.AsymmetricAlgorithms;
+import chat.dim.crypto.AsymmetricAlgorithms;
 import chat.dim.protocol.Bulletin;
 import chat.dim.protocol.EncryptKey;
 import chat.dim.protocol.EntityType;
@@ -78,7 +78,7 @@ public class Register {
         //
         //  Step 3: generate ID with meta
         //
-        ID identifier = ID.generate(meta, EntityType.USER.value);
+        ID identifier = meta.generateID(EntityType.USER.value);
         //
         //  Step 4: generate visa with ID and sign with private key
         //
@@ -121,7 +121,7 @@ public class Register {
         //
         //  Step 3: generate ID with meta
         //
-        ID identifier = ID.generate(meta, EntityType.GROUP.value);
+        ID identifier = meta.generateID(EntityType.GROUP.value);
         //
         //  Step 4: generate bulletin with ID and sign with founder's private key
         //
