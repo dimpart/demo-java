@@ -25,6 +25,7 @@
  */
 package chat.dim.compat;
 
+import chat.dim.CryptoPluginLoader;
 import chat.dim.ExtensionLoader;
 import chat.dim.PluginLoader;
 
@@ -33,10 +34,11 @@ public class LibraryLoader implements Runnable {
 
     private final ExtensionLoader extensionLoader;
     private final PluginLoader pluginLoader;
+    private final CryptoPluginLoader cryptoLoader;
 
     private boolean loaded = false;
 
-    public LibraryLoader(ExtensionLoader extensionLoader, PluginLoader pluginLoader) {
+    public LibraryLoader(ExtensionLoader extensionLoader, PluginLoader pluginLoader, CryptoPluginLoader cryptoLoader) {
 
         if (extensionLoader == null) {
             this.extensionLoader = new ClientExtensionLoader();
@@ -48,6 +50,12 @@ public class LibraryLoader implements Runnable {
             this.pluginLoader = new ClientPluginLoader();
         } else {
             this.pluginLoader = pluginLoader;
+        }
+
+        if (cryptoLoader == null) {
+            this.cryptoLoader = new CryptoPluginLoader();
+        } else {
+            this.cryptoLoader = cryptoLoader;
         }
     }
 
@@ -67,6 +75,7 @@ public class LibraryLoader implements Runnable {
     protected void load() {
         extensionLoader.load();
         pluginLoader.load();
+        cryptoLoader.load();
     }
 
 }

@@ -25,8 +25,6 @@
  */
 package chat.dim.compat;
 
-import java.util.Set;
-
 import chat.dim.ExtensionLoader;
 import chat.dim.dkd.BaseHandshakeCommand;
 import chat.dim.dkd.app.AppCustomizedContent;
@@ -103,8 +101,8 @@ public class CommonExtensionLoader extends ExtensionLoader {
                     /*/
 
                     @Override
-                    public InstantMessage decryptMessage(SecureMessage sMsg, ID receiver, Set<String> terminals) {
-                        InstantMessage iMsg = super.decryptMessage(sMsg, receiver, terminals);
+                    public InstantMessage decryptMessage(SecureMessage sMsg, ID receiver) {
+                        InstantMessage iMsg = super.decryptMessage(sMsg, receiver);
                         if (iMsg != null) {
                             iMsg.remove("key");
                         }

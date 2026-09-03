@@ -33,14 +33,13 @@ package chat.dim.mkm;
 import java.util.List;
 import java.util.Set;
 
-import chat.dim.crypto.EncryptedBundle;
 import chat.dim.data.Converter;
+import chat.dim.dkd.EncryptedBundle;
 import chat.dim.protocol.Address;
 import chat.dim.protocol.Document;
 import chat.dim.protocol.EntityType;
 import chat.dim.protocol.ID;
 import chat.dim.protocol.Meta;
-import chat.dim.protocol.Visa;
 
 /**
  *  DIM Server
@@ -236,13 +235,13 @@ public class Station implements User {
     }
 
     @Override
-    public Visa sign(Visa doc) {
-        return user.sign(doc);
+    public Document signDocument(Document doc) {
+        return user.signDocument(doc);
     }
 
     @Override
-    public boolean verify(Visa doc) {
-        return user.verify(doc);
+    public boolean verifyDocument(Document doc) {
+        return user.verifyDocument(doc);
     }
 
     //
