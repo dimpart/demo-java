@@ -72,8 +72,8 @@ public class CommonPluginLoader extends PluginLoader {
     }
 
     @Override
-    protected void loadDigesters() {
-        super.loadDigesters();
+    protected void loadDigestPlugins() {
+        super.loadDigestPlugins();
 
         registerMD5Digester();
 

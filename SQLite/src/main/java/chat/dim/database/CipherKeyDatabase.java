@@ -35,9 +35,9 @@ import chat.dim.dbi.CipherKeyDBI;
 import chat.dim.mem.CacheManager;
 import chat.dim.mem.CachePair;
 import chat.dim.mem.CachePool;
-import chat.dim.protocol.ID;
-import chat.dim.protocol.SymmetricAlgorithms;
+import chat.dim.crypto.SymmetricAlgorithms;
 import chat.dim.protocol.SymmetricKey;
+import chat.dim.protocol.ID;
 import chat.dim.sqlite.DatabaseConnector;
 
 public class CipherKeyDatabase implements CipherKeyDBI {

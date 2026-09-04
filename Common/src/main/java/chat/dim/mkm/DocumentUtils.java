@@ -46,7 +46,7 @@ import chat.dim.protocol.Visa;
 public interface DocumentUtils {
 
     static String getDocumentType(Document doc) {
-        return SharedAccountExtensions.helper.getDocumentType(doc.toMap(), null);
+        return SharedAccountExtensions.handler.getDocumentType(doc.toMap(), null);
     }
 
     /**

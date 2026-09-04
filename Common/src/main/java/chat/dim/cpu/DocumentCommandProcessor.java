@@ -228,7 +228,7 @@ public class DocumentCommandProcessor extends MetaCommandProcessor {
             return false;
         }
         // check document ID
-        ID docID = SharedAccountExtensions.helper.getDocumentID(doc.toMap());
+        ID docID = SharedAccountExtensions.handler.getDocumentID(doc.toMap());
         if (docID == null) {
             assert false : "document ID not found: " + doc.toMap();
         } else if (!docID.isSameAs(did)) {

@@ -176,8 +176,8 @@ public class CommonArchivist implements Barrack {
         return database.saveMeta(meta, did);
     }
 
-    protected boolean checkMeta(Meta meta, ID identifier) {
-        return meta.isValid() && MetaUtils.matches(identifier, meta);
+    protected boolean checkMeta(Meta meta, ID did) {
+        return meta.isValid() && MetaUtils.matches(did, meta);
     }
 
     /**
