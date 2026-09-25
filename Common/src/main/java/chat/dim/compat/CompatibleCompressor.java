@@ -32,7 +32,7 @@ package chat.dim.compat;
 
 import java.util.Map;
 
-import chat.dim.core.MessageCompressor;
+import chat.dim.dkd.MessageCompressor;
 
 public class CompatibleCompressor extends MessageCompressor {
 

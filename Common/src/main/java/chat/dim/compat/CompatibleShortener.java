@@ -32,7 +32,7 @@ package chat.dim.compat;
 
 import java.util.Map;
 
-import chat.dim.core.MessageShortener;
+import chat.dim.dkd.MessageShortener;
 
 public class CompatibleShortener extends MessageShortener {
 
